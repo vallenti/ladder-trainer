@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Ladder Trainer",
+    "slug": "ladder-trainer-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": ["ios", "android", "web"],
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.laddertrainer.app"
+    },
+    "android": {
+      "package": "com.laddertrainer.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
