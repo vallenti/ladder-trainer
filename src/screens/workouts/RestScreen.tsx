@@ -51,10 +51,12 @@ const RestScreen: React.FC = () => {
         Next: Round {nextRound}
       </Text>
       <Button
-        mode="contained"
+        mode="outlined"
         onPress={handleSkipRest}
         style={styles.skipButton}
         contentStyle={styles.skipButtonContent}
+        buttonColor="white"
+        textColor="#4CAF50"
       >
         Skip Rest
       </Button>
@@ -78,6 +80,8 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 100,
     fontWeight: 'bold',
+    lineHeight: 120,
+    textAlignVertical: 'center',
   },
   nextRound: {
     color: 'white',
@@ -85,7 +89,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   skipButton: {
-    backgroundColor: 'white',
+    marginTop: 20,
   },
   skipButtonContent: {
     paddingVertical: 8,

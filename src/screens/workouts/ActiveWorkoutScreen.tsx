@@ -1,28 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Platform } from 'react-native';
-import { Text, Button, Card, ProgressBar, Appbar, Portal, Dialog } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, Platform, BackHandler } from 'react-native';
+import { Text, Button, Card, ProgressBar, Appbar, Portal, Dialog, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { getExercisesForRound, formatTime } from '../../utils/calculations';
 import { spacing } from '../../constants/theme';
 import { Exercise } from '../../types';
 
+const formatTimeWithMs = (totalSeconds: number): { main: string; ms: string } => {
+  const seconds = Math.floor(totalSeconds);
+  const ms = Math.floor((totalSeconds - seconds) * 100);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  
+  if (hours > 0) {
+    return {
+      main: `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
+      ms: `.${ms.toString().padStart(2, '0')}`
+    };
+  }
+  return {
+    main: `${minutes}:${secs.toString().padStart(2, '0')}`,
+    ms: `.${ms.toString().padStart(2, '0')}`
+  };
+};
+
 const ActiveWorkoutScreen: React.FC = () => {
   const navigation = useNavigation();
   const { activeWorkout, completeRound, startNextRound, completeWorkout } = useActiveWorkoutStore();
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [pauseDialogVisible, setPauseDialogVisible] = useState(false);
   const [quitDialogVisible, setQuitDialogVisible] = useState(false);
+  const [pauseStartTime, setPauseStartTime] = useState<number>(0);
+  const [totalPausedTime, setTotalPausedTime] = useState<number>(0);
+  const [frozenElapsedTime, setFrozenElapsedTime] = useState<number>(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      if (activeWorkout) {
-        const elapsed = Math.floor((new Date().getTime() - activeWorkout.startTime.getTime()) / 1000);
+      if (activeWorkout && !isPaused) {
+        const totalElapsedMs = new Date().getTime() - activeWorkout.startTime.getTime();
+        const elapsed = (totalElapsedMs / 1000) - totalPausedTime;
         setElapsedTime(elapsed);
+      } else if (isPaused) {
+        // Keep showing the frozen time while paused
+        setElapsedTime(frozenElapsedTime);
       }
-    }, 1000);
+    }, 100);
 
     return () => clearInterval(timer);
-  }, [activeWorkout]);
+  }, [activeWorkout, isPaused, totalPausedTime, frozenElapsedTime]);
+
+  // Handle Android back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!isPaused) {
+        handlePause();
+        return true; // Prevent default back behavior
+      }
+      return false; // Allow default behavior when already paused
+    });
+
+    return () => backHandler.remove();
+  }, [isPaused]);
 
   if (!activeWorkout) {
     return (
@@ -65,12 +106,54 @@ const ActiveWorkoutScreen: React.FC = () => {
     navigation.navigate('HomeTabs' as never);
   };
 
+  const handlePause = () => {
+    setFrozenElapsedTime(elapsedTime);
+    setPauseStartTime(Date.now());
+    setIsPaused(true);
+    setPauseDialogVisible(true);
+  };
+
+  const handleResume = () => {
+    const pauseDuration = Math.floor((Date.now() - pauseStartTime) / 1000);
+    setTotalPausedTime(totalPausedTime + pauseDuration);
+    setIsPaused(false);
+    setPauseDialogVisible(false);
+  };
+
+  const handleStopAndDiscard = () => {
+    setPauseDialogVisible(false);
+    navigation.navigate('HomeTabs' as never);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.timerContainer}>
-        <Text variant="displayMedium" style={styles.timer}>
-          {formatTime(elapsedTime)}
-        </Text>
+        <View style={styles.timerRow}>
+          <View style={styles.timerContent}>
+            <View style={styles.timerTextContainer}>
+              <Text variant="displayMedium" style={styles.timer}>
+                {formatTimeWithMs(elapsedTime).main}
+              </Text>
+              <Text variant="headlineSmall" style={styles.timerMs}>
+                {formatTimeWithMs(elapsedTime).ms}
+              </Text>
+            </View>
+            {isPaused && (
+              <Text variant="bodyMedium" style={styles.pausedLabel}>
+                PAUSED
+              </Text>
+            )}
+          </View>
+          <IconButton
+            icon={isPaused ? "play" : "pause"}
+            size={32}
+            iconColor="#6200ee"
+            onPress={handlePause}
+            disabled={isPaused}
+            style={styles.pauseButton}
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+          />
+        </View>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -95,7 +178,7 @@ const ActiveWorkoutScreen: React.FC = () => {
                     </Text>
                   </View>
                   <Text variant="bodyLarge" style={[styles.exerciseName, isNewExercise && styles.newExerciseText]}>
-                    {exercise.name}
+                    {(exercise.unit || '').toLowerCase()} {exercise.name}
                   </Text>
                 </View>
               );
@@ -116,6 +199,23 @@ const ActiveWorkoutScreen: React.FC = () => {
       </View>
 
       <Portal>
+        <Dialog visible={pauseDialogVisible} onDismiss={handleResume}>
+          <Dialog.Title>Workout Paused</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Take a breather! Your progress is saved. Resume when you're ready or stop to discard this workout.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={handleStopAndDiscard} textColor="#c62828">
+              Stop & Discard
+            </Button>
+            <Button onPress={handleResume} mode="contained">
+              Resume
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
         <Dialog visible={quitDialogVisible} onDismiss={() => setQuitDialogVisible(false)}>
           <Dialog.Title>Quit Workout?</Dialog.Title>
           <Dialog.Content>
@@ -145,9 +245,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 0,
   },
+  timerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    paddingHorizontal: spacing.md,
+  },
+  timerContent: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  timerTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
   timer: {
     fontWeight: 'bold',
     color: '#6200ee',
+  },
+  timerMs: {
+    fontWeight: 'bold',
+    color: '#6200ee',
+    opacity: 0.7,
+  },
+  pausedLabel: {
+    color: '#c62828',
+    fontWeight: 'bold',
+    marginTop: spacing.xs,
+  },
+  pauseButton: {
+    position: 'absolute',
+    right: spacing.md,
   },
   scrollView: {
     flex: 1,
@@ -162,18 +291,21 @@ const styles = StyleSheet.create({
   cardTitle: {
     marginBottom: spacing.sm,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.xs,
+    paddingLeft: spacing.xs + 4,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    borderLeftWidth: 4,
+    borderLeftColor: 'transparent',
   },
   newExerciseRow: {
     backgroundColor: '#E8F5E9',
-    borderLeftWidth: 4,
     borderLeftColor: '#4CAF50',
     borderRadius: 4,
     marginVertical: 2,

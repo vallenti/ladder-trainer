@@ -48,7 +48,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
     if (!activeWorkout || !currentRoundStartTime) return;
 
     const endTime = new Date();
-    const duration = Math.floor((endTime.getTime() - currentRoundStartTime.getTime()) / 1000);
+    const duration = (endTime.getTime() - currentRoundStartTime.getTime()) / 1000;
 
     const round: Round = {
       roundNumber: activeWorkout.currentRoundIndex + 1,
@@ -84,7 +84,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
     if (!activeWorkout) return;
 
     const endTime = new Date();
-    const totalTime = Math.floor((endTime.getTime() - activeWorkout.startTime.getTime()) / 1000);
+    const totalTime = (endTime.getTime() - activeWorkout.startTime.getTime()) / 1000;
 
     const completedWorkout: Workout = {
       ...activeWorkout,

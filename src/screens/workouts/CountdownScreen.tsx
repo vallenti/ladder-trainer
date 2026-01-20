@@ -85,6 +85,8 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 120,
     fontWeight: 'bold',
+    lineHeight: 140,
+    textAlignVertical: 'center',
   },
   subtitle: {
     color: 'white',
