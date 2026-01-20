@@ -1,0 +1,43 @@
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { HomeTabParamList } from '../types/navigation';
+import TemplateNavigator from './TemplateNavigator';
+import LogbookScreen from '../screens/logbook/LogBookScreen';
+
+const Tab = createBottomTabNavigator<HomeTabParamList>();
+
+const BottomTabNavigator: React.FC = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#6200ee',
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen
+        name="Templates"
+        component={TemplateNavigator}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Logbook"
+        component={LogbookScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="book" size={size} color={color} />
+          ),
+          headerShown: true,
+          headerTitle: 'Workout History',
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
+
+export default BottomTabNavigator;
