@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { FAB, Text, Portal, Dialog, Button } from 'react-native-paper';
+import { FAB, Text, Portal, Dialog, Button, Appbar } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import WorkoutCard from '../../components/WorkoutCard';
@@ -42,25 +42,33 @@ const WorkoutListScreen: React.FC = () => {
 
   if (!isLoading && workouts.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text variant="headlineSmall" style={styles.emptyText}>
-          No workouts yet
-        </Text>
-        <Text variant="bodyLarge" style={styles.emptySubtext}>
-          Create your first workout to get started!
-        </Text>
-        <FAB
-          icon="plus"
-          style={styles.fab}
-          onPress={handleCreateWorkout}
-          label="Create Workout"
-        />
+      <View style={styles.container}>
+        <Appbar.Header>
+          <Appbar.Content title="Ladder Trainer" />
+        </Appbar.Header>
+        <View style={styles.emptyContainer}>
+          <Text variant="headlineSmall" style={styles.emptyText}>
+            No workouts yet
+          </Text>
+          <Text variant="bodyLarge" style={styles.emptySubtext}>
+            Create your first workout to get started!
+          </Text>
+          <FAB
+            icon="plus"
+            style={styles.fab}
+            onPress={handleCreateWorkout}
+            label="Create Workout"
+          />
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      <Appbar.Header>
+        <Appbar.Content title="Workouts" />
+      </Appbar.Header>
       <FlatList
         data={workouts}
         keyExtractor={(item) => item.id}
