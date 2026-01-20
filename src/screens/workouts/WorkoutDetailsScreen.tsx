@@ -45,8 +45,8 @@ const WorkoutDetailsScreen: React.FC = () => {
   };
 
   const handleStartWorkout = () => {
-    // TODO: Navigate to workout flow in Phase 2
-    console.log('Start workout:', workout.id);
+    // @ts-ignore
+    navigation.navigate('Countdown', { workoutId: workout.id });
   };
 
   return (

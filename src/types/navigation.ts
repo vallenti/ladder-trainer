@@ -4,7 +4,10 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 
 export type RootStackParamList = {
   HomeTabs: NavigatorScreenParams<HomeTabParamList>;
-  WorkoutFlow: NavigatorScreenParams<WorkoutFlowStackParamList>;
+  Countdown: { workoutId: string };
+  ActiveWorkout: { workoutId: string };
+  Rest: { workoutId: string };
+  WorkoutComplete: { workoutId: string };
 };
 
 export type HomeTabParamList = {
@@ -16,13 +19,6 @@ export type WorkoutStackParamList = {
   WorkoutList: undefined;
   CreateEditWorkout: { workoutId?: string };
   WorkoutDetails: { workoutId: string };
-};
-
-export type WorkoutFlowStackParamList = {
-  Countdown: { workoutId: string };
-  ActiveWorkout: { workoutId: string };
-  Rest: { workoutId: string };
-  WorkoutComplete: { workoutId: string };
 };
 
 // Helper types for screen props
