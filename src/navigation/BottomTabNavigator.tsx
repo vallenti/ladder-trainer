@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { HomeTabParamList } from '../types/navigation';
-import TemplateNavigator from './TemplateNavigator';
+import WorkoutNavigator from './WorkoutNavigator';
 import LogbookScreen from '../screens/logbook/LogBookScreen';
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
@@ -17,8 +17,8 @@ const BottomTabNavigator: React.FC = () => {
       }}
     >
       <Tab.Screen
-        name="Templates"
-        component={TemplateNavigator}
+        name="Workouts"
+        component={WorkoutNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />

@@ -2,32 +2,32 @@ import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, Button, Card, Appbar, Portal, Dialog } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useTemplateStore } from '../../store/templateStore';
+import { useWorkoutStore } from '../../store/workoutStore';
 import { spacing } from '../../constants/theme';
 
 type RouteParams = {
-  TemplateDetails: {
-    templateId: string;
+  WorkoutDetails: {
+    workoutId: string;
   };
 };
 
-const TemplateDetailsScreen: React.FC = () => {
+const WorkoutDetailsScreen: React.FC = () => {
   const navigation = useNavigation();
-  const route = useRoute<RouteProp<RouteParams, 'TemplateDetails'>>();
-  const { getTemplate, deleteTemplate } = useTemplateStore();
+  const route = useRoute<RouteProp<RouteParams, 'WorkoutDetails'>>();
+  const { getWorkout, deleteWorkout } = useWorkoutStore();
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 
-  const template = getTemplate(route.params.templateId);
+  const workout = getWorkout(route.params.workoutId);
 
-  if (!template) {
+  if (!workout) {
     return (
       <View style={styles.container}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => navigation.goBack()} />
-          <Appbar.Content title="Template Not Found" />
+          <Appbar.Content title="Workout Not Found" />
         </Appbar.Header>
         <View style={styles.errorContainer}>
-          <Text>Template not found</Text>
+          <Text>Workout not found</Text>
         </View>
       </View>
     );
@@ -35,25 +35,25 @@ const TemplateDetailsScreen: React.FC = () => {
 
   const handleEdit = () => {
     // @ts-ignore
-    navigation.navigate('CreateEditTemplate', { templateId: template.id });
+    navigation.navigate('CreateEditWorkout', { workoutId: workout.id });
   };
 
   const handleDelete = async () => {
-    await deleteTemplate(template.id);
+    await deleteWorkout(workout.id);
     setDeleteDialogVisible(false);
     navigation.goBack();
   };
 
   const handleStartWorkout = () => {
     // TODO: Navigate to workout flow in Phase 2
-    console.log('Start workout:', template.id);
+    console.log('Start workout:', workout.id);
   };
 
   return (
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title={template.name} />
+        <Appbar.Content title={workout.name} />
         <Appbar.Action icon="pencil" onPress={handleEdit} />
         <Appbar.Action icon="delete" onPress={() => setDeleteDialogVisible(true)} />
       </Appbar.Header>
@@ -63,15 +63,15 @@ const TemplateDetailsScreen: React.FC = () => {
           <Card style={styles.card}>
             <Card.Content>
               <Text variant="titleMedium" style={styles.label}>
-                Exercises ({template.exercises.length})
+                Exercises ({workout.exercises.length})
               </Text>
-              {template.exercises.map((exercise) => (
+              {workout.exercises.map((exercise) => (
                 <View key={exercise.position} style={styles.exerciseRow}>
                   <View style={styles.positionBadge}>
                     <Text style={styles.positionText}>{exercise.position}</Text>
                   </View>
                   <Text variant="bodyLarge" style={styles.exerciseText}>
-                    {exercise.unit} {exercise.name}
+                    {exercise.unit && `${exercise.unit} `}{exercise.name}
                   </Text>
                 </View>
               ))}
@@ -84,9 +84,9 @@ const TemplateDetailsScreen: React.FC = () => {
                 Rest Period
               </Text>
               <Text variant="bodyLarge">
-                {template.restPeriodSeconds === 0
+                {workout.restPeriodSeconds === 0
                   ? 'No rest'
-                  : `${template.restPeriodSeconds} seconds`}
+                  : `${workout.restPeriodSeconds} seconds`}
               </Text>
             </Card.Content>
           </Card>
@@ -105,15 +105,15 @@ const TemplateDetailsScreen: React.FC = () => {
 
       <Portal>
         <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
-          <Dialog.Title>Delete Template</Dialog.Title>
+          <Dialog.Title>Delete Workout</Dialog.Title>
           <Dialog.Content>
             <Text variant="bodyMedium">
-              Are you sure you want to delete "{template.name}"? This action cannot be undone.
+              Are you sure you want to delete "{workout.name}"? This action cannot be undone.
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setDeleteDialogVisible(false)}>Cancel</Button>
-            <Button onPress={handleDelete}>Delete</Button>
+            <Button onPress={handleDelete} textColor="#c62828">Delete</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -132,31 +132,26 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.md,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   card: {
     marginBottom: spacing.md,
   },
   label: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
     fontWeight: 'bold',
   },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.xs,
+    marginBottom: spacing.sm,
   },
   positionBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#6200ee',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.sm,
+    marginRight: spacing.md,
   },
   positionText: {
     color: 'white',
@@ -172,6 +167,11 @@ const styles = StyleSheet.create({
   startButtonContent: {
     paddingVertical: spacing.sm,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
-export default TemplateDetailsScreen;
+export default WorkoutDetailsScreen;

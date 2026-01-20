@@ -2,33 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Text, Appbar, Divider, Checkbox } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useTemplateStore } from '../../store/templateStore';
+import { useWorkoutStore } from '../../store/workoutStore';
 import ExerciseInput from '../../components/ExerciseInput';
 import { Exercise } from '../../types';
 import { spacing } from '../../constants/theme';
 
 type RouteParams = {
-  CreateEditTemplate: {
-    templateId?: string;
+  CreateEditWorkout: {
+    workoutId?: string;
   };
 };
 
-const CreateEditTemplateScreen: React.FC = () => {
+const CreateEditWorkoutScreen: React.FC = () => {
   const navigation = useNavigation();
-  const route = useRoute<RouteProp<RouteParams, 'CreateEditTemplate'>>();
-  const { addTemplate, updateTemplate, getTemplate } = useTemplateStore();
+  const route = useRoute<RouteProp<RouteParams, 'CreateEditWorkout'>>();
+  const { addWorkout, updateWorkout, getWorkout } = useWorkoutStore();
   
-  const templateId = route.params?.templateId;
-  const isEditing = !!templateId;
-  const existingTemplate = isEditing ? getTemplate(templateId) : undefined;
+  const workoutId = route.params?.workoutId;
+  const isEditing = !!workoutId;
+  const existingWorkout = isEditing ? getWorkout(workoutId) : undefined;
 
-  const [name, setName] = useState(existingTemplate?.name || '');
-  const [hasRest, setHasRest] = useState((existingTemplate?.restPeriodSeconds || 0) > 0);
+  const [name, setName] = useState(existingWorkout?.name || '');
+  const [hasRest, setHasRest] = useState((existingWorkout?.restPeriodSeconds || 0) > 0);
   const [restPeriod, setRestPeriod] = useState(
-    existingTemplate?.restPeriodSeconds?.toString() || '60'
+    existingWorkout?.restPeriodSeconds?.toString() || '60'
   );
   const [exercises, setExercises] = useState<Exercise[]>(
-    existingTemplate?.exercises || [{ position: 1, unit: '', name: '' }]
+    existingWorkout?.exercises || [{ position: 1, unit: '', name: '' }]
   );
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -61,7 +61,7 @@ const CreateEditTemplateScreen: React.FC = () => {
     const newErrors: string[] = [];
 
     if (!name.trim()) {
-      newErrors.push('Template name is required');
+      newErrors.push('Workout name is required');
     }
 
     if (exercises.length === 0) {
@@ -88,16 +88,16 @@ const CreateEditTemplateScreen: React.FC = () => {
   const handleSave = async () => {
     if (!validate()) return;
 
-    const templateData = {
+    const workoutData = {
       name: name.trim(),
       exercises,
       restPeriodSeconds: hasRest ? parseInt(restPeriod, 10) : 0,
     };
 
-    if (isEditing && templateId) {
-      await updateTemplate(templateId, templateData);
+    if (isEditing && workoutId) {
+      await updateWorkout(workoutId, workoutData);
     } else {
-      await addTemplate(templateData);
+      await addWorkout(workoutData);
     }
 
     navigation.goBack();
@@ -107,32 +107,71 @@ const CreateEditTemplateScreen: React.FC = () => {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title={isEditing ? 'Edit Template' : 'Create Template'} />
+        <Appbar.Content title={isEditing ? 'Edit Workout' : 'Create Workout'} />
+        <Appbar.Action icon="check" onPress={handleSave} />
       </Appbar.Header>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView style={styles.scrollView}>
           <View style={styles.content}>
+            {/* Error Display */}
+            {errors.length > 0 && (
+              <View style={styles.errorContainer}>
+                {errors.map((error, index) => (
+                  <Text key={index} style={styles.errorText}>
+                    • {error}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            {/* Workout Name */}
             <TextInput
               mode="outlined"
-              label="Template Name"
+              label="Workout Name"
               value={name}
               onChangeText={setName}
-              placeholder="e.g., Classic 12 Days"
+              placeholder="e.g., Morning Ladder, CrossFit WOD"
               style={styles.input}
             />
 
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Exercises ({exercises.length}/12)
-            </Text>
+            {/* Rest Period */}
+            <View style={styles.restSection}>
+              <View style={styles.checkboxRow}>
+                <Checkbox.Android
+                  status={hasRest ? 'checked' : 'unchecked'}
+                  onPress={() => setHasRest(!hasRest)}
+                />
+                <Text variant="bodyLarge" style={styles.checkboxLabel}>
+                  Include rest period between rounds
+                </Text>
+              </View>
+
+              {hasRest && (
+                <TextInput
+                  mode="outlined"
+                  label="Rest Period (seconds)"
+                  value={restPeriod}
+                  onChangeText={setRestPeriod}
+                  keyboardType="numeric"
+                  placeholder="60"
+                  style={styles.restInput}
+                />
+              )}
+            </View>
+
+            <Divider style={styles.divider} />
+
+            {/* Exercises Section */}
+            <View style={styles.exercisesHeader}>
+              <Text variant="titleLarge">Exercises</Text>
+              <Text variant="bodyMedium" style={styles.exerciseCount}>
+                {exercises.length}/12
+              </Text>
+            </View>
 
             {exercises.map((exercise, index) => (
               <ExerciseInput
@@ -154,65 +193,6 @@ const CreateEditTemplateScreen: React.FC = () => {
                 Add Exercise
               </Button>
             )}
-
-            <Divider style={styles.divider} />
-
-            {/* Rest Period Section - Less Prominent */}
-            <View style={styles.restSection}>
-              <View style={styles.checkboxRow}>
-                <Checkbox
-                  status={hasRest ? 'checked' : 'unchecked'}
-                  onPress={() => setHasRest(!hasRest)}
-                />
-                <Text 
-                  variant="bodyLarge" 
-                  style={styles.checkboxLabel}
-                  onPress={() => setHasRest(!hasRest)}
-                >
-                  Add rest between rounds
-                </Text>
-              </View>
-              
-              {hasRest && (
-                <TextInput
-                  mode="outlined"
-                  label="Rest Duration (seconds)"
-                  value={restPeriod}
-                  onChangeText={setRestPeriod}
-                  keyboardType="numeric"
-                  placeholder="60"
-                  style={styles.restInput}
-                  dense
-                />
-              )}
-            </View>
-
-            {errors.length > 0 && (
-              <View style={styles.errorContainer}>
-                {errors.map((error, index) => (
-                  <Text key={index} style={styles.errorText}>
-                    • {error}
-                  </Text>
-                ))}
-              </View>
-            )}
-
-            <View style={styles.buttonContainer}>
-              <Button
-                mode="outlined"
-                onPress={() => navigation.goBack()}
-                style={styles.button}
-              >
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleSave}
-                style={styles.button}
-              >
-                {isEditing ? 'Update' : 'Create'}
-              </Button>
-            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -231,27 +211,11 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: spacing.xl,
-  },
   content: {
     padding: spacing.md,
   },
   input: {
     marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    fontWeight: 'bold',
-  },
-  addButton: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-  },
-  divider: {
-    marginVertical: spacing.lg,
   },
   restSection: {
     marginBottom: spacing.md,
@@ -262,32 +226,37 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   checkboxLabel: {
-    marginLeft: spacing.xs,
+    marginLeft: spacing.sm,
     flex: 1,
   },
   restInput: {
-    marginLeft: 40,
     marginTop: spacing.sm,
+  },
+  divider: {
+    marginVertical: spacing.lg,
+  },
+  exercisesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  exerciseCount: {
+    color: '#666',
+  },
+  addButton: {
+    marginTop: spacing.md,
   },
   errorContainer: {
     backgroundColor: '#ffebee',
     padding: spacing.md,
     borderRadius: 8,
-    marginVertical: spacing.md,
+    marginBottom: spacing.md,
   },
   errorText: {
     color: '#c62828',
     marginVertical: 2,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.lg,
-    gap: spacing.md,
-  },
-  button: {
-    flex: 1,
-  },
 });
 
-export default CreateEditTemplateScreen;
+export default CreateEditWorkoutScreen;

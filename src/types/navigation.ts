@@ -4,22 +4,22 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 
 export type RootStackParamList = {
   HomeTabs: NavigatorScreenParams<HomeTabParamList>;
-  WorkoutFlow: NavigatorScreenParams<WorkoutStackParamList>;
+  WorkoutFlow: NavigatorScreenParams<WorkoutFlowStackParamList>;
 };
 
 export type HomeTabParamList = {
-  Templates: undefined;
+  Workouts: undefined;
   Logbook: undefined;
 };
 
-export type TemplateStackParamList = {
-  TemplateList: undefined;
-  CreateEditTemplate: { templateId?: string };
-  TemplateDetails: { templateId: string };
+export type WorkoutStackParamList = {
+  WorkoutList: undefined;
+  CreateEditWorkout: { workoutId?: string };
+  WorkoutDetails: { workoutId: string };
 };
 
-export type WorkoutStackParamList = {
-  Countdown: { templateId: string };
+export type WorkoutFlowStackParamList = {
+  Countdown: { workoutId: string };
   ActiveWorkout: { workoutId: string };
   Rest: { workoutId: string };
   WorkoutComplete: { workoutId: string };

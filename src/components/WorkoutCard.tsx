@@ -5,25 +5,25 @@ import { format } from 'date-fns';
 import { Template } from '../types';
 import { spacing } from '../constants/theme';
 
-interface TemplateCardProps {
-  template: Template;
+interface WorkoutCardProps {
+  workout: Template;
   onPress: () => void;
   onDelete: () => void;
 }
 
-const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPress, onDelete }) => {
+const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onDelete }) => {
   return (
     <Card style={styles.card} onPress={onPress}>
       <Card.Content>
         <Text variant="titleLarge" style={styles.title}>
-          {template.name}
+          {workout.name}
         </Text>
         <Text variant="bodyMedium" style={styles.subtitle}>
-          {template.exercises.length} exercise{template.exercises.length !== 1 ? 's' : ''}
-          {template.restPeriodSeconds > 0 && ` • ${template.restPeriodSeconds}s rest`}
+          {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}
+          {workout.restPeriodSeconds > 0 && ` • ${workout.restPeriodSeconds}s rest`}
         </Text>
         <Text variant="bodySmall" style={styles.date}>
-          Created {format(template.createdAt, 'MMM d, yyyy')}
+          Created {format(workout.createdAt, 'MMM d, yyyy')}
         </Text>
       </Card.Content>
       <Card.Actions>
@@ -55,4 +55,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TemplateCard;
+export default WorkoutCard;
