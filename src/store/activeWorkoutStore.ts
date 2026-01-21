@@ -16,6 +16,7 @@ interface ActiveWorkoutStore {
   // History
   workoutHistory: Workout[];
   loadHistory: () => Promise<void>;
+  deleteWorkoutFromHistory: (workoutId: string) => Promise<void>;
 }
 
 export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
@@ -114,5 +115,12 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
   loadHistory: async () => {
     const history = await loadWorkoutHistory();
     set({ workoutHistory: history });
+  },
+
+  deleteWorkoutFromHistory: async (workoutId: string) => {
+    const { workoutHistory } = get();
+    const updatedHistory = workoutHistory.filter(w => w.id !== workoutId);
+    await saveWorkoutHistory(updatedHistory);
+    set({ workoutHistory: updatedHistory });
   },
 }));
