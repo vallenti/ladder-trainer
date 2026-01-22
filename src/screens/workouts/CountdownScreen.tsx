@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import { Text, Button, useTheme } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { useWorkoutStore } from '../../store/workoutStore';
@@ -12,6 +12,7 @@ type RouteParams = {
 };
 
 const CountdownScreen: React.FC = () => {
+  const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RouteParams, 'Countdown'>>();
   const { getWorkout } = useWorkoutStore();
@@ -46,7 +47,7 @@ const CountdownScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
       <Text variant="headlineLarge" style={styles.workoutName}>
         {template.name}
       </Text>
@@ -73,7 +74,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#6200ee',
     padding: 20,
   },
   workoutName: {

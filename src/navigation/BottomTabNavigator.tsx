@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { HomeTabParamList } from '../types/navigation';
 import WorkoutNavigator from './WorkoutNavigator';
 import LogbookScreen from '../screens/logbook/LogBookScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
@@ -11,7 +12,7 @@ const BottomTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#6200ee',
+        tabBarActiveTintColor: '#FF6B35',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
       }}
@@ -34,6 +35,17 @@ const BottomTabNavigator: React.FC = () => {
           ),
           headerShown: true,
           headerTitle: 'Workout History',
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="cog" size={size} color={color} />
+          ),
+          headerShown: true,
+          headerTitle: 'Settings',
         }}
       />
     </Tab.Navigator>

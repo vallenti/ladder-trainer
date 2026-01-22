@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { TextInput, IconButton, Text, Chip } from 'react-native-paper';
+import { TextInput, IconButton, Text, Chip, useTheme } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
 
@@ -17,6 +17,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
   onDelete,
   canDelete,
 }) => {
+  const theme = useTheme();
   const [showUnitInput, setShowUnitInput] = useState(false);
 
   const isDefaultUnit = !exercise.unit || exercise.unit === '';
@@ -30,15 +31,15 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
       {/* Header Row: Position + Delete */}
       <View style={styles.headerRow}>
-        <View style={styles.positionContainer}>
+        <View style={[styles.positionContainer, { backgroundColor: theme.colors.primary }]}>
           <Text variant="titleMedium" style={styles.position}>
             {exercise.position}
           </Text>
         </View>
-        <Text variant="bodySmall" style={styles.positionLabel}>
+        <Text variant="bodySmall" style={[styles.positionLabel, { color: theme.colors.onSurfaceVariant }]}>
           Exercise {exercise.position}
         </Text>
         <View style={styles.spacer} />
@@ -66,7 +67,11 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
         {!showUnitInput ? (
           <TouchableOpacity 
             onPress={handleOpenUnitEdit} 
-            style={[styles.unitButton, isDefaultUnit && styles.unitButtonIcon]}
+            style={[
+              styles.unitButton,
+              { borderColor: theme.colors.outline },
+              isDefaultUnit && styles.unitButtonIcon
+            ]}
           >
             {isDefaultUnit ? (
               <IconButton
@@ -76,7 +81,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
               />
             ) : (
               <View style={styles.unitButtonContent}>
-                <Text variant="bodyMedium" style={styles.unitText}>
+                <Text variant="bodyMedium" style={[styles.unitText, { color: theme.colors.onSurface }]}>
                   {exercise.unit}
                 </Text>
                 <IconButton
@@ -112,7 +117,6 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: spacing.md,
     marginVertical: spacing.sm,
@@ -131,7 +135,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#6200ee',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm,
@@ -142,7 +145,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   positionLabel: {
-    color: '#666',
     fontSize: 12,
   },
   spacer: {
@@ -161,7 +163,6 @@ const styles = StyleSheet.create({
   },
   unitButton: {
     borderWidth: 1,
-    borderColor: '#79747E',
     borderRadius: 4,
     height: 50,
     justifyContent: 'center',
@@ -183,7 +184,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   unitText: {
-    color: '#1C1B1F',
     fontWeight: '500',
   },
   editIcon: {

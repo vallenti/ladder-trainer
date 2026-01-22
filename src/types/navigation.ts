@@ -13,6 +13,7 @@ export type RootStackParamList = {
 export type HomeTabParamList = {
   Workouts: undefined;
   Logbook: undefined;
+  Settings: undefined;
 };
 
 export type WorkoutStackParamList = {

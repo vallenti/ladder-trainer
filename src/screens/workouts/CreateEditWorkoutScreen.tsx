@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button, Text, Appbar, Divider, Checkbox } from 'react-native-paper';
+import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import ExerciseInput from '../../components/ExerciseInput';
@@ -14,6 +14,7 @@ type RouteParams = {
 };
 
 const CreateEditWorkoutScreen: React.FC = () => {
+  const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RouteParams, 'CreateEditWorkout'>>();
   const { addWorkout, updateWorkout, getWorkout } = useWorkoutStore();
@@ -104,7 +105,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
         <Appbar.Content title={isEditing ? 'Edit Workout' : 'Create Workout'} />
@@ -119,9 +120,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
           <View style={styles.content}>
             {/* Error Display */}
             {errors.length > 0 && (
-              <View style={styles.errorContainer}>
+              <View style={[styles.errorContainer, { backgroundColor: theme.dark ? '#3D1F1F' : '#ffebee' }]}>
                 {errors.map((error, index) => (
-                  <Text key={index} style={styles.errorText}>
+                  <Text key={index} style={[styles.errorText, { color: theme.colors.error }]}>
                     • {error}
                   </Text>
                 ))}
@@ -168,7 +169,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
             {/* Exercises Section */}
             <View style={styles.exercisesHeader}>
               <Text variant="titleLarge">Exercises</Text>
-              <Text variant="bodyMedium" style={styles.exerciseCount}>
+              <Text variant="bodyMedium" style={[styles.exerciseCount, { color: theme.colors.onSurfaceVariant }]}>
                 {exercises.length}/12
               </Text>
             </View>
@@ -203,7 +204,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   keyboardView: {
     flex: 1,
@@ -242,19 +242,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   exerciseCount: {
-    color: '#666',
   },
   addButton: {
     marginTop: spacing.md,
   },
   errorContainer: {
-    backgroundColor: '#ffebee',
     padding: spacing.md,
     borderRadius: 8,
     marginBottom: spacing.md,
   },
   errorText: {
-    color: '#c62828',
     marginVertical: 2,
   },
 });

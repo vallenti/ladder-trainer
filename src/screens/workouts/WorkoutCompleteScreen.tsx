@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, PanResponder, Platform } from 'react-native';
-import { Text, Button, Card } from 'react-native-paper';
+import { Text, Button, Card, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { formatTime } from '../../utils/calculations';
@@ -27,6 +27,7 @@ const formatTimeWithMs = (totalSeconds: number): { main: string; ms: string } =>
 };
 
 const WorkoutCompleteScreen: React.FC = () => {
+  const theme = useTheme();
   const navigation = useNavigation();
   const { workoutHistory } = useActiveWorkoutStore();
   const [activeTab, setActiveTab] = useState<'exercises' | 'rounds'>('exercises');
@@ -60,7 +61,7 @@ const WorkoutCompleteScreen: React.FC = () => {
 
   if (!completedWorkout) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Text>No workout data</Text>
         <Button onPress={handleDone}>Go Home</Button>
       </View>
@@ -82,18 +83,18 @@ const WorkoutCompleteScreen: React.FC = () => {
   }).filter(ex => ex.timesPerformed > 0); // Only show exercises that were performed
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <MaterialCommunityIcons name="check-circle" size={60} color="#4CAF50" />
+          <MaterialCommunityIcons name="check-circle" size={60} color={theme.colors.tertiary} />
           <Text variant="headlineMedium" style={styles.title}>
             Workout Complete!
           </Text>
           <View style={styles.totalTimeContainer}>
-            <Text variant="displaySmall" style={styles.totalTime}>
+            <Text variant="displaySmall" style={[styles.totalTime, { color: theme.colors.primary }]}>
               {formatTimeWithMs(completedWorkout.totalTime).main}
             </Text>
-            <Text variant="headlineSmall" style={styles.totalTimeMs}>
+            <Text variant="headlineSmall" style={[styles.totalTimeMs, { color: theme.colors.primary }]}>
               {formatTimeWithMs(completedWorkout.totalTime).ms}
             </Text>
           </View>
@@ -102,25 +103,39 @@ const WorkoutCompleteScreen: React.FC = () => {
         <Card style={styles.card}>
           <Card.Content>
 
-            <View style={styles.tabContainer}>
+            <View style={[styles.tabContainer, { borderBottomColor: theme.colors.outline }]}>
               <TouchableOpacity
-                style={[styles.tab, activeTab === 'exercises' && styles.activeTab]}
+                style={[
+                  styles.tab,
+                  activeTab === 'exercises' && [styles.activeTab, { borderBottomColor: theme.colors.primary }]
+                ]}
                 onPress={() => setActiveTab('exercises')}
               >
                 <Text
                   variant="titleSmall"
-                  style={[styles.tabText, activeTab === 'exercises' && styles.activeTabText]}
+                  style={[
+                    styles.tabText,
+                    { color: theme.colors.onSurfaceVariant },
+                    activeTab === 'exercises' && [styles.activeTabText, { color: theme.colors.primary }]
+                  ]}
                 >
                   Exercise Summary
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.tab, activeTab === 'rounds' && styles.activeTab]}
+                style={[
+                  styles.tab,
+                  activeTab === 'rounds' && [styles.activeTab, { borderBottomColor: theme.colors.primary }]
+                ]}
                 onPress={() => setActiveTab('rounds')}
               >
                 <Text
                   variant="titleSmall"
-                  style={[styles.tabText, activeTab === 'rounds' && styles.activeTabText]}
+                  style={[
+                    styles.tabText,
+                    { color: theme.colors.onSurfaceVariant },
+                    activeTab === 'rounds' && [styles.activeTabText, { color: theme.colors.primary }]
+                  ]}
                 >
                   Round Times
                 </Text>
@@ -131,9 +146,9 @@ const WorkoutCompleteScreen: React.FC = () => {
               {activeTab === 'exercises' ? (
                 <View style={styles.tabContent}>
                   {exerciseTotals.map((exercise) => (
-                    <View key={exercise.position} style={styles.exerciseSummaryItem}>
+                    <View key={exercise.position} style={[styles.exerciseSummaryItem, { borderBottomColor: theme.colors.outline }]}>
                       <Text variant="bodyLarge">{exercise.name}</Text>
-                      <Text variant="bodyLarge" style={styles.exerciseTotalText}>
+                      <Text variant="bodyLarge" style={[styles.exerciseTotalText, { color: theme.colors.tertiary }]}>
                         {exercise.totalAmount} {(exercise.unit || 'reps').toLowerCase()}
                       </Text>
                     </View>
@@ -142,9 +157,9 @@ const WorkoutCompleteScreen: React.FC = () => {
               ) : (
                 <View style={styles.tabContent}>
                   {completedWorkout.rounds.map((round) => (
-                    <View key={round.roundNumber} style={styles.roundItem}>
+                    <View key={round.roundNumber} style={[styles.roundItem, { borderBottomColor: theme.colors.outline }]}>
                       <Text variant="bodyLarge">Round {round.roundNumber}</Text>
-                      <Text variant="bodyLarge" style={styles.roundTime}>
+                      <Text variant="bodyLarge" style={[styles.roundTime, { color: theme.colors.primary }]}>
                         {formatTimeWithMs(round.duration).main}{formatTimeWithMs(round.duration).ms}
                       </Text>
                     </View>
@@ -171,7 +186,6 @@ const WorkoutCompleteScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollContent: {
     padding: spacing.md,
@@ -192,11 +206,9 @@ const styles = StyleSheet.create({
   },
   totalTime: {
     fontWeight: 'bold',
-    color: '#6200ee',
   },
   totalTimeMs: {
     fontWeight: 'bold',
-    color: '#6200ee',
     opacity: 0.7,
   },
   card: {
@@ -207,7 +219,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: spacing.md,
     borderBottomWidth: 2,
-    borderBottomColor: '#e0e0e0',
   },
   tab: {
     flex: 1,
@@ -218,14 +229,11 @@ const styles = StyleSheet.create({
     marginBottom: -2,
   },
   activeTab: {
-    borderBottomColor: '#6200ee',
   },
   tabText: {
-    color: '#666',
     fontWeight: '500',
   },
   activeTabText: {
-    color: '#6200ee',
     fontWeight: 'bold',
   },
   swipeContainer: {
@@ -239,22 +247,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   exerciseTotalText: {
     fontWeight: 'bold',
-    color: '#4CAF50',
   },
   roundItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   roundTime: {
     fontWeight: 'bold',
-    color: '#6200ee',
   },
   doneButton: {
     margin: spacing.md,

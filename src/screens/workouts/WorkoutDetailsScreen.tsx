@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Button, Card, Appbar, Portal, Dialog } from 'react-native-paper';
+import { Text, Button, Card, Appbar, Portal, Dialog, useTheme } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { spacing } from '../../constants/theme';
@@ -12,6 +12,7 @@ type RouteParams = {
 };
 
 const WorkoutDetailsScreen: React.FC = () => {
+  const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RouteParams, 'WorkoutDetails'>>();
   const { getWorkout, deleteWorkout } = useWorkoutStore();
@@ -21,7 +22,7 @@ const WorkoutDetailsScreen: React.FC = () => {
 
   if (!workout) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => navigation.goBack()} />
           <Appbar.Content title="Workout Not Found" />
@@ -50,7 +51,7 @@ const WorkoutDetailsScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
         <Appbar.Content title={workout.name} />
@@ -67,7 +68,7 @@ const WorkoutDetailsScreen: React.FC = () => {
               </Text>
               {workout.exercises.map((exercise) => (
                 <View key={exercise.position} style={styles.exerciseRow}>
-                  <View style={styles.positionBadge}>
+                  <View style={[styles.positionBadge, { backgroundColor: theme.colors.primary }]}>
                     <Text style={styles.positionText}>{exercise.position}</Text>
                   </View>
                   <Text variant="bodyLarge" style={styles.exerciseText}>
@@ -113,7 +114,7 @@ const WorkoutDetailsScreen: React.FC = () => {
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setDeleteDialogVisible(false)}>Cancel</Button>
-            <Button onPress={handleDelete} textColor="#c62828">Delete</Button>
+            <Button onPress={handleDelete} textColor={theme.colors.error}>Delete</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -124,7 +125,6 @@ const WorkoutDetailsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollView: {
     flex: 1,
@@ -148,7 +148,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#6200ee',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,

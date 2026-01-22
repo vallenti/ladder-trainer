@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Platform, BackHandler } from 'react-native';
-import { Text, Button, Card, ProgressBar, Appbar, Portal, Dialog, IconButton } from 'react-native-paper';
+import { Text, Button, Card, ProgressBar, Appbar, Portal, Dialog, IconButton, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { getExercisesForRound, formatTime } from '../../utils/calculations';
@@ -27,6 +27,7 @@ const formatTimeWithMs = (totalSeconds: number): { main: string; ms: string } =>
 };
 
 const ActiveWorkoutScreen: React.FC = () => {
+  const theme = useTheme();
   const navigation = useNavigation();
   const { activeWorkout, completeRound, startNextRound, completeWorkout } = useActiveWorkoutStore();
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -126,20 +127,20 @@ const ActiveWorkoutScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.timerContainer}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.timerContainer, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.timerRow}>
           <View style={styles.timerContent}>
             <View style={styles.timerTextContainer}>
-              <Text variant="displayMedium" style={styles.timer}>
+              <Text variant="displayMedium" style={[styles.timer, { color: theme.colors.primary }]}>
                 {formatTimeWithMs(elapsedTime).main}
               </Text>
-              <Text variant="headlineSmall" style={styles.timerMs}>
+              <Text variant="headlineSmall" style={[styles.timerMs, { color: theme.colors.primary }]}>
                 {formatTimeWithMs(elapsedTime).ms}
               </Text>
             </View>
             {isPaused && (
-              <Text variant="bodyMedium" style={styles.pausedLabel}>
+              <Text variant="bodyMedium" style={[styles.pausedLabel, { color: theme.colors.error }]}>
                 PAUSED
               </Text>
             )}
@@ -147,7 +148,7 @@ const ActiveWorkoutScreen: React.FC = () => {
           <IconButton
             icon={isPaused ? "play" : "pause"}
             size={32}
-            iconColor="#6200ee"
+            iconColor={theme.colors.primary}
             onPress={handlePause}
             disabled={isPaused}
             style={styles.pauseButton}
@@ -169,15 +170,32 @@ const ActiveWorkoutScreen: React.FC = () => {
                   key={exercise.position} 
                   style={[
                     styles.exerciseRow,
-                    isNewExercise && styles.newExerciseRow
+                    { borderBottomColor: theme.colors.outline },
+                    isNewExercise && [
+                      styles.newExerciseRow,
+                      { 
+                        backgroundColor: theme.dark 
+                          ? 'rgba(255, 140, 97, 0.15)'  // Light orange with transparency for dark mode
+                          : 'rgba(255, 107, 53, 0.1)',  // Light orange with transparency for light mode
+                        borderLeftColor: theme.colors.primary
+                      }
+                    ]
                   ]}
                 >
                   <View style={styles.repsContainer}>
-                    <Text variant="titleLarge" style={[styles.repsNumber, isNewExercise && styles.newExerciseText]}>
+                    <Text variant="titleLarge" style={[
+                      styles.repsNumber,
+                      { color: theme.colors.primary },
+                      isNewExercise && { fontWeight: 'bold' }
+                    ]}>
                       {exercise.position}
                     </Text>
                   </View>
-                  <Text variant="bodyLarge" style={[styles.exerciseName, isNewExercise && styles.newExerciseText]}>
+                  <Text variant="bodyLarge" style={[
+                    styles.exerciseName,
+                    { color: theme.colors.onSurface },
+                    isNewExercise && { fontWeight: 'bold' }
+                  ]}>
                     {(exercise.unit || '').toLowerCase()} {exercise.name}
                   </Text>
                 </View>
@@ -187,7 +205,7 @@ const ActiveWorkoutScreen: React.FC = () => {
         </Card>
       </ScrollView>
 
-      <View style={styles.buttonContainer}>
+      <View style={[styles.buttonContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outline }]}>
         <Button
           mode="contained"
           onPress={handleRoundComplete}
@@ -236,12 +254,10 @@ const ActiveWorkoutScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   timerContainer: {
     paddingTop: Platform.OS === 'android' ? 50 : 20,
     paddingBottom: spacing.md,
-    backgroundColor: 'white',
     alignItems: 'center',
     marginBottom: 0,
   },
@@ -262,15 +278,12 @@ const styles = StyleSheet.create({
   },
   timer: {
     fontWeight: 'bold',
-    color: '#6200ee',
   },
   timerMs: {
     fontWeight: 'bold',
-    color: '#6200ee',
     opacity: 0.7,
   },
   pausedLabel: {
-    color: '#c62828',
     fontWeight: 'bold',
     marginTop: spacing.xs,
   },
@@ -300,13 +313,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     paddingLeft: spacing.xs + 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
     borderLeftWidth: 4,
     borderLeftColor: 'transparent',
   },
   newExerciseRow: {
-    backgroundColor: '#E8F5E9',
-    borderLeftColor: '#4CAF50',
+    borderLeftWidth: 4,
     borderRadius: 4,
     marginVertical: 2,
   },
@@ -317,10 +328,8 @@ const styles = StyleSheet.create({
   },
   repsNumber: {
     fontWeight: 'bold',
-    color: '#6200ee',
   },
   newExerciseText: {
-    color: '#2E7D32',
     fontWeight: 'bold',
   },
   exerciseName: {
@@ -329,9 +338,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     padding: spacing.md,
     paddingBottom: Platform.OS === 'android' ? 40 : spacing.md,
-    backgroundColor: 'white',
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },

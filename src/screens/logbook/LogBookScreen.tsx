@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Card, IconButton, Portal, Dialog, Button } from 'react-native-paper';
+import { Text, Card, IconButton, Portal, Dialog, Button, useTheme } from 'react-native-paper';
 import { spacing } from '../../constants/theme';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { formatTime } from '../../utils/calculations';
@@ -20,6 +20,7 @@ const formatTimeWithMs = (totalSeconds: number): string => {
 };
 
 const LogbookScreen: React.FC = () => {
+  const theme = useTheme();
   const { workoutHistory, loadHistory, deleteWorkoutFromHistory } = useActiveWorkoutStore();
   const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
@@ -50,12 +51,12 @@ const LogbookScreen: React.FC = () => {
 
   if (workoutHistory.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <MaterialCommunityIcons name="clipboard-text-outline" size={80} color="#ccc" />
+      <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background }]}>
+        <MaterialCommunityIcons name="clipboard-text-outline" size={80} color={theme.colors.onSurfaceVariant} />
         <Text variant="headlineSmall" style={styles.emptyText}>
           No workouts completed yet
         </Text>
-        <Text variant="bodyLarge" style={styles.emptySubtext}>
+        <Text variant="bodyLarge" style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
           Complete your first workout to see it here!
         </Text>
       </View>
@@ -63,7 +64,7 @@ const LogbookScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {workoutHistory.map((workout) => {
           const isExpanded = expandedWorkoutId === workout.id;
@@ -89,15 +90,15 @@ const LogbookScreen: React.FC = () => {
                       <Text variant="titleMedium" style={styles.workoutName}>
                         {workout.templateName}
                       </Text>
-                      <Text variant="bodySmall" style={styles.workoutDate}>
+                      <Text variant="bodySmall" style={[styles.workoutDate, { color: theme.colors.onSurfaceVariant }]}>
                         {new Date(workout.startTime).toLocaleDateString()} {new Date(workout.startTime).toLocaleTimeString()}
                       </Text>
                     </View>
                     <View style={styles.workoutStats}>
-                      <Text variant="titleLarge" style={styles.totalTime}>
+                      <Text variant="titleLarge" style={[styles.totalTime, { color: theme.colors.primary }]}>
                         {formatTimeWithMs(workout.totalTime)}
                       </Text>
-                      <Text variant="bodySmall" style={styles.roundsCompleted}>
+                      <Text variant="bodySmall" style={[styles.roundsCompleted, { color: theme.colors.onSurfaceVariant }]}>
                         {workout.rounds.length} rounds
                       </Text>
                     </View>
@@ -105,7 +106,7 @@ const LogbookScreen: React.FC = () => {
 
                   {isExpanded && (
                     <View style={styles.expandedContent}>
-                      <View style={styles.actionButtons}>
+                      <View style={[styles.actionButtons, { borderTopColor: theme.colors.outline }]}>
                         <Button
                           mode="outlined"
                           icon="share-variant"
@@ -117,7 +118,7 @@ const LogbookScreen: React.FC = () => {
                         </Button>
                         <IconButton
                           icon="delete"
-                          iconColor="#c62828"
+                          iconColor={theme.colors.error}
                           size={24}
                           onPress={() => handleDelete(workout.id)}
                         />
@@ -128,9 +129,9 @@ const LogbookScreen: React.FC = () => {
                           Exercise Summary
                         </Text>
                         {exerciseTotals.map((exercise) => (
-                          <View key={exercise.position} style={styles.exerciseItem}>
+                          <View key={exercise.position} style={[styles.exerciseItem, { borderBottomColor: theme.colors.outline }]}>
                             <Text variant="bodyMedium">{exercise.name}</Text>
-                            <Text variant="bodyMedium" style={styles.exerciseTotal}>
+                            <Text variant="bodyMedium" style={[styles.exerciseTotal, { color: theme.colors.tertiary }]}>
                               {exercise.totalAmount} {(exercise.unit || 'reps').toLowerCase()}
                             </Text>
                           </View>
@@ -142,9 +143,9 @@ const LogbookScreen: React.FC = () => {
                           Round Times
                         </Text>
                         {workout.rounds.map((round) => (
-                          <View key={round.roundNumber} style={styles.roundItem}>
+                          <View key={round.roundNumber} style={[styles.roundItem, { borderBottomColor: theme.colors.outline }]}>
                             <Text variant="bodyMedium">Round {round.roundNumber}</Text>
-                            <Text variant="bodyMedium" style={styles.roundTime}>
+                            <Text variant="bodyMedium" style={[styles.roundTime, { color: theme.colors.primary }]}>
                               {formatTimeWithMs(round.duration)}
                             </Text>
                           </View>
@@ -180,14 +181,12 @@ const LogbookScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
-    backgroundColor: '#f5f5f5',
   },
   emptyText: {
     marginTop: spacing.md,
@@ -196,7 +195,6 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     textAlign: 'center',
-    color: '#666',
   },
   scrollView: {
     flex: 1,
@@ -220,17 +218,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   workoutDate: {
-    color: '#666',
   },
   workoutStats: {
     alignItems: 'flex-end',
   },
   totalTime: {
     fontWeight: 'bold',
-    color: '#6200ee',
   },
   roundsCompleted: {
-    color: '#666',
     marginTop: spacing.xs,
   },
   expandedContent: {
@@ -265,7 +260,6 @@ const styles = StyleSheet.create({
   },
   exerciseTotal: {
     fontWeight: '600',
-    color: '#4CAF50',
   },
   roundItem: {
     flexDirection: 'row',
@@ -276,7 +270,6 @@ const styles = StyleSheet.create({
   },
   roundTime: {
     fontWeight: '600',
-    color: '#6200ee',
   },
 });
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { FAB, Text, Portal, Dialog, Button, Appbar } from 'react-native-paper';
+import { FAB, Text, Portal, Dialog, Button, Appbar, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import WorkoutCard from '../../components/WorkoutCard';
@@ -8,6 +8,7 @@ import { spacing } from '../../constants/theme';
 import { Template } from '../../types';
 
 const WorkoutListScreen: React.FC = () => {
+  const theme = useTheme();
   const navigation = useNavigation();
   const { workouts, loadWorkouts, deleteWorkout, isLoading } = useWorkoutStore();
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
@@ -42,20 +43,20 @@ const WorkoutListScreen: React.FC = () => {
 
   if (!isLoading && workouts.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Appbar.Header>
           <Appbar.Content title="Ladder Trainer" />
         </Appbar.Header>
-        <View style={styles.emptyContainer}>
+        <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background }]}>
           <Text variant="headlineSmall" style={styles.emptyText}>
             No workouts yet
           </Text>
-          <Text variant="bodyLarge" style={styles.emptySubtext}>
+          <Text variant="bodyLarge" style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
             Create your first workout to get started!
           </Text>
           <FAB
             icon="plus"
-            style={styles.fab}
+            style={[styles.fab, { backgroundColor: theme.colors.primary }]}
             onPress={handleCreateWorkout}
             label="Create Workout"
           />
@@ -65,7 +66,7 @@ const WorkoutListScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
         <Appbar.Content title="Workouts" />
       </Appbar.Header>
@@ -83,7 +84,7 @@ const WorkoutListScreen: React.FC = () => {
       />
       <FAB
         icon="plus"
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         onPress={handleCreateWorkout}
       />
       <Portal>
@@ -107,21 +108,18 @@ const WorkoutListScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
-    backgroundColor: '#f5f5f5',
   },
   emptyText: {
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   emptySubtext: {
-    color: '#666',
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
