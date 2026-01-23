@@ -1,7 +1,6 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Card, Text, IconButton, useTheme, Chip } from 'react-native-paper';
-import { format } from 'date-fns';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import { Card, Text, IconButton, useTheme, Surface } from 'react-native-paper';
 import { Template } from '../types';
 import { spacing } from '../constants/theme';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -9,59 +8,59 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 interface WorkoutCardProps {
   workout: Template;
   onPress: () => void;
-  onDelete: () => void;
+  onStart: () => void;
 }
 
-const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onDelete }) => {
+const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) => {
   const theme = useTheme();
   
   return (
-    <Card style={styles.card} onPress={onPress} mode="elevated">
-      <Card.Content>
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Text variant="titleLarge" style={styles.title}>
+    <Card style={styles.card} mode="elevated" onPress={onPress}>
+      <Card.Content style={styles.cardContent}>
+        <View style={styles.mainContent}>
+          <View style={styles.leftSection}>
+            <Text variant="titleLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
               {workout.name}
             </Text>
-            <Text variant="bodySmall" style={[styles.date, { color: theme.colors.onSurfaceVariant }]}>
-              {format(workout.createdAt, 'MMM d, yyyy')}
-            </Text>
-          </View>
-          <IconButton
-            icon="delete"
-            size={24}
-            iconColor={theme.colors.error}
-            onPress={onDelete}
-            style={styles.deleteButton}
-          />
-        </View>
-        
-        <View style={styles.statsContainer}>
-          <View style={styles.stat}>
-            <MaterialCommunityIcons 
-              name="dumbbell" 
-              size={20} 
-              color={theme.colors.primary} 
-              style={styles.statIcon}
-            />
-            <Text variant="bodyMedium" style={[styles.statText, { color: theme.colors.onSurface }]}>
-              {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}
-            </Text>
+            
+            <View style={styles.statsContainer}>
+              <View style={styles.statBadge}>
+                <MaterialCommunityIcons 
+                  name="dumbbell" 
+                  size={16} 
+                  color={theme.colors.primary} 
+                />
+                <Text variant="bodySmall" style={[styles.statText, { color: theme.colors.onSurfaceVariant }]}>
+                  {workout.exercises.length} {workout.exercises.length === 1 ? 'exercise' : 'exercises'}
+                </Text>
+              </View>
+              
+              {workout.restPeriodSeconds > 0 && (
+                <View style={styles.statBadge}>
+                  <MaterialCommunityIcons 
+                    name="timer-outline" 
+                    size={16} 
+                    color={theme.colors.primary} 
+                  />
+                  <Text variant="bodySmall" style={[styles.statText, { color: theme.colors.onSurfaceVariant }]}>
+                    {workout.restPeriodSeconds}s
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
           
-          {workout.restPeriodSeconds > 0 && (
-            <View style={styles.stat}>
-              <MaterialCommunityIcons 
-                name="timer-outline" 
-                size={20} 
-                color={theme.colors.primary} 
-                style={styles.statIcon}
-              />
-              <Text variant="bodyMedium" style={[styles.statText, { color: theme.colors.onSurface }]}>
-                {workout.restPeriodSeconds}s rest
-              </Text>
-            </View>
-          )}
+          <TouchableOpacity 
+            onPress={onStart}
+            style={[styles.playButton, { backgroundColor: theme.colors.primary }]}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons 
+              name="play" 
+              size={24} 
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
         </View>
       </Card.Content>
     </Card>
@@ -71,43 +70,52 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onDelete })
 const styles = StyleSheet.create({
   card: {
     marginHorizontal: spacing.md,
-    marginVertical: spacing.sm,
-    elevation: 2,
+    marginVertical: spacing.xs,
+    elevation: 1,
   },
-  header: {
+  cardContent: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  mainContent: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.sm,
   },
-  titleContainer: {
+  leftSection: {
     flex: 1,
     marginRight: spacing.sm,
   },
   title: {
-    fontWeight: 'bold',
-    marginBottom: spacing.xs,
-  },
-  date: {
-    fontSize: 12,
-  },
-  deleteButton: {
-    margin: 0,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+    fontSize: 18,
   },
   statsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: spacing.md,
   },
-  stat: {
+  statBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  statIcon: {
-    marginRight: spacing.xs,
+    gap: spacing.xs,
   },
   statText: {
+    fontSize: 13,
     fontWeight: '500',
+  },
+  playButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
 });
 

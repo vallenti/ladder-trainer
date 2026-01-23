@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { FAB, Text, Portal, Dialog, Button, Appbar, useTheme } from 'react-native-paper';
+import { FAB, Text, Appbar, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import WorkoutCard from '../../components/WorkoutCard';
@@ -10,9 +10,7 @@ import { Template } from '../../types';
 const WorkoutListScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { workouts, loadWorkouts, deleteWorkout, isLoading } = useWorkoutStore();
-  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
-  const [workoutToDelete, setWorkoutToDelete] = useState<Template | null>(null);
+  const { workouts, loadWorkouts, isLoading } = useWorkoutStore();
 
   useEffect(() => {
     loadWorkouts();
@@ -28,17 +26,9 @@ const WorkoutListScreen: React.FC = () => {
     navigation.navigate('WorkoutDetails', { workoutId });
   };
 
-  const handleDeletePress = (workout: Template) => {
-    setWorkoutToDelete(workout);
-    setDeleteDialogVisible(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (workoutToDelete) {
-      await deleteWorkout(workoutToDelete.id);
-      setDeleteDialogVisible(false);
-      setWorkoutToDelete(null);
-    }
+  const handleStartWorkout = (workout: Template) => {
+    // @ts-ignore
+    navigation.navigate('Countdown', { workoutId: workout.id });
   };
 
   if (!isLoading && workouts.length === 0) {
@@ -77,7 +67,7 @@ const WorkoutListScreen: React.FC = () => {
           <WorkoutCard
             workout={item}
             onPress={() => handleWorkoutPress(item.id)}
-            onDelete={() => handleDeletePress(item)}
+            onStart={() => handleStartWorkout(item)}
           />
         )}
         contentContainerStyle={styles.listContent}
@@ -87,20 +77,6 @@ const WorkoutListScreen: React.FC = () => {
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         onPress={handleCreateWorkout}
       />
-      <Portal>
-        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
-          <Dialog.Title>Delete Workout</Dialog.Title>
-          <Dialog.Content>
-            <Text variant="bodyMedium">
-              Are you sure you want to delete "{workoutToDelete?.name}"?
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setDeleteDialogVisible(false)}>Cancel</Button>
-            <Button onPress={handleConfirmDelete}>Delete</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
     </View>
   );
 };

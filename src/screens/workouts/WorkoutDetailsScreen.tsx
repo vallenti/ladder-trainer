@@ -59,7 +59,7 @@ const WorkoutDetailsScreen: React.FC = () => {
         <Appbar.Action icon="delete" onPress={() => setDeleteDialogVisible(true)} />
       </Appbar.Header>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <Card style={styles.card}>
             <Card.Content>
@@ -91,18 +91,21 @@ const WorkoutDetailsScreen: React.FC = () => {
               </Text>
             </Card.Content>
           </Card>
-
-          <Button
-            mode="contained"
-            onPress={handleStartWorkout}
-            icon="play"
-            style={styles.startButton}
-            contentStyle={styles.startButtonContent}
-          >
-            Start Workout
-          </Button>
         </View>
       </ScrollView>
+
+      <View style={[styles.buttonContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outline }]}>
+        <Button
+          mode="contained"
+          onPress={handleStartWorkout}
+          icon="play"
+          style={styles.startButton}
+          contentStyle={styles.startButtonContent}
+          buttonColor={theme.colors.primary}
+        >
+          Start Workout
+        </Button>
+      </View>
 
       <Portal>
         <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
@@ -128,6 +131,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing.md,
   },
   content: {
     padding: spacing.md,
@@ -160,8 +166,12 @@ const styles = StyleSheet.create({
   exerciseText: {
     flex: 1,
   },
+  buttonContainer: {
+    padding: spacing.md,
+    borderTopWidth: 1,
+  },
   startButton: {
-    marginTop: spacing.lg,
+    marginTop: 0,
   },
   startButtonContent: {
     paddingVertical: spacing.sm,

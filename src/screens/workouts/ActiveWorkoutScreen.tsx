@@ -29,14 +29,33 @@ const formatTimeWithMs = (totalSeconds: number): { main: string; ms: string } =>
 const ActiveWorkoutScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { activeWorkout, completeRound, startNextRound, completeWorkout } = useActiveWorkoutStore();
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [pauseDialogVisible, setPauseDialogVisible] = useState(false);
+  const { 
+    activeWorkout, 
+    completeRound, 
+    startNextRound, 
+    completeWorkout,
+    isPaused: storePaused,
+    elapsedTime: storeElapsedTime,
+    totalPausedTime: storeTotalPausedTime,
+    pauseWorkout,
+    resumeWorkout,
+    discardPausedWorkout,
+  } = useActiveWorkoutStore();
+  const [elapsedTime, setElapsedTime] = useState(storeElapsedTime);
+  const [isPaused, setIsPaused] = useState(storePaused);
+  const [pauseDialogVisible, setPauseDialogVisible] = useState(storePaused);
   const [quitDialogVisible, setQuitDialogVisible] = useState(false);
-  const [pauseStartTime, setPauseStartTime] = useState<number>(0);
-  const [totalPausedTime, setTotalPausedTime] = useState<number>(0);
-  const [frozenElapsedTime, setFrozenElapsedTime] = useState<number>(0);
+  const [totalPausedTime, setTotalPausedTime] = useState(storeTotalPausedTime);
+  const [frozenElapsedTime, setFrozenElapsedTime] = useState(storeElapsedTime);
+
+  // Sync with store state when it changes (e.g., after loading paused workout)
+  useEffect(() => {
+    setIsPaused(storePaused);
+    setElapsedTime(storeElapsedTime);
+    setTotalPausedTime(storeTotalPausedTime);
+    setFrozenElapsedTime(storeElapsedTime);
+    setPauseDialogVisible(storePaused);
+  }, [storePaused, storeElapsedTime, storeTotalPausedTime]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -109,19 +128,25 @@ const ActiveWorkoutScreen: React.FC = () => {
 
   const handlePause = () => {
     setFrozenElapsedTime(elapsedTime);
-    setPauseStartTime(Date.now());
     setIsPaused(true);
     setPauseDialogVisible(true);
+    // Save to store for persistence
+    pauseWorkout(elapsedTime, totalPausedTime);
   };
 
   const handleResume = () => {
-    const pauseDuration = Math.floor((Date.now() - pauseStartTime) / 1000);
-    setTotalPausedTime(totalPausedTime + pauseDuration);
-    setIsPaused(false);
-    setPauseDialogVisible(false);
+    resumeWorkout();
+    // Get the updated totalPausedTime from the store after resume
+    setTimeout(() => {
+      const store = useActiveWorkoutStore.getState();
+      setTotalPausedTime(store.totalPausedTime);
+      setIsPaused(false);
+      setPauseDialogVisible(false);
+    }, 0);
   };
 
-  const handleStopAndDiscard = () => {
+  const handleStopAndDiscard = async () => {
+    await discardPausedWorkout();
     setPauseDialogVisible(false);
     navigation.navigate('HomeTabs' as never);
   };
@@ -211,6 +236,7 @@ const ActiveWorkoutScreen: React.FC = () => {
           onPress={handleRoundComplete}
           style={styles.completeButton}
           contentStyle={styles.completeButtonContent}
+          buttonColor={theme.colors.primary}
         >
           {currentRound >= totalRounds ? 'Finish Workout' : 'Complete Round'}
         </Button>
@@ -225,10 +251,10 @@ const ActiveWorkoutScreen: React.FC = () => {
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={handleStopAndDiscard} textColor="#c62828">
+            <Button onPress={handleStopAndDiscard} textColor={theme.colors.error}>
               Stop & Discard
             </Button>
-            <Button onPress={handleResume} mode="contained">
+            <Button onPress={handleResume} mode="contained" buttonColor={theme.colors.primary}>
               Resume
             </Button>
           </Dialog.Actions>
@@ -243,7 +269,7 @@ const ActiveWorkoutScreen: React.FC = () => {
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setQuitDialogVisible(false)}>Cancel</Button>
-            <Button onPress={handleQuit} textColor="#c62828">Quit</Button>
+            <Button onPress={handleQuit} textColor={theme.colors.error}>Quit</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>

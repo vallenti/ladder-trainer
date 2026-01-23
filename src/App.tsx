@@ -1,18 +1,56 @@
-import React, { useEffect } from 'react';
-import { StatusBar } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StatusBar, AppState } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import AppNavigator from './navigation/AppNavigator';
 import { lightTheme, darkTheme } from './constants/theme';
 import { useThemeStore } from './store/themeStore';
+import { useActiveWorkoutStore } from './store/activeWorkoutStore';
 
 const App = () => {
   const { themeMode, loadThemePreference } = useThemeStore();
+  const { activeWorkout, isPaused, pauseWorkout, elapsedTime, totalPausedTime, loadPausedWorkout } = useActiveWorkoutStore();
+  const appState = useRef(AppState.currentState);
+  const navigationRef = useRef<any>(null);
 
   useEffect(() => {
     // Load saved theme preference on app start
     loadThemePreference();
+    
+    // Load paused workout if exists and navigate to it
+    const initializePausedWorkout = async () => {
+      const hasPausedWorkout = await loadPausedWorkout();
+      if (hasPausedWorkout && navigationRef.current) {
+        // Wait a bit for navigation to be ready
+        setTimeout(() => {
+          navigationRef.current?.navigate('ActiveWorkout');
+        }, 100);
+      }
+    };
+    
+    initializePausedWorkout();
   }, []);
+
+  useEffect(() => {
+    // Listen to app state changes (background/foreground)
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (
+        appState.current.match(/active/) &&
+        nextAppState.match(/inactive|background/)
+      ) {
+        // App is going to background - pause active workout
+        if (activeWorkout && !isPaused) {
+          pauseWorkout(elapsedTime, totalPausedTime);
+        }
+      }
+      
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [activeWorkout, isPaused, elapsedTime, totalPausedTime]);
 
   const currentTheme = themeMode === 'dark' ? darkTheme : lightTheme;
   
@@ -47,7 +85,7 @@ const App = () => {
         barStyle={themeMode === 'dark' ? 'light-content' : 'dark-content'}
         backgroundColor={currentTheme.colors.surface}
       />
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer theme={navigationTheme} ref={navigationRef}>
         <AppNavigator />
       </NavigationContainer>
     </PaperProvider>
