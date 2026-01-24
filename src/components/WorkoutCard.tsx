@@ -14,6 +14,21 @@ interface WorkoutCardProps {
 const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) => {
   const theme = useTheme();
   
+  const getLadderTypeName = () => {
+    switch (workout.ladderType) {
+      case 'christmas':
+        return 'Christmas';
+      case 'ascending':
+        return 'Ascending';
+      case 'descending':
+        return 'Descending';
+      case 'pyramid':
+        return 'Pyramid';
+      default:
+        return 'Christmas';
+    }
+  };
+  
   return (
     <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} mode="elevated" onPress={onPress}>
       <Card.Content style={styles.cardContent}>
@@ -24,6 +39,17 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
             </Text>
             
             <View style={styles.statsContainer}>
+              <View style={styles.statBadge}>
+                <MaterialCommunityIcons 
+                  name="ladder" 
+                  size={16} 
+                  color={theme.colors.primary} 
+                />
+                <Text variant="bodySmall" style={[styles.statText, { color: theme.colors.onSurfaceVariant }]}>
+                  {getLadderTypeName()}
+                </Text>
+              </View>
+              
               <View style={styles.statBadge}>
                 <MaterialCommunityIcons 
                   name="dumbbell" 
