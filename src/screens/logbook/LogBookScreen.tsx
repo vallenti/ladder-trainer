@@ -313,6 +313,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: spacing.sm,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   emptySubtext: {
     textAlign: 'center',

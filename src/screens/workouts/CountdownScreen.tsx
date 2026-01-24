@@ -48,20 +48,20 @@ const CountdownScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
-      <Text variant="headlineLarge" style={styles.workoutName}>
+      <Text variant="headlineLarge" style={[styles.workoutName, { color: '#FFFFFF' }]}>
         {template.name}
       </Text>
-      <Text variant="displayLarge" style={styles.countdown}>
+      <Text variant="displayLarge" style={[styles.countdown, { color: '#FFFFFF' }]}>
         {countdown}
       </Text>
-      <Text variant="titleMedium" style={styles.subtitle}>
+      <Text variant="titleMedium" style={[styles.subtitle, { color: '#FFFFFF' }]}>
         Get Ready!
       </Text>
-      <Text variant="bodyLarge" style={styles.info}>
+      <Text variant="bodyLarge" style={[styles.info, { color: '#FFFFFF' }]}>
         {template.exercises.length} rounds
       </Text>
       {template.restPeriodSeconds > 0 && (
-        <Text variant="bodyMedium" style={styles.info}>
+        <Text variant="bodyMedium" style={[styles.info, { color: '#FFFFFF' }]}>
           {template.restPeriodSeconds}s rest between rounds
         </Text>
       )}
@@ -77,23 +77,20 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   workoutName: {
-    color: 'white',
     marginBottom: 40,
     textAlign: 'center',
   },
   countdown: {
-    color: 'white',
     fontSize: 120,
     fontWeight: 'bold',
     lineHeight: 140,
     textAlignVertical: 'center',
   },
   subtitle: {
-    color: 'white',
     marginTop: 20,
   },
   info: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    opacity: 0.8,
     marginTop: 10,
   },
 });

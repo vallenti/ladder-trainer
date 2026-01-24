@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import { Text, Button, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { formatTime } from '../../utils/calculations';
 
 const RestScreen: React.FC = () => {
+  const theme = useTheme();
   const navigation = useNavigation();
   const { activeWorkout, startNextRound } = useActiveWorkoutStore();
   const [timeRemaining, setTimeRemaining] = useState(activeWorkout?.restPeriodSeconds || 60);
@@ -40,23 +41,23 @@ const RestScreen: React.FC = () => {
   const nextRound = activeWorkout.currentRoundIndex + 2;
 
   return (
-    <View style={styles.container}>
-      <Text variant="headlineLarge" style={styles.title}>
+    <View style={[styles.container, { backgroundColor: theme.colors.success }]}>
+      <Text variant="headlineLarge" style={[styles.title, { color: '#FFFFFF' }]}>
         Rest
       </Text>
-      <Text variant="displayLarge" style={styles.timer}>
+      <Text variant="displayLarge" style={[styles.timer, { color: '#FFFFFF' }]}>
         {formatTime(timeRemaining)}
       </Text>
-      <Text variant="titleMedium" style={styles.nextRound}>
+      <Text variant="titleMedium" style={[styles.nextRound, { color: '#FFFFFF' }]}>
         Next: Round {nextRound}
       </Text>
       <Button
-        mode="outlined"
+        mode="contained"
         onPress={handleSkipRest}
         style={styles.skipButton}
         contentStyle={styles.skipButtonContent}
-        buttonColor="white"
-        textColor="#4CAF50"
+        buttonColor="#FFFFFF"
+        textColor={theme.colors.success}
       >
         Skip Rest
       </Button>
@@ -69,22 +70,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
     padding: 20,
   },
   title: {
-    color: 'white',
     marginBottom: 40,
   },
   timer: {
-    color: 'white',
     fontSize: 100,
     fontWeight: 'bold',
     lineHeight: 120,
     textAlignVertical: 'center',
   },
   nextRound: {
-    color: 'white',
     marginTop: 20,
     marginBottom: 40,
   },

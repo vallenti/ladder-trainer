@@ -70,11 +70,11 @@ const WorkoutDetailsScreen: React.FC = () => {
                 <View key={exercise.position} style={styles.exerciseRow}>
                   {workout.ladderType === 'christmas' ? (
                     <View style={[styles.positionBadge, { backgroundColor: theme.colors.primary }]}>
-                      <Text style={styles.positionText}>{exercise.position}</Text>
+                      <Text style={[styles.positionText, { color: '#FFFFFF' }]}>{exercise.position}</Text>
                     </View>
                   ) : (
                     <View style={[styles.bulletBadge, { backgroundColor: theme.colors.primary }]}>
-                      <View style={styles.bulletDot} />
+                      <View style={[styles.bulletDot, { backgroundColor: '#FFFFFF' }]} />
                     </View>
                   )}
                   <Text variant="bodyLarge" style={styles.exerciseText}>
@@ -188,10 +188,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'white',
   },
   positionText: {
-    color: 'white',
     fontWeight: 'bold',
     fontSize: 14,
   },

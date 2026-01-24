@@ -91,6 +91,15 @@ const CreateEditWorkoutScreen: React.FC = () => {
       newErrors.push('Max rounds must be a positive number');
     }
 
+    if (ladderType === 'christmas') {
+      if (rounds > 12) {
+        newErrors.push('Christmas ladder cannot exceed 12 rounds');
+      }
+      if (rounds > exercises.length) {
+        newErrors.push(`Christmas ladder requires at least ${rounds} exercises for ${rounds} rounds`);
+      }
+    }
+
     if (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') {
       const step = parseInt(stepSize, 10);
       if (isNaN(step) || step <= 0) {
@@ -145,7 +154,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
           <View style={styles.content}>
             {/* Error Display */}
             {errors.length > 0 && (
-              <View style={[styles.errorContainer, { backgroundColor: theme.dark ? '#3D1F1F' : '#ffebee' }]}>
+              <View style={[styles.errorContainer, { backgroundColor: theme.colors.errorContainer }]}>
                 {errors.map((error, index) => (
                   <Text key={index} style={[styles.errorText, { color: theme.colors.error }]}>
                     • {error}
@@ -291,9 +300,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
             {/* Exercises Section */}
             <View style={styles.exercisesHeader}>
               <Text variant="titleLarge">Exercises</Text>
-              <Text variant="bodyMedium" style={[styles.exerciseCount, { color: theme.colors.onSurfaceVariant }]}>
-                {exercises.length}/12
-              </Text>
+              
             </View>
 
             {exercises.map((exercise, index) => (
@@ -306,16 +313,23 @@ const CreateEditWorkoutScreen: React.FC = () => {
               />
             ))}
 
-            {exercises.length < 12 && (
-              <Button
-                mode="outlined"
-                onPress={handleAddExercise}
-                icon="plus"
-                style={styles.addButton}
-              >
-                Add Exercise
-              </Button>
-            )}
+            {(() => {
+              const rounds = parseInt(maxRounds, 10) || 10;
+              const canAddExercise = ladderType === 'christmas' 
+                ? exercises.length < rounds && exercises.length < 12
+                : exercises.length < 12;
+              
+              return canAddExercise && (
+                <Button
+                  mode="outlined"
+                  onPress={handleAddExercise}
+                  icon="plus"
+                  style={styles.addButton}
+                >
+                  Add Exercise
+                </Button>
+              );
+            })()}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -31,11 +31,11 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
       {/* Header Row: Position + Delete */}
       <View style={styles.headerRow}>
         <View style={[styles.positionContainer, { backgroundColor: theme.colors.primary }]}>
-          <Text variant="titleMedium" style={styles.position}>
+          <Text variant="titleMedium" style={[styles.position, { color: '#FFFFFF' }]}>
             {exercise.position}
           </Text>
         </View>
@@ -121,7 +121,6 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginVertical: spacing.sm,
     elevation: 1,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -140,7 +139,6 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   position: {
-    color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
   },

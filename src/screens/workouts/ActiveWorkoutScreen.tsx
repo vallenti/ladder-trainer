@@ -231,13 +231,21 @@ const ActiveWorkoutScreen: React.FC = () => {
         </Card>
       </ScrollView>
 
-      <View style={[styles.buttonContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outline }]}>
+      <View style={[
+        styles.buttonContainer, 
+        { 
+          backgroundColor: theme.colors.surface, 
+          borderTopColor: theme.colors.outline,
+          shadowColor: theme.colors.shadow 
+        }
+      ]}>
         <Button
           mode="contained"
           onPress={handleRoundComplete}
           style={styles.completeButton}
           contentStyle={styles.completeButtonContent}
           buttonColor={theme.colors.primary}
+          textColor="#FFFFFF"
         >
           {currentRound >= totalRounds ? 'Finish Workout' : 'Complete Round'}
         </Button>
@@ -367,7 +375,6 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'android' ? 40 : spacing.md,
     borderTopWidth: 1,
     elevation: 8,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

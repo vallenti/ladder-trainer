@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from 'react-native-paper';
 import { HomeTabParamList } from '../types/navigation';
 import WorkoutNavigator from './WorkoutNavigator';
 import LogbookScreen from '../screens/logbook/LogBookScreen';
@@ -9,11 +10,13 @@ import SettingsScreen from '../screens/SettingsScreen';
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
 const BottomTabNavigator: React.FC = () => {
+  const theme = useTheme();
+  
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#FF6B35',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
         headerShown: false,
       }}
     >

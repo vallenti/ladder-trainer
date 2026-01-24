@@ -52,7 +52,13 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
           
           <TouchableOpacity 
             onPress={onStart}
-            style={[styles.playButton, { backgroundColor: theme.colors.primary }]}
+            style={[
+              styles.playButton, 
+              { 
+                backgroundColor: theme.colors.primary,
+                shadowColor: theme.colors.shadow 
+              }
+            ]}
             activeOpacity={0.7}
           >
             <MaterialCommunityIcons 
@@ -112,7 +118,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 2,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3,

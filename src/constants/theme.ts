@@ -19,6 +19,8 @@ export const lightTheme = {
     onBackground: '#1A1A1A',
     outline: '#DEE2E6',
     success: '#2ECC71',
+    shadow: '#000000',
+    errorContainer: '#FFEBEE',
   },
 };
 
@@ -41,6 +43,8 @@ export const darkTheme = {
     onBackground: '#FFFFFF',
     outline: '#3C3C3C',
     success: '#3DDC84',
+    shadow: '#000000',
+    errorContainer: '#3D1F1F',
   },
 };
 
