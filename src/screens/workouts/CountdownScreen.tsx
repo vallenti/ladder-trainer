@@ -58,7 +58,7 @@ const CountdownScreen: React.FC = () => {
         Get Ready!
       </Text>
       <Text variant="bodyLarge" style={[styles.info, { color: '#FFFFFF' }]}>
-        {template.exercises.length} rounds
+        {template.maxRounds} rounds
       </Text>
       {template.restPeriodSeconds > 0 && (
         <Text variant="bodyMedium" style={[styles.info, { color: '#FFFFFF' }]}>
