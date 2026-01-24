@@ -68,9 +68,15 @@ const WorkoutDetailsScreen: React.FC = () => {
               </Text>
               {workout.exercises.map((exercise) => (
                 <View key={exercise.position} style={styles.exerciseRow}>
-                  <View style={[styles.positionBadge, { backgroundColor: theme.colors.primary }]}>
-                    <Text style={styles.positionText}>{exercise.position}</Text>
-                  </View>
+                  {workout.ladderType === 'christmas' ? (
+                    <View style={[styles.positionBadge, { backgroundColor: theme.colors.primary }]}>
+                      <Text style={styles.positionText}>{exercise.position}</Text>
+                    </View>
+                  ) : (
+                    <View style={[styles.bulletBadge, { backgroundColor: theme.colors.primary }]}>
+                      <View style={styles.bulletDot} />
+                    </View>
+                  )}
                   <Text variant="bodyLarge" style={styles.exerciseText}>
                     {exercise.unit && `${exercise.unit} `}{exercise.name}
                   </Text>
@@ -169,6 +175,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
+  },
+  bulletBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  bulletDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'white',
   },
   positionText: {
     color: 'white',

@@ -70,7 +70,7 @@ const LogbookScreen: React.FC = () => {
     if (!workout) return;
 
     const { dateStr, timeStr } = formatDateTime(workout.startTime);
-    const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1);
+    const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds);
     
     // Calculate exercise summary using ladder strategy
     const exerciseTotals = workout.exercises.map(exercise => {
@@ -82,7 +82,10 @@ const LogbookScreen: React.FC = () => {
     });
 
     // Format the share message
-    const ladderTypeName = workout.ladderType === 'christmas' ? 'Christmas Ladder' : 'Ascending Ladder';
+    const ladderTypeName = 
+      workout.ladderType === 'christmas' ? 'Christmas Ladder' : 
+      workout.ladderType === 'ascending' ? 'Ascending Ladder' : 
+      'Descending Ladder';
     let message = `🏋️ ${workout.templateName}\n`;
     message += `📊 ${ladderTypeName}\n\n`;
     message += `📅 ${dateStr} at ${timeStr}\n`;
@@ -133,7 +136,7 @@ const LogbookScreen: React.FC = () => {
         {workoutHistory.map((workout) => {
           const isExpanded = expandedWorkoutId === workout.id;
           const { dateStr, timeStr } = formatDateTime(workout.startTime);
-          const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1);
+          const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds);
           const exerciseTotals = workout.exercises.map(exercise => {
             const totalAmount = ladderStrategy.calculateTotalReps(exercise, workout.rounds.length);
             return {

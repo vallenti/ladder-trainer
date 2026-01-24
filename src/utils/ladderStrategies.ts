@@ -69,6 +69,50 @@ export class ChristmasLadderStrategy implements LadderStrategy {
 }
 
 /**
+ * Descending Ladder Strategy
+ * Pattern: Each round decreases reps by stepSize for all exercises
+ * Starting from maxRounds and going down to 1
+ * Round 1: maxRounds * stepSize reps of each exercise
+ * Round 2: (maxRounds - 1) * stepSize reps of each exercise
+ * Round 3: (maxRounds - 2) * stepSize reps of each exercise
+ */
+export class DescendingLadderStrategy implements LadderStrategy {
+  private stepSize: number;
+  private maxRounds: number;
+
+  constructor(stepSize: number = 1, maxRounds?: number) {
+    this.stepSize = stepSize;
+    this.maxRounds = maxRounds || 10; // Default fallback
+  }
+
+  getExercisesForRound(
+    roundNumber: number,
+    exercises: Exercise[]
+  ): Array<{ exercise: Exercise; reps: number }> {
+    // For descending: Round 1 gets maxRounds*step, Round 2 gets (maxRounds-1)*step, etc.
+    const reps = (this.maxRounds - roundNumber + 1) * this.stepSize;
+    return exercises.map(ex => ({
+      exercise: ex,
+      reps: reps,
+    }));
+  }
+
+  calculateTotalReps(exercise: Exercise, totalRounds: number): number {
+    // Same as ascending: sum is the same whether going up or down
+    // = stepSize * (1 + 2 + 3 + ... + totalRounds)
+    // = stepSize * (totalRounds * (totalRounds + 1) / 2)
+    return this.stepSize * ((totalRounds * (totalRounds + 1)) / 2);
+  }
+
+  getDescription(): string {
+    if (this.stepSize === 1) {
+      return 'Each round decreases reps by 1 for all exercises (5, 4, 3, 2, 1...)';
+    }
+    return `Each round decreases reps by ${this.stepSize} for all exercises (${this.stepSize * 5}, ${this.stepSize * 4}, ${this.stepSize * 3}, ${this.stepSize * 2}...)`;
+  }
+}
+
+/**
  * Ascending Ladder Strategy
  * Pattern: Each round increases reps by stepSize for all exercises
  * Round 1: stepSize reps of each exercise
@@ -111,12 +155,14 @@ export class AscendingLadderStrategy implements LadderStrategy {
 /**
  * Factory function to get the appropriate ladder strategy
  */
-export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1): LadderStrategy {
+export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, maxRounds?: number): LadderStrategy {
   switch (ladderType) {
     case 'christmas':
       return new ChristmasLadderStrategy();
     case 'ascending':
       return new AscendingLadderStrategy(stepSize);
+    case 'descending':
+      return new DescendingLadderStrategy(stepSize, maxRounds);
     default:
       throw new Error(`Unknown ladder type: ${ladderType}`);
   }

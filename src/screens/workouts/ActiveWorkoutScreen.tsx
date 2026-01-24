@@ -96,7 +96,7 @@ const ActiveWorkoutScreen: React.FC = () => {
 
   const currentRound = activeWorkout.currentRoundIndex + 1;
   const totalRounds = activeWorkout.maxRounds;
-  const ladderStrategy = getLadderStrategy(activeWorkout.ladderType, activeWorkout.stepSize || 1);
+  const ladderStrategy = getLadderStrategy(activeWorkout.ladderType, activeWorkout.stepSize || 1, activeWorkout.maxRounds);
   const exercisesInRound = ladderStrategy.getExercisesForRound(currentRound, activeWorkout.exercises);
   const progress = activeWorkout.currentRoundIndex / totalRounds;
 

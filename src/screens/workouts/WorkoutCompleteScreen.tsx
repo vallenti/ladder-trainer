@@ -70,7 +70,7 @@ const WorkoutCompleteScreen: React.FC = () => {
   }
 
   // Calculate exercise totals using ladder strategy
-  const ladderStrategy = getLadderStrategy(completedWorkout.ladderType, completedWorkout.stepSize || 1);
+  const ladderStrategy = getLadderStrategy(completedWorkout.ladderType, completedWorkout.stepSize || 1, completedWorkout.maxRounds);
   const exerciseTotals = completedWorkout.exercises.map(exercise => {
     const totalAmount = ladderStrategy.calculateTotalReps(exercise, completedWorkout.rounds.length);
     
