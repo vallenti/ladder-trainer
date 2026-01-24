@@ -113,6 +113,63 @@ export class DescendingLadderStrategy implements LadderStrategy {
 }
 
 /**
+ * Pyramid Ladder Strategy
+ * Pattern: Ascends to peak then descends
+ * For 5 rounds step 1: 1, 2, 3, 2, 1
+ * For 6 rounds step 1: 1, 2, 3, 3, 2, 1
+ * Peak is at middle (odd) or repeats twice (even)
+ */
+export class PyramidLadderStrategy implements LadderStrategy {
+  private stepSize: number;
+  private maxRounds: number;
+
+  constructor(stepSize: number = 1, maxRounds?: number) {
+    this.stepSize = stepSize;
+    this.maxRounds = maxRounds || 10;
+  }
+
+  getExercisesForRound(
+    roundNumber: number,
+    exercises: Exercise[]
+  ): Array<{ exercise: Exercise; reps: number }> {
+    const peak = Math.ceil(this.maxRounds / 2);
+    let reps: number;
+    
+    if (roundNumber <= peak) {
+      // Ascending phase
+      reps = roundNumber * this.stepSize;
+    } else {
+      // Descending phase
+      reps = (this.maxRounds - roundNumber + 1) * this.stepSize;
+    }
+    
+    return exercises.map(ex => ({
+      exercise: ex,
+      reps: reps,
+    }));
+  }
+
+  calculateTotalReps(exercise: Exercise, totalRounds: number): number {
+    const peak = Math.ceil(totalRounds / 2);
+    
+    if (totalRounds % 2 === 1) {
+      // Odd rounds: 1+2+3+2+1 = peak^2
+      return peak * peak * this.stepSize;
+    } else {
+      // Even rounds: 1+2+3+3+2+1 = peak*(peak+1)
+      return peak * (peak + 1) * this.stepSize;
+    }
+  }
+
+  getDescription(): string {
+    if (this.stepSize === 1) {
+      return 'Ascends to peak then descends (1, 2, 3, 2, 1...)';
+    }
+    return `Ascends to peak then descends (${this.stepSize}, ${this.stepSize * 2}, ${this.stepSize * 3}, ${this.stepSize * 2}...)`;
+  }
+}
+
+/**
  * Ascending Ladder Strategy
  * Pattern: Each round increases reps by stepSize for all exercises
  * Round 1: stepSize reps of each exercise
@@ -163,6 +220,8 @@ export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, 
       return new AscendingLadderStrategy(stepSize);
     case 'descending':
       return new DescendingLadderStrategy(stepSize, maxRounds);
+    case 'pyramid':
+      return new PyramidLadderStrategy(stepSize, maxRounds);
     default:
       throw new Error(`Unknown ladder type: ${ladderType}`);
   }

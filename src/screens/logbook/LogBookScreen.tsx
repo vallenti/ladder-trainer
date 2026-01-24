@@ -85,7 +85,8 @@ const LogbookScreen: React.FC = () => {
     const ladderTypeName = 
       workout.ladderType === 'christmas' ? 'Christmas Ladder' : 
       workout.ladderType === 'ascending' ? 'Ascending Ladder' : 
-      'Descending Ladder';
+      workout.ladderType === 'descending' ? 'Descending Ladder' :
+      'Pyramid Ladder';
     let message = `🏋️ ${workout.templateName}\n`;
     message += `📊 ${ladderTypeName}\n\n`;
     message += `📅 ${dateStr} at ${timeStr}\n`;

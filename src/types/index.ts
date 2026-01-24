@@ -19,7 +19,7 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
-export type LadderType = 'christmas' | 'ascending' | 'descending';
+export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid';
 
 export interface Exercise {
   position: number; // 1-12

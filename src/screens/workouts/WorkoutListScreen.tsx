@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { FAB, Text, Appbar, useTheme } from 'react-native-paper';
+import { Button, Text, Appbar, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import WorkoutCard from '../../components/WorkoutCard';
@@ -36,6 +36,7 @@ const WorkoutListScreen: React.FC = () => {
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Appbar.Header>
           <Appbar.Content title="LadFit" />
+          <Appbar.Action icon="plus" onPress={handleCreateWorkout} />
         </Appbar.Header>
         <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background }]}>
           <Text variant="headlineSmall" style={styles.emptyText}>
@@ -44,13 +45,16 @@ const WorkoutListScreen: React.FC = () => {
           <Text variant="bodyLarge" style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
             Create your first workout to get started!
           </Text>
-          <FAB
+          <Button
             icon="plus"
-            style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-            color="#FFFFFF"
+            mode="contained"
             onPress={handleCreateWorkout}
-            label="Create Workout"
-          />
+            buttonColor={theme.colors.primary}
+            textColor="#FFFFFF"
+            style={styles.emptyButton}
+          >
+            Create Workout
+          </Button>
         </View>
       </View>
     );
@@ -60,6 +64,7 @@ const WorkoutListScreen: React.FC = () => {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
         <Appbar.Content title="Workouts" />
+        <Appbar.Action icon="plus" onPress={handleCreateWorkout} />
       </Appbar.Header>
       <FlatList
         data={workouts}
@@ -72,12 +77,6 @@ const WorkoutListScreen: React.FC = () => {
           />
         )}
         contentContainerStyle={styles.listContent}
-      />
-      <FAB
-        icon="plus"
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        color="#FFFFFF"
-        onPress={handleCreateWorkout}
       />
     </View>
   );
@@ -101,15 +100,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
+  emptyButton: {
+    marginTop: spacing.md,
+  },
   listContent: {
     paddingVertical: spacing.md,
-  },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    borderRadius: 30,
   },
 });
 

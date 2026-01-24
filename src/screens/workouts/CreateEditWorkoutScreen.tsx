@@ -91,7 +91,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       newErrors.push('Max rounds must be a positive number');
     }
 
-    if (ladderType === 'ascending' || ladderType === 'descending') {
+    if (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') {
       const step = parseInt(stepSize, 10);
       if (isNaN(step) || step <= 0) {
         newErrors.push('Step size must be a positive number');
@@ -111,7 +111,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       restPeriodSeconds: hasRest ? parseInt(restPeriod, 10) : 0,
       ladderType,
       maxRounds: parseInt(maxRounds, 10),
-      stepSize: (ladderType === 'ascending' || ladderType === 'descending') ? parseInt(stepSize, 10) : undefined,
+      stepSize: (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') ? parseInt(stepSize, 10) : undefined,
     };
 
     if (isEditing && workoutId) {
@@ -207,6 +207,20 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         {getLadderStrategy('descending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
                       </Text>
                     </View>
+                    
+                    <View style={styles.radioOption}>
+                      <RadioButton.Item
+                        label="Pyramid Ladder"
+                        value="pyramid"
+                        labelVariant="bodyLarge"
+                        position="leading"
+                        style={styles.radioItem}
+                        labelStyle={styles.radioLabel}
+                      />
+                      <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
+                        {getLadderStrategy('pyramid', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                      </Text>
+                    </View>
                   </RadioButton.Group>
                 </Card.Content>
               </Card>
@@ -223,8 +237,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
               style={styles.input}
             />
 
-            {/* Step Size - Only for ascending and descending ladder */}
-            {(ladderType === 'ascending' || ladderType === 'descending') && (
+            {/* Step Size - Only for ascending, descending, and pyramid ladder */}
+            {(ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') && (
               <TextInput
                 mode="outlined"
                 label="Step Size"
