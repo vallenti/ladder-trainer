@@ -15,7 +15,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
   const theme = useTheme();
   
   return (
-    <Card style={styles.card} mode="elevated" onPress={onPress}>
+    <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} mode="elevated" onPress={onPress}>
       <Card.Content style={styles.cardContent}>
         <View style={styles.mainContent}>
           <View style={styles.leftSection}>

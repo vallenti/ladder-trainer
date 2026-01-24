@@ -47,6 +47,7 @@ const WorkoutListScreen: React.FC = () => {
           <FAB
             icon="plus"
             style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+            color="#FFFFFF"
             onPress={handleCreateWorkout}
             label="Create Workout"
           />
@@ -75,6 +76,7 @@ const WorkoutListScreen: React.FC = () => {
       <FAB
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        color="#FFFFFF"
         onPress={handleCreateWorkout}
       />
     </View>
@@ -107,6 +109,7 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
+    borderRadius: 30,
   },
 });
 

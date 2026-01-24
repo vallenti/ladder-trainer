@@ -61,7 +61,7 @@ const WorkoutDetailsScreen: React.FC = () => {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <Card style={styles.card}>
+          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
             <Card.Content>
               <Text variant="titleMedium" style={styles.label}>
                 Exercises ({workout.exercises.length})
@@ -79,7 +79,7 @@ const WorkoutDetailsScreen: React.FC = () => {
             </Card.Content>
           </Card>
 
-          <Card style={styles.card}>
+          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
             <Card.Content>
               <Text variant="titleMedium" style={styles.label}>
                 Rest Period
@@ -102,13 +102,18 @@ const WorkoutDetailsScreen: React.FC = () => {
           style={styles.startButton}
           contentStyle={styles.startButtonContent}
           buttonColor={theme.colors.primary}
+          textColor="#FFFFFF"
         >
           Start Workout
         </Button>
       </View>
 
       <Portal>
-        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
+        <Dialog 
+          visible={deleteDialogVisible} 
+          onDismiss={() => setDeleteDialogVisible(false)}
+          style={{ backgroundColor: theme.colors.surface }}
+        >
           <Dialog.Title>Delete Workout</Dialog.Title>
           <Dialog.Content>
             <Text variant="bodyMedium">
@@ -116,7 +121,14 @@ const WorkoutDetailsScreen: React.FC = () => {
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setDeleteDialogVisible(false)}>Cancel</Button>
+            <Button 
+              onPress={() => setDeleteDialogVisible(false)}
+              buttonColor={theme.colors.primary}
+              textColor="#FFFFFF"
+              mode="contained"
+            >
+              Cancel
+            </Button>
             <Button onPress={handleDelete} textColor={theme.colors.error}>Delete</Button>
           </Dialog.Actions>
         </Dialog>

@@ -34,7 +34,7 @@ const formatDateTime = (date: Date) => {
     ? 'Yesterday' 
     : workoutDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: workoutDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
   
-  const timeStr = workoutDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const timeStr = workoutDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
   
   return { dateStr, timeStr };
 };
@@ -101,7 +101,7 @@ const LogbookScreen: React.FC = () => {
           }).filter(ex => ex.timesPerformed > 0);
 
           return (
-            <Card key={workout.id} style={styles.workoutCard} mode="elevated">
+            <Card key={workout.id} style={[styles.workoutCard, { backgroundColor: theme.colors.surface }]} mode="elevated">
               <TouchableOpacity
                 onPress={() => setExpandedWorkoutId(isExpanded ? null : workout.id)}
                 activeOpacity={0.7}
@@ -132,8 +132,8 @@ const LogbookScreen: React.FC = () => {
                       <Text variant="headlineSmall" style={[styles.totalTime, { color: theme.colors.primary }]}>
                         {formatTimeWithMs(workout.totalTime)}
                       </Text>
-                      <View style={[styles.roundsBadge, { backgroundColor: theme.colors.secondaryContainer }]}>
-                        <Text variant="bodySmall" style={[styles.roundsText, { color: theme.colors.onSecondaryContainer }]}>
+                      <View style={[styles.roundsBadge, { backgroundColor: theme.colors.surfaceVariant }]}>
+                        <Text variant="bodySmall" style={[styles.roundsText, { color: theme.colors.onSurfaceVariant }]}>
                           {workout.rounds.length} {workout.rounds.length === 1 ? 'round' : 'rounds'}
                         </Text>
                       </View>
@@ -225,7 +225,11 @@ const LogbookScreen: React.FC = () => {
       </ScrollView>
 
       <Portal>
-        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
+        <Dialog 
+          visible={deleteDialogVisible} 
+          onDismiss={() => setDeleteDialogVisible(false)}
+          style={{ backgroundColor: theme.colors.surface }}
+        >
           <Dialog.Title>Delete Workout</Dialog.Title>
           <Dialog.Content>
             <Text variant="bodyMedium">
@@ -233,7 +237,14 @@ const LogbookScreen: React.FC = () => {
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setDeleteDialogVisible(false)}>Cancel</Button>
+            <Button 
+              onPress={() => setDeleteDialogVisible(false)}
+              buttonColor={theme.colors.primary}
+              textColor="#FFFFFF"
+              mode="contained"
+            >
+              Cancel
+            </Button>
             <Button onPress={confirmDelete} textColor={theme.colors.error}>Delete</Button>
           </Dialog.Actions>
         </Dialog>
