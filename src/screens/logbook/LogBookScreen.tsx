@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Share } from 'react-native';
 import { Text, Card, IconButton, Portal, Dialog, Button, useTheme, Divider } from 'react-native-paper';
 import { spacing } from '../../constants/theme';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
@@ -64,9 +64,52 @@ const LogbookScreen: React.FC = () => {
     }
   };
 
-  const handleStravaShare = (workoutId: string) => {
-    // Placeholder for Strava integration
-    console.log('Share to Strava:', workoutId);
+  const handleShare = async (workoutId: string) => {
+    const workout = workoutHistory.find(w => w.id === workoutId);
+    if (!workout) return;
+
+    const { dateStr, timeStr } = formatDateTime(workout.startTime);
+    
+    // Calculate exercise summary
+    const exerciseTotals = workout.exercises.map(exercise => {
+      const roundsCompleted = workout.rounds.length;
+      const timesPerformed = Math.max(0, roundsCompleted - exercise.position + 1);
+      const totalAmount = exercise.position * timesPerformed;
+      return {
+        ...exercise,
+        timesPerformed,
+        totalAmount
+      };
+    }).filter(ex => ex.timesPerformed > 0);
+
+    // Format the share message
+    let message = `🏋️ ${workout.templateName}\n\n`;
+    message += `📅 ${dateStr} at ${timeStr}\n`;
+    message += `⏱️ Total Time: ${formatTimeWithMs(workout.totalTime)}\n`;
+    message += `🔄 Rounds Completed: ${workout.rounds.length}\n\n`;
+    
+    if (exerciseTotals.length > 0) {
+      message += `💪 Exercise Summary:\n`;
+      exerciseTotals.forEach(ex => {
+        message += `  • ${ex.name}: ${ex.totalAmount} ${ex.unit || 'reps'}\n`;
+      });
+      message += '\n';
+    }
+    
+    message += `🔥 Round Times:\n`;
+    workout.rounds.forEach(round => {
+      message += `  Round ${round.roundNumber}: ${formatTimeWithMs(round.duration)}\n`;
+    });
+    
+    message += `\n💪 Powered by LadFit`;
+
+    try {
+      await Share.share({
+        message: message,
+      });
+    } catch (error) {
+      console.error('Error sharing workout:', error);
+    }
   };
 
   if (workoutHistory.length === 0) {
@@ -199,12 +242,12 @@ const LogbookScreen: React.FC = () => {
                           <Button
                             mode="outlined"
                             icon="share-variant"
-                            onPress={() => handleStravaShare(workout.id)}
+                            onPress={() => handleShare(workout.id)}
                             style={styles.stravaButton}
                             compact
                             textColor={theme.colors.primary}
                           >
-                            Share to Strava
+                            Share Workout
                           </Button>
                           <IconButton
                             icon="delete"

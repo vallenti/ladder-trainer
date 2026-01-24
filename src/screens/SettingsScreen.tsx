@@ -54,8 +54,8 @@ const SettingsScreen: React.FC = () => {
     };
 
     const subject = feedbackType === 'bug' 
-      ? 'Ladder Trainer - Bug Report' 
-      : 'Ladder Trainer - Feature Suggestion';
+      ? 'LadFit - Bug Report' 
+      : 'LadFit - Feature Suggestion';
 
     const body = `
 ${feedbackType === 'bug' ? 'Bug Description:' : 'Feature Suggestion:'}
@@ -120,7 +120,7 @@ Device Information:
               Feedback
             </Text>
             <Text variant="bodyMedium" style={[styles.sectionDescription, { color: theme.colors.onSurfaceVariant }]}>
-              Help us improve Ladder Trainer
+              Help us improve LadFit
             </Text>
 
             <View style={styles.feedbackButtons}>

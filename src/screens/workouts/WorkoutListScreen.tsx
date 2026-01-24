@@ -35,7 +35,7 @@ const WorkoutListScreen: React.FC = () => {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Appbar.Header>
-          <Appbar.Content title="Ladder Trainer" />
+          <Appbar.Content title="LadFit" />
         </Appbar.Header>
         <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background }]}>
           <Text variant="headlineSmall" style={styles.emptyText}>
