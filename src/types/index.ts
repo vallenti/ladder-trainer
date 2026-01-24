@@ -19,6 +19,8 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
+export type LadderType = 'christmas' | 'ascending';
+
 export interface Exercise {
   position: number; // 1-12
   unit: string; // "reps", "calories", "meters"
@@ -30,6 +32,9 @@ export interface Template {
   name: string;
   exercises: Exercise[]; // 1-12 items
   restPeriodSeconds: number; // 0 = no rest
+  ladderType: LadderType;
+  maxRounds: number;
+  stepSize?: number; // For ascending ladder: step increment (default 1)
   createdAt: Date;
 }
 
@@ -47,6 +52,9 @@ export interface Workout {
   templateName: string; // snapshot
   exercises: Exercise[]; // snapshot from template
   restPeriodSeconds: number;
+  ladderType: LadderType; // snapshot from template
+  maxRounds: number; // snapshot from template
+  stepSize?: number; // snapshot from template
   startTime: Date;
   endTime?: Date;
   status: WorkoutStatus;

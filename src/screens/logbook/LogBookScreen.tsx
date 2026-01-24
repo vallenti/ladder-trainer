@@ -4,6 +4,7 @@ import { Text, Card, IconButton, Portal, Dialog, Button, useTheme, Divider } fro
 import { spacing } from '../../constants/theme';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { formatTime } from '../../utils/calculations';
+import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const formatTimeWithMs = (totalSeconds: number): string => {
@@ -69,24 +70,24 @@ const LogbookScreen: React.FC = () => {
     if (!workout) return;
 
     const { dateStr, timeStr } = formatDateTime(workout.startTime);
+    const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1);
     
-    // Calculate exercise summary
+    // Calculate exercise summary using ladder strategy
     const exerciseTotals = workout.exercises.map(exercise => {
-      const roundsCompleted = workout.rounds.length;
-      const timesPerformed = Math.max(0, roundsCompleted - exercise.position + 1);
-      const totalAmount = exercise.position * timesPerformed;
+      const totalAmount = ladderStrategy.calculateTotalReps(exercise, workout.rounds.length);
       return {
         ...exercise,
-        timesPerformed,
         totalAmount
       };
-    }).filter(ex => ex.timesPerformed > 0);
+    });
 
     // Format the share message
-    let message = `🏋️ ${workout.templateName}\n\n`;
+    const ladderTypeName = workout.ladderType === 'christmas' ? 'Christmas Ladder' : 'Ascending Ladder';
+    let message = `🏋️ ${workout.templateName}\n`;
+    message += `📊 ${ladderTypeName}\n\n`;
     message += `📅 ${dateStr} at ${timeStr}\n`;
     message += `⏱️ Total Time: ${formatTimeWithMs(workout.totalTime)}\n`;
-    message += `🔄 Rounds Completed: ${workout.rounds.length}\n\n`;
+    message += `🔄 Rounds Completed: ${workout.rounds.length}/${workout.maxRounds}\n\n`;
     
     if (exerciseTotals.length > 0) {
       message += `💪 Exercise Summary:\n`;
@@ -132,16 +133,14 @@ const LogbookScreen: React.FC = () => {
         {workoutHistory.map((workout) => {
           const isExpanded = expandedWorkoutId === workout.id;
           const { dateStr, timeStr } = formatDateTime(workout.startTime);
+          const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1);
           const exerciseTotals = workout.exercises.map(exercise => {
-            const roundsCompleted = workout.rounds.length;
-            const timesPerformed = Math.max(0, roundsCompleted - exercise.position + 1);
-            const totalAmount = exercise.position * timesPerformed;
+            const totalAmount = ladderStrategy.calculateTotalReps(exercise, workout.rounds.length);
             return {
               ...exercise,
-              timesPerformed,
               totalAmount
             };
-          }).filter(ex => ex.timesPerformed > 0);
+          });
 
           return (
             <Card key={workout.id} style={[styles.workoutCard, { backgroundColor: theme.colors.surface }]} mode="elevated">

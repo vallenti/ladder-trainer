@@ -4,6 +4,7 @@ import { Text, Button, Card, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { formatTime } from '../../utils/calculations';
+import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { spacing } from '../../constants/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -68,19 +69,16 @@ const WorkoutCompleteScreen: React.FC = () => {
     );
   }
 
-  // Calculate exercise totals
+  // Calculate exercise totals using ladder strategy
+  const ladderStrategy = getLadderStrategy(completedWorkout.ladderType, completedWorkout.stepSize || 1);
   const exerciseTotals = completedWorkout.exercises.map(exercise => {
-    const roundsCompleted = completedWorkout.rounds.length;
-    // Exercise at position N is performed in rounds N through 12
-    const timesPerformed = Math.max(0, roundsCompleted - exercise.position + 1);
-    const totalAmount = exercise.position * timesPerformed;
+    const totalAmount = ladderStrategy.calculateTotalReps(exercise, completedWorkout.rounds.length);
     
     return {
       ...exercise,
-      timesPerformed,
       totalAmount
     };
-  }).filter(ex => ex.timesPerformed > 0); // Only show exercises that were performed
+  });
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>

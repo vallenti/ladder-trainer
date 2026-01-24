@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme } from 'react-native-paper';
+import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, RadioButton, Card } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import ExerciseInput from '../../components/ExerciseInput';
-import { Exercise } from '../../types';
+import { Exercise, LadderType } from '../../types';
 import { spacing } from '../../constants/theme';
+import { getLadderStrategy } from '../../utils/ladderStrategies';
 
 type RouteParams = {
   CreateEditWorkout: {
@@ -23,6 +24,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const isEditing = !!workoutId;
   const existingWorkout = isEditing ? getWorkout(workoutId) : undefined;
 
+  const [ladderType, setLadderType] = useState<LadderType>(existingWorkout?.ladderType || 'christmas');
+  const [maxRounds, setMaxRounds] = useState(existingWorkout?.maxRounds?.toString() || '10');
+  const [stepSize, setStepSize] = useState(existingWorkout?.stepSize?.toString() || '1');
   const [name, setName] = useState(existingWorkout?.name || '');
   const [hasRest, setHasRest] = useState((existingWorkout?.restPeriodSeconds || 0) > 0);
   const [restPeriod, setRestPeriod] = useState(
@@ -82,6 +86,18 @@ const CreateEditWorkoutScreen: React.FC = () => {
       }
     }
 
+    const rounds = parseInt(maxRounds, 10);
+    if (isNaN(rounds) || rounds <= 0) {
+      newErrors.push('Max rounds must be a positive number');
+    }
+
+    if (ladderType === 'ascending') {
+      const step = parseInt(stepSize, 10);
+      if (isNaN(step) || step <= 0) {
+        newErrors.push('Step size must be a positive number');
+      }
+    }
+
     setErrors(newErrors);
     return newErrors.length === 0;
   };
@@ -93,6 +109,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
       name: name.trim(),
       exercises,
       restPeriodSeconds: hasRest ? parseInt(restPeriod, 10) : 0,
+      ladderType,
+      maxRounds: parseInt(maxRounds, 10),
+      stepSize: ladderType === 'ascending' ? parseInt(stepSize, 10) : undefined,
     };
 
     if (isEditing && workoutId) {
@@ -113,10 +132,16 @@ const CreateEditWorkoutScreen: React.FC = () => {
       </Appbar.Header>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView style={styles.scrollView}>
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContentContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={true}
+        >
           <View style={styles.content}>
             {/* Error Display */}
             {errors.length > 0 && (
@@ -127,6 +152,75 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   </Text>
                 ))}
               </View>
+            )}
+
+            {/* Ladder Type Selection - Only shown when creating new workout */}
+            {!isEditing && (
+              <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+                <Card.Content>
+                  <Text variant="titleMedium" style={styles.sectionTitle}>
+                    Ladder Type
+                  </Text>
+                  <Text variant="bodySmall" style={[styles.sectionDescription, { color: theme.colors.onSurfaceVariant }]}>
+                    Choose your ladder workout style (cannot be changed later)
+                  </Text>
+                  
+                  <RadioButton.Group onValueChange={(value) => setLadderType(value as LadderType)} value={ladderType}>
+                    <View style={styles.radioOption}>
+                      <RadioButton.Item
+                        label="Christmas Ladder"
+                        value="christmas"
+                        labelVariant="bodyLarge"
+                        position="leading"
+                        style={styles.radioItem}
+                        labelStyle={styles.radioLabel}
+                      />
+                      <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
+                        {getLadderStrategy('christmas', 1).getDescription()}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.radioOption}>
+                      <RadioButton.Item
+                        label="Ascending Ladder"
+                        value="ascending"
+                        labelVariant="bodyLarge"
+                        position="leading"
+                        style={styles.radioItem}
+                        labelStyle={styles.radioLabel}
+                      />
+                      <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
+                        {getLadderStrategy('ascending', parseInt(stepSize, 10) || 1).getDescription()}
+                      </Text>
+                    </View>
+                  </RadioButton.Group>
+                </Card.Content>
+              </Card>
+            )}
+
+            {/* Max Rounds */}
+            <TextInput
+              mode="outlined"
+              label="Maximum Rounds"
+              value={maxRounds}
+              onChangeText={setMaxRounds}
+              keyboardType="numeric"
+              placeholder="10"
+              style={styles.input}
+            />
+
+            {/* Step Size - Only for ascending ladder */}
+            {ladderType === 'ascending' && (
+              <TextInput
+                mode="outlined"
+                label="Step Size"
+                value={stepSize}
+                onChangeText={setStepSize}
+                keyboardType="numeric"
+                placeholder="1"
+                style={styles.input}
+                right={<TextInput.Affix text="reps per round" />}
+              />
             )}
 
             {/* Workout Name */}
@@ -211,8 +305,37 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContentContainer: {
+    flexGrow: 1,
+    paddingBottom: spacing.xl,
+  },
   content: {
     padding: spacing.md,
+  },
+  card: {
+    marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    marginBottom: spacing.xs,
+    fontWeight: 'bold',
+  },
+  sectionDescription: {
+    marginBottom: spacing.md,
+  },
+  radioOption: {
+    marginBottom: spacing.sm,
+  },
+  radioItem: {
+    paddingLeft: 0,
+    marginLeft: 0,
+  },
+  radioLabel: {
+    textAlign: 'left',
+  },
+  radioDescription: {
+    marginLeft: 40,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.sm,
   },
   input: {
     marginBottom: spacing.md,

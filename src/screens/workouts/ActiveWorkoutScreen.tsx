@@ -3,7 +3,8 @@ import { View, ScrollView, StyleSheet, Platform, BackHandler } from 'react-nativ
 import { Text, Button, Card, ProgressBar, Appbar, Portal, Dialog, IconButton, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
-import { getExercisesForRound, formatTime } from '../../utils/calculations';
+import { formatTime } from '../../utils/calculations';
+import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { spacing } from '../../constants/theme';
 import { Exercise } from '../../types';
 
@@ -94,10 +95,10 @@ const ActiveWorkoutScreen: React.FC = () => {
   }
 
   const currentRound = activeWorkout.currentRoundIndex + 1;
-  const totalRounds = activeWorkout.exercises.length;
-  const exercisesInRound = getExercisesForRound(currentRound, activeWorkout.exercises);
+  const totalRounds = activeWorkout.maxRounds;
+  const ladderStrategy = getLadderStrategy(activeWorkout.ladderType, activeWorkout.stepSize || 1);
+  const exercisesInRound = ladderStrategy.getExercisesForRound(currentRound, activeWorkout.exercises);
   const progress = activeWorkout.currentRoundIndex / totalRounds;
-  const newExercisePosition = currentRound; // The new exercise introduced this round
 
   const handleRoundComplete = () => {
     completeRound();
@@ -183,16 +184,16 @@ const ActiveWorkoutScreen: React.FC = () => {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Card style={styles.card}>
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.cardTitle}>
-              Round {currentRound} Exercises
+              Round {currentRound} of {totalRounds}
             </Text>
-            {exercisesInRound.map((exercise: Exercise) => {
-              const isNewExercise = exercise.position === newExercisePosition;
+            {exercisesInRound.map((item) => {
+              const isNewExercise = activeWorkout.ladderType === 'christmas' && item.exercise.position === currentRound;
               return (
                 <View 
-                  key={exercise.position} 
+                  key={item.exercise.position} 
                   style={[
                     styles.exerciseRow,
                     { borderBottomColor: theme.colors.outline },
@@ -213,7 +214,7 @@ const ActiveWorkoutScreen: React.FC = () => {
                       { color: theme.colors.primary },
                       isNewExercise && { fontWeight: 'bold' }
                     ]}>
-                      {exercise.position}
+                      {item.reps}
                     </Text>
                   </View>
                   <Text variant="bodyLarge" style={[
@@ -221,7 +222,7 @@ const ActiveWorkoutScreen: React.FC = () => {
                     { color: theme.colors.onSurface },
                     isNewExercise && { fontWeight: 'bold' }
                   ]}>
-                    {(exercise.unit || '').toLowerCase()} {exercise.name}
+                    {(item.exercise.unit || '').toLowerCase()} {item.exercise.name}
                   </Text>
                 </View>
               );

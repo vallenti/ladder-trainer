@@ -51,6 +51,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       templateName: template.name,
       exercises: template.exercises,
       restPeriodSeconds: template.restPeriodSeconds,
+      ladderType: template.ladderType,
+      maxRounds: template.maxRounds,
+      stepSize: template.stepSize,
       startTime: new Date(),
       endTime: undefined,
       status: 'incomplete',
@@ -199,6 +202,12 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
 
       const pausedState: PausedWorkoutState = JSON.parse(savedState);
       
+      // Data migration: Add default ladderType and maxRounds if missing
+      if (!pausedState.activeWorkout.ladderType) {
+        pausedState.activeWorkout.ladderType = 'christmas';
+        pausedState.activeWorkout.maxRounds = pausedState.activeWorkout.exercises.length;
+      }
+      
       // Convert date strings back to Date objects
       pausedState.activeWorkout.startTime = new Date(pausedState.activeWorkout.startTime);
       if (pausedState.currentRoundStartTime) {
@@ -227,7 +236,25 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
   },
 
   loadHistory: async () => {
-    const history = await loadWorkoutHistory();
+    const loadedHistory = await loadWorkoutHistory();
+    
+    // Data migration: Add default ladderType and maxRounds to existing workout history
+    const history = loadedHistory.map(workout => {
+      if (!workout.ladderType) {
+        return {
+          ...workout,
+          ladderType: 'christmas' as const,
+          maxRounds: workout.maxRounds || workout.exercises.length,
+        };
+      }
+      return workout;
+    });
+    
+    // Save migrated data if any changes were made
+    if (history.some((w, i) => !loadedHistory[i].ladderType)) {
+      await saveWorkoutHistory(history);
+    }
+    
     set({ workoutHistory: history });
   },
 

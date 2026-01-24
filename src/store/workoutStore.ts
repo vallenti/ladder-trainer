@@ -18,7 +18,25 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
 
   loadWorkouts: async () => {
     set({ isLoading: true });
-    const workouts = await loadWorkouts();
+    const loadedWorkouts = await loadWorkouts();
+    
+    // Data migration: Add default ladderType and maxRounds to existing workouts
+    const workouts = loadedWorkouts.map(workout => {
+      if (!workout.ladderType) {
+        return {
+          ...workout,
+          ladderType: 'christmas' as const,
+          maxRounds: workout.maxRounds || workout.exercises.length, // Default to number of exercises
+        };
+      }
+      return workout;
+    });
+    
+    // Save migrated data if any changes were made
+    if (workouts.some((w, i) => !loadedWorkouts[i].ladderType)) {
+      await saveWorkouts(workouts);
+    }
+    
     set({ workouts, isLoading: false });
   },
 
