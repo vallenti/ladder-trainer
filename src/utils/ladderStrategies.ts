@@ -217,6 +217,72 @@ export class AscendingLadderStrategy implements LadderStrategy {
 }
 
 /**
+ * Flexible Ladder Strategy
+ * Pattern: Each exercise has independent progression (ascending or descending)
+ * Each exercise defines its own: direction, starting reps, and step size
+ * All exercises must result in the same number of rounds
+ */
+export class FlexibleLadderStrategy implements LadderStrategy {
+  private maxRounds: number;
+
+  constructor(maxRounds?: number) {
+    this.maxRounds = maxRounds || 10;
+  }
+
+  getExercisesForRound(
+    roundNumber: number,
+    exercises: Exercise[]
+  ): Array<{ exercise: Exercise; reps: number }> {
+    return exercises.map(ex => {
+      const direction = ex.direction || 'ascending';
+      const startingReps = ex.startingReps || 1;
+      const stepSize = ex.stepSize || 1;
+      
+      let reps: number;
+      if (direction === 'constant') {
+        reps = startingReps; // Same reps for all rounds
+      } else if (direction === 'ascending') {
+        reps = startingReps + (roundNumber - 1) * stepSize;
+      } else {
+        reps = startingReps - (roundNumber - 1) * stepSize;
+      }
+      
+      return {
+        exercise: ex,
+        reps: Math.max(0, reps), // Ensure non-negative
+      };
+    });
+  }
+
+  calculateTotalReps(exercise: Exercise, totalRounds: number): number {
+    const direction = exercise.direction || 'ascending';
+    const startingReps = exercise.startingReps || 1;
+    const stepSize = exercise.stepSize || 1;
+    
+    // Constant: same reps every round
+    if (direction === 'constant') {
+      return startingReps * totalRounds;
+    }
+    
+    // Sum of arithmetic sequence: n * (first + last) / 2
+    const firstReps = startingReps;
+    let lastReps: number;
+    
+    if (direction === 'ascending') {
+      lastReps = startingReps + (totalRounds - 1) * stepSize;
+    } else {
+      lastReps = startingReps - (totalRounds - 1) * stepSize;
+    }
+    
+    return (totalRounds * (firstReps + Math.max(0, lastReps))) / 2;
+  }
+
+  getDescription(): string {
+    return 'Each exercise has independent progression with custom starting reps, step size, and direction (ascending or descending)';
+  }
+}
+
+/**
  * Factory function to get the appropriate ladder strategy
  */
 export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, maxRounds?: number, startingReps?: number): LadderStrategy {
@@ -229,6 +295,8 @@ export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, 
       return new DescendingLadderStrategy(stepSize, maxRounds, startingReps);
     case 'pyramid':
       return new PyramidLadderStrategy(stepSize, maxRounds);
+    case 'flexible':
+      return new FlexibleLadderStrategy(maxRounds);
     default:
       throw new Error(`Unknown ladder type: ${ladderType}`);
   }

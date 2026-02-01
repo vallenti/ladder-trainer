@@ -4,6 +4,7 @@ import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card } fr
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import ExerciseInput from '../../components/ExerciseInput';
+import FlexibleExerciseInput from '../../components/FlexibleExerciseInput';
 import { Exercise, LadderType } from '../../types';
 import { spacing } from '../../constants/theme';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
@@ -37,16 +38,53 @@ const CreateEditWorkoutScreen: React.FC = () => {
     existingWorkout?.restPeriodSeconds?.toString() || '60'
   );
   const [exercises, setExercises] = useState<Exercise[]>(
-    existingWorkout?.exercises || [{ position: 1, unit: '', name: '' }]
+    existingWorkout?.exercises || [{ 
+      position: 1, 
+      unit: '', 
+      name: '',
+      ...(ladderType === 'flexible' ? {
+        direction: 'ascending' as const,
+        startingReps: 1,
+        stepSize: 1
+      } : {})
+    }]
   );
   const [errors, setErrors] = useState<string[]>([]);
 
+  // When switching ladder types, update exercises to have correct fields
+  useEffect(() => {
+    setExercises(prevExercises => 
+      prevExercises.map(ex => {
+        if (ladderType === 'flexible') {
+          // Add flexible ladder fields if not present
+          return {
+            ...ex,
+            direction: ex.direction || 'ascending',
+            startingReps: ex.startingReps || 1,
+            stepSize: ex.stepSize || 1
+          };
+        } else {
+          // Remove flexible ladder fields for other types
+          const { direction, startingReps: exStartingReps, stepSize: exStepSize, ...rest } = ex;
+          return rest as Exercise;
+        }
+      })
+    );
+  }, [ladderType]);
+
   const handleAddExercise = () => {
     if (exercises.length < 12) {
-      setExercises([
-        ...exercises,
-        { position: exercises.length + 1, unit: '', name: '' },
-      ]);
+      const newExercise: Exercise = {
+        position: exercises.length + 1,
+        unit: '',
+        name: '',
+        ...(ladderType === 'flexible' && {
+          direction: 'ascending',
+          startingReps: 1,
+          stepSize: 1,
+        }),
+      };
+      setExercises([...exercises, newExercise]);
     }
   };
 
@@ -111,6 +149,37 @@ const CreateEditWorkoutScreen: React.FC = () => {
       }
     }
 
+    if (ladderType === 'flexible') {
+      // Validate that each exercise has direction, startingReps, and stepSize (except constant)
+      exercises.forEach((ex, index) => {
+        if (!ex.direction) {
+          newErrors.push(`Exercise ${index + 1}: Direction is required`);
+        }
+        if (!ex.startingReps || ex.startingReps <= 0) {
+          newErrors.push(`Exercise ${index + 1}: ${ex.direction === 'constant' ? 'Value' : 'Starting reps'} must be a positive number`);
+        }
+        
+        // Step size only required for ascending/descending
+        if (ex.direction !== 'constant' && (!ex.stepSize || ex.stepSize <= 0)) {
+          newErrors.push(`Exercise ${index + 1}: Step size must be a positive number`);
+        }
+        
+        // Validate that exercise configuration results in exactly maxRounds rounds
+        // Constant exercises are always valid for any number of rounds
+        if (ex.direction !== 'constant') {
+          const startReps = ex.startingReps || 1;
+          const step = ex.stepSize || 1;
+          const calculatedRounds = ex.direction === 'ascending' 
+            ? Math.floor((rounds - startReps) / step) + 1
+            : Math.floor(startReps / step);
+          
+          if (calculatedRounds < rounds) {
+            newErrors.push(`Exercise ${index + 1}: Configuration results in only ${calculatedRounds} rounds, but ${rounds} rounds are required`);
+          }
+        }
+      });
+    }
+
     setErrors(newErrors);
     return newErrors.length === 0;
   };
@@ -143,6 +212,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       ascending: 'Ascending',
       descending: 'Descending',
       pyramid: 'Pyramid',
+      flexible: 'Flexible',
     };
     
     return `${typeNames[ladderType]} WOD`;
@@ -299,7 +369,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
                       <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'christmas' && { color: theme.colors.primary }]}>
-                        Christmas Ladder
+                        🎄 Christmas Ladder
                       </Text>
                       {ladderType === 'christmas' && (
                         <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
@@ -325,7 +395,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
                       <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'ascending' && { color: theme.colors.primary }]}>
-                        Ascending Ladder
+                        ⬆️ Ascending Ladder
                       </Text>
                       {ladderType === 'ascending' && (
                         <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
@@ -351,7 +421,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
                       <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'descending' && { color: theme.colors.primary }]}>
-                        Descending Ladder
+                        ⬇️ Descending Ladder
                       </Text>
                       {ladderType === 'descending' && (
                         <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
@@ -377,7 +447,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
                       <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'pyramid' && { color: theme.colors.primary }]}>
-                        Pyramid Ladder
+                        🔺 Pyramid Ladder
                       </Text>
                       {ladderType === 'pyramid' && (
                         <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
@@ -386,6 +456,32 @@ const CreateEditWorkoutScreen: React.FC = () => {
                     {ladderType === 'pyramid' && (
                       <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
                         {getLadderStrategy('pyramid', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                      </Text>
+                    )}
+                  </Card.Content>
+                </Card>
+
+                {/* Flexible Ladder Card */}
+                <Card 
+                  style={[
+                    styles.ladderTypeCard,
+                    { backgroundColor: theme.colors.surface },
+                    ladderType === 'flexible' && { borderColor: theme.colors.primary, borderWidth: 2, backgroundColor: `${theme.colors.primary}15` }
+                  ]}
+                  onPress={() => setLadderType('flexible')}
+                >
+                  <Card.Content>
+                    <View style={styles.ladderTypeHeader}>
+                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'flexible' && { color: theme.colors.primary }]}>
+                        Flexible Ladder
+                      </Text>
+                      {ladderType === 'flexible' && (
+                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                      )}
+                    </View>
+                    {ladderType === 'flexible' && (
+                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                        {getLadderStrategy('flexible', 1, parseInt(maxRounds, 10) || 10).getDescription()}
                       </Text>
                     )}
                   </Card.Content>
@@ -408,6 +504,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         {ladderType === 'ascending' && '⬆️ Ascending Ladder'}
                         {ladderType === 'descending' && '⬇️ Descending Ladder'}
                         {ladderType === 'pyramid' && '🔺 Pyramid Ladder'}
+                        {ladderType === 'flexible' && 'Flexible Ladder'}
                       </Text>
                     </Card.Content>
                   </Card>
@@ -509,15 +606,28 @@ const CreateEditWorkoutScreen: React.FC = () => {
               
             </View>
 
-            {exercises.map((exercise, index) => (
-              <ExerciseInput
-                key={index}
-                exercise={exercise}
-                onChange={(ex) => handleExerciseChange(index, ex)}
-                onDelete={() => handleDeleteExercise(index)}
-                canDelete={exercises.length > 1}
-              />
-            ))}
+            {ladderType === 'flexible' ? (
+              exercises.map((exercise, index) => (
+                <FlexibleExerciseInput
+                  key={index}
+                  exercise={exercise}
+                  onChange={(ex) => handleExerciseChange(index, ex)}
+                  onDelete={() => handleDeleteExercise(index)}
+                  canDelete={exercises.length > 1}
+                  exerciseNumber={index + 1}
+                />
+              ))
+            ) : (
+              exercises.map((exercise, index) => (
+                <ExerciseInput
+                  key={index}
+                  exercise={exercise}
+                  onChange={(ex) => handleExerciseChange(index, ex)}
+                  onDelete={() => handleDeleteExercise(index)}
+                  canDelete={exercises.length > 1}
+                />
+              ))
+            )}
 
             {(() => {
               const rounds = parseInt(maxRounds, 10) || 10;
@@ -550,7 +660,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
               icon="arrow-right"
               contentStyle={styles.nextButtonContent}
               style={styles.fixedNextButton}
-              textColor="#FFFFFF"
             >
               Next: Configure Workout
             </Button>

@@ -19,12 +19,16 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
-export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid';
+export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'flexible';
 
 export interface Exercise {
   position: number; // 1-12
   unit: string; // "reps", "calories", "meters"
   name: string; // "Wall Walk", "Row"
+  // Flexible ladder per-exercise settings
+  direction?: 'ascending' | 'descending' | 'constant';
+  startingReps?: number;
+  stepSize?: number;
 }
 
 export interface Template {
