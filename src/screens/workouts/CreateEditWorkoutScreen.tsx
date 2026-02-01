@@ -156,6 +156,49 @@ const CreateEditWorkoutScreen: React.FC = () => {
     return currentStep === 1 ? 'Select Workout Type' : 'Configure Workout';
   };
 
+  const generateRepsPreview = (): string => {
+    const rounds = parseInt(maxRounds, 10) || 0;
+    const step = parseInt(stepSize, 10) || 1;
+    const starting = parseInt(startingReps, 10) || 1;
+    
+    if (rounds <= 0 || rounds > 20) return '';
+    
+    const repsArray: number[] = [];
+    
+    switch (ladderType) {
+      case 'ascending':
+        for (let i = 0; i < rounds; i++) {
+          repsArray.push(starting + i * step);
+        }
+        break;
+      
+      case 'descending':
+        for (let i = 0; i < rounds; i++) {
+          repsArray.push(starting - i * step);
+        }
+        break;
+      
+      case 'pyramid':
+        const peak = Math.ceil(rounds / 2);
+        for (let i = 1; i <= rounds; i++) {
+          if (i <= peak) {
+            repsArray.push(i * step);
+          } else {
+            repsArray.push((rounds - i + 1) * step);
+          }
+        }
+        break;
+      
+      case 'christmas':
+        for (let i = 1; i <= rounds; i++) {
+          repsArray.push(i);
+        }
+        break;
+    }
+    
+    return repsArray.join(' - ');
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
@@ -362,6 +405,23 @@ const CreateEditWorkoutScreen: React.FC = () => {
               />
             )}
 
+            {/* Reps Preview */}
+            {(() => {
+              const preview = generateRepsPreview();
+              return preview && (
+                <Card style={[styles.previewCard, { backgroundColor: theme.colors.primaryContainer }]}>
+                  <Card.Content>
+                    <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer, marginBottom: 4 }}>
+                      REPS PREVIEW
+                    </Text>
+                    <Text variant="titleMedium" style={{ color: theme.colors.onPrimaryContainer, fontWeight: 'bold' }}>
+                      {preview}
+                    </Text>
+                  </Card.Content>
+                </Card>
+              );
+            })()}
+
             {/* Workout Name */}
             <TextInput
               mode="outlined"
@@ -503,6 +563,9 @@ const styles = StyleSheet.create({
   nextButtonContent: {
     flexDirection: 'row-reverse',
     paddingVertical: spacing.xs,
+  },
+  previewCard: {
+    marginBottom: spacing.md,
   },
   card: {
     marginBottom: spacing.md,
