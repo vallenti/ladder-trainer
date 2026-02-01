@@ -60,7 +60,6 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
           label="Exercise Name"
           value={exercise.name}
           onChangeText={(name) => onChange({ ...exercise, name })}
-          placeholder="e.g., Wall Walk, Row"
           style={styles.nameInput}
         />
 
@@ -99,7 +98,6 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
               label="Unit"
               value={exercise.unit}
               onChangeText={(unit) => onChange({ ...exercise, unit })}
-              placeholder="e.g., reps, calories, meters"
               style={styles.unitTextInput}
             />
             <IconButton
