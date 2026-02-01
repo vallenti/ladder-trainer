@@ -8,6 +8,7 @@ import FlexibleExerciseInput from '../../components/FlexibleExerciseInput';
 import { Exercise, LadderType } from '../../types';
 import { spacing } from '../../constants/theme';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
+import { getLadderDefaults } from '../../constants/ladderDefaults';
 
 type RouteParams = {
   CreateEditWorkout: {
@@ -28,10 +29,13 @@ const CreateEditWorkoutScreen: React.FC = () => {
   // Step tracking for creation flow (1 = Select Type, 2 = Configure Details)
   const [currentStep, setCurrentStep] = useState(isEditing ? 2 : 1);
 
-  const [ladderType, setLadderType] = useState<LadderType>(existingWorkout?.ladderType || 'christmas');
-  const [maxRounds, setMaxRounds] = useState(existingWorkout?.maxRounds?.toString() || '10');
-  const [stepSize, setStepSize] = useState(existingWorkout?.stepSize?.toString() || '1');
-  const [startingReps, setStartingReps] = useState(existingWorkout?.startingReps?.toString() || '1');
+  const initialLadderType = existingWorkout?.ladderType || 'christmas';
+  const initialDefaults = getLadderDefaults(initialLadderType);
+  
+  const [ladderType, setLadderType] = useState<LadderType>(initialLadderType);
+  const [maxRounds, setMaxRounds] = useState(existingWorkout?.maxRounds?.toString() || initialDefaults.maxRounds.toString());
+  const [stepSize, setStepSize] = useState(existingWorkout?.stepSize?.toString() || initialDefaults.stepSize.toString());
+  const [startingReps, setStartingReps] = useState(existingWorkout?.startingReps?.toString() || initialDefaults.startingReps.toString());
   const [name, setName] = useState(existingWorkout?.name || '');
   const [hasRest, setHasRest] = useState((existingWorkout?.restPeriodSeconds || 0) > 0);
   const [restPeriod, setRestPeriod] = useState(
@@ -50,6 +54,16 @@ const CreateEditWorkoutScreen: React.FC = () => {
     }]
   );
   const [errors, setErrors] = useState<string[]>([]);
+
+  // Update defaults when ladder type changes (only for new workouts)
+  useEffect(() => {
+    if (!isEditing) {
+      const defaults = getLadderDefaults(ladderType);
+      setMaxRounds(defaults.maxRounds.toString());
+      setStepSize(defaults.stepSize.toString());
+      setStartingReps(defaults.startingReps.toString());
+    }
+  }, [ladderType, isEditing]);
 
   // When switching ladder types, update exercises to have correct fields
   useEffect(() => {
@@ -242,7 +256,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
     return currentStep === 1 ? 'Select Workout Type' : 'Configure Workout';
   };
 
-  const generateRepsPreview = (): string => {
+  const generateRepsPreview = (): string | string[] => {
     const rounds = parseInt(maxRounds, 10) || 0;
     const step = parseInt(stepSize, 10) || 1;
     const starting = parseInt(startingReps, 10) || 1;
@@ -276,10 +290,23 @@ const CreateEditWorkoutScreen: React.FC = () => {
         break;
       
       case 'christmas':
-        for (let i = 1; i <= rounds; i++) {
-          repsArray.push(i);
+        // Format: 1, 2-1, 3-2-1, 4-3-2-1, ...
+        const lines: string[] = [];
+        const maxLines = rounds > 4 ? 4 : rounds;
+        
+        for (let i = 1; i <= maxLines; i++) {
+          const roundReps = [];
+          for (let j = i; j >= 1; j--) {
+            roundReps.push(j);
+          }
+          lines.push(roundReps.join(' - '));
         }
-        break;
+        
+        if (rounds > 4) {
+          lines.push('...');
+        }
+        
+        return lines;
     }
     
     return repsArray.join(' - ');
@@ -369,7 +396,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
                       <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'christmas' && { color: theme.colors.primary }]}>
-                        🎄 Christmas Ladder
+                          Christmas
                       </Text>
                       {ladderType === 'christmas' && (
                         <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
@@ -395,7 +422,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
                       <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'ascending' && { color: theme.colors.primary }]}>
-                        ⬆️ Ascending Ladder
+                        Ascending
                       </Text>
                       {ladderType === 'ascending' && (
                         <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
@@ -421,7 +448,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
                       <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'descending' && { color: theme.colors.primary }]}>
-                        ⬇️ Descending Ladder
+                        Descending
                       </Text>
                       {ladderType === 'descending' && (
                         <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
@@ -447,7 +474,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
                       <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'pyramid' && { color: theme.colors.primary }]}>
-                        🔺 Pyramid Ladder
+                        Pyramid
                       </Text>
                       {ladderType === 'pyramid' && (
                         <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
@@ -500,10 +527,10 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         SELECTED TYPE
                       </Text>
                       <Text variant="titleMedium" style={{ color: theme.colors.primary, marginTop: 4 }}>
-                        {ladderType === 'christmas' && '🎄 Christmas Ladder'}
-                        {ladderType === 'ascending' && '⬆️ Ascending Ladder'}
-                        {ladderType === 'descending' && '⬇️ Descending Ladder'}
-                        {ladderType === 'pyramid' && '🔺 Pyramid Ladder'}
+                        {ladderType === 'christmas' && 'Christmas Ladder'}
+                        {ladderType === 'ascending' && 'Ascending Ladder'}
+                        {ladderType === 'descending' && 'Descending Ladder'}
+                        {ladderType === 'pyramid' && 'Pyramid Ladder'}
                         {ladderType === 'flexible' && 'Flexible Ladder'}
                       </Text>
                     </Card.Content>
@@ -559,15 +586,38 @@ const CreateEditWorkoutScreen: React.FC = () => {
             {/* Reps Preview */}
             {(() => {
               const preview = generateRepsPreview();
-              return preview && (
-                <Card style={[styles.previewCard, { backgroundColor: theme.colors.primaryContainer }]}>
+              return preview && (Array.isArray(preview) ? preview.length > 0 : preview) && (
+                <Card style={[styles.previewCard, { 
+                  backgroundColor: 'rgba(255, 140, 97, 0.15)',
+                  borderColor: '#FF8C61',
+                  borderWidth: 1,
+                }]}>
                   <Card.Content>
-                    <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer, marginBottom: 4 }}>
+                    <Text variant="labelSmall" style={{ color: '#FF6B35', marginBottom: 4, fontWeight: 'bold' }}>
                       REPS PREVIEW
                     </Text>
-                    <Text variant="titleMedium" style={{ color: theme.colors.onPrimaryContainer, fontWeight: 'bold' }}>
-                      {preview}
-                    </Text>
+                    {Array.isArray(preview) ? (
+                      <View style={styles.christmasPreview}>
+                        {preview.map((line, index) => (
+                          <Text 
+                            key={index} 
+                            variant="bodyLarge" 
+                            style={{ 
+                              color: theme.colors.onSurface, 
+                              fontWeight: line === '...' ? 'normal' : '600',
+                              textAlign: 'center',
+                              opacity: line === '...' ? 0.6 : 1,
+                            }}
+                          >
+                            {line}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                        {preview}
+                      </Text>
+                    )}
                   </Card.Content>
                 </Card>
               );
@@ -660,6 +710,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
               icon="arrow-right"
               contentStyle={styles.nextButtonContent}
               style={styles.fixedNextButton}
+              textColor='#fff'
             >
               Next: Configure Workout
             </Button>
@@ -764,6 +815,10 @@ const styles = StyleSheet.create({
   },
   previewCard: {
     marginBottom: spacing.md,
+  },
+  christmasPreview: {
+    alignItems: 'center',
+    gap: 4,
   },
   card: {
     marginBottom: spacing.md,
