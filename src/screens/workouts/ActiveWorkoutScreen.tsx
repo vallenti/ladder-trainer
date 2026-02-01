@@ -41,6 +41,8 @@ const ActiveWorkoutScreen: React.FC = () => {
     pauseWorkout,
     resumeWorkout,
     discardPausedWorkout,
+    isMuted,
+    toggleMute,
   } = useActiveWorkoutStore();
   const [elapsedTime, setElapsedTime] = useState(storeElapsedTime);
   const [isPaused, setIsPaused] = useState(storePaused);
@@ -156,6 +158,14 @@ const ActiveWorkoutScreen: React.FC = () => {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.timerContainer, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.timerRow}>
+          <IconButton
+            icon={isMuted ? "volume-off" : "volume-high"}
+            size={28}
+            iconColor={theme.colors.primary}
+            onPress={toggleMute}
+            style={styles.muteButton}
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+          />
           <View style={styles.timerContent}>
             <View style={styles.timerTextContainer}>
               <Text variant="displayMedium" style={[styles.timer, { color: theme.colors.primary }]}>
@@ -321,6 +331,10 @@ const styles = StyleSheet.create({
   pausedLabel: {
     fontWeight: 'bold',
     marginTop: spacing.xs,
+  },
+  muteButton: {
+    position: 'absolute',
+    left: spacing.md,
   },
   pauseButton: {
     position: 'absolute',

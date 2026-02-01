@@ -4,6 +4,7 @@ import { Text, Button, useTheme } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { useWorkoutStore } from '../../store/workoutStore';
+import { playShortBeep, playLongBeep } from '../../utils/soundUtils';
 
 type RouteParams = {
   Countdown: {
@@ -20,6 +21,7 @@ const CountdownScreen: React.FC = () => {
   const [countdown, setCountdown] = useState(5);
 
   const template = getWorkout(route.params.workoutId);
+  const { isMuted } = useActiveWorkoutStore();
 
   useEffect(() => {
     if (countdown === 0) {
@@ -31,12 +33,21 @@ const CountdownScreen: React.FC = () => {
       return;
     }
 
+    // Play beeps at 3, 2, 1
+    if (!isMuted) {
+      if (countdown === 3 || countdown === 2) {
+        playShortBeep();
+      } else if (countdown === 1) {
+        playLongBeep();
+      }
+    }
+
     const timer = setTimeout(() => {
       setCountdown(countdown - 1);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [countdown, template]);
+  }, [countdown, template, isMuted]);
 
   if (!template) {
     return (

@@ -20,8 +20,10 @@ interface ActiveWorkoutStore {
   elapsedTime: number;
   totalPausedTime: number;
   pauseStartTime: number;
+  isMuted: boolean;
   
   startWorkout: (template: Template) => void;
+  toggleMute: () => void;
   completeRound: () => void;
   startNextRound: () => void;
   completeWorkout: () => Promise<void>;
@@ -43,6 +45,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
   elapsedTime: 0,
   totalPausedTime: 0,
   pauseStartTime: 0,
+  isMuted: false,
   workoutHistory: [],
 
   startWorkout: (template: Template) => {
@@ -264,5 +267,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
     const updatedHistory = workoutHistory.filter(w => w.id !== workoutId);
     await saveWorkoutHistory(updatedHistory);
     set({ workoutHistory: updatedHistory });
+  },
+
+  toggleMute: () => {
+    const { isMuted } = get();
+    set({ isMuted: !isMuted });
   },
 }));
