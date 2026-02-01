@@ -41,7 +41,7 @@ const RestScreen: React.FC = () => {
   const nextRound = activeWorkout.currentRoundIndex + 2;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.success }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
       <Text variant="headlineLarge" style={[styles.title, { color: '#FFFFFF' }]}>
         Rest
       </Text>
@@ -57,7 +57,7 @@ const RestScreen: React.FC = () => {
         style={styles.skipButton}
         contentStyle={styles.skipButtonContent}
         buttonColor="#FFFFFF"
-        textColor={theme.colors.success}
+        textColor={theme.colors.primary}
       >
         Skip Rest
       </Button>

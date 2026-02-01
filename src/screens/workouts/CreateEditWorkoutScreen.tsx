@@ -24,6 +24,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const isEditing = !!workoutId;
   const existingWorkout = isEditing ? getWorkout(workoutId) : undefined;
 
+  // Step tracking for creation flow (1 = Select Type, 2 = Configure Details)
+  const [currentStep, setCurrentStep] = useState(isEditing ? 2 : 1);
+
   const [ladderType, setLadderType] = useState<LadderType>(existingWorkout?.ladderType || 'christmas');
   const [maxRounds, setMaxRounds] = useState(existingWorkout?.maxRounds?.toString() || '10');
   const [stepSize, setStepSize] = useState(existingWorkout?.stepSize?.toString() || '1');
@@ -132,13 +135,63 @@ const CreateEditWorkoutScreen: React.FC = () => {
     navigation.goBack();
   };
 
+  const handleNextStep = () => {
+    setCurrentStep(2);
+    setErrors([]); // Clear any errors when moving to next step
+  };
+
+  const handleBackStep = () => {
+    if (currentStep === 2 && !isEditing) {
+      setCurrentStep(1);
+      setErrors([]); // Clear any errors when going back
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const getStepTitle = () => {
+    if (isEditing) return 'Edit Workout';
+    return currentStep === 1 ? 'Select Workout Type' : 'Configure Workout';
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title={isEditing ? 'Edit Workout' : 'Create Workout'} />
-        <Appbar.Action icon="check" onPress={handleSave} />
+        <Appbar.BackAction onPress={handleBackStep} />
+        <Appbar.Content title={getStepTitle()} />
+        {currentStep === 2 && <Appbar.Action icon="check" onPress={handleSave} />}
       </Appbar.Header>
+
+      {/* Step Indicator - Only show when creating new workout */}
+      {!isEditing && (
+        <View style={[styles.stepIndicator, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.stepItem}>
+            <View style={[
+              styles.stepCircle, 
+              currentStep === 1 ? { backgroundColor: theme.colors.primary } : { backgroundColor: theme.colors.surfaceVariant }
+            ]}>
+              <Text style={[styles.stepNumber, { color: currentStep === 1 ? theme.colors.onPrimary : theme.colors.onSurfaceVariant }]}>1</Text>
+            </View>
+            <Text variant="bodySmall" style={[styles.stepLabel, currentStep === 1 && { color: theme.colors.primary }]}>
+              Select Type
+            </Text>
+          </View>
+          
+          <View style={[styles.stepLine, { backgroundColor: currentStep === 2 ? theme.colors.primary : theme.colors.surfaceVariant }]} />
+          
+          <View style={styles.stepItem}>
+            <View style={[
+              styles.stepCircle, 
+              currentStep === 2 ? { backgroundColor: theme.colors.primary } : { backgroundColor: theme.colors.surfaceVariant }
+            ]}>
+              <Text style={[styles.stepNumber, { color: currentStep === 2 ? theme.colors.onPrimary : theme.colors.onSurfaceVariant }]}>2</Text>
+            </View>
+            <Text variant="bodySmall" style={[styles.stepLabel, currentStep === 2 && { color: theme.colors.primary }]}>
+              Configure
+            </Text>
+          </View>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -163,80 +216,113 @@ const CreateEditWorkoutScreen: React.FC = () => {
               </View>
             )}
 
-            {/* Ladder Type Selection - Only shown when creating new workout */}
-            {!isEditing && (
-              <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-                <Card.Content>
-                  <Text variant="titleMedium" style={styles.sectionTitle}>
-                    Ladder Type
-                  </Text>
-                  <Text variant="bodySmall" style={[styles.sectionDescription, { color: theme.colors.onSurfaceVariant }]}>
-                    Choose your ladder workout style (cannot be changed later)
-                  </Text>
-                  
-                  <RadioButton.Group onValueChange={(value) => setLadderType(value as LadderType)} value={ladderType}>
-                    <View style={styles.radioOption}>
-                      <RadioButton.Item
-                        label="Christmas Ladder"
-                        value="christmas"
-                        labelVariant="bodyLarge"
-                        position="leading"
-                        style={styles.radioItem}
-                        labelStyle={styles.radioLabel}
-                      />
-                      <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
-                        {getLadderStrategy('christmas', 1, parseInt(maxRounds, 10) || 10).getDescription()}
-                      </Text>
-                    </View>
+            {/* STEP 1: Ladder Type Selection */}
+            {currentStep === 1 && !isEditing && (
+              <>
+                <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+                  <Card.Content>
+                    <Text variant="titleLarge" style={styles.stepMainTitle}>
+                      Choose Your Ladder Type
+                    </Text>
+                    <Text variant="bodyMedium" style={[styles.sectionDescription, { color: theme.colors.onSurfaceVariant }]}>
+                      Select the workout style that best fits your training goals. This cannot be changed later.
+                    </Text>
                     
-                    <View style={styles.radioOption}>
-                      <RadioButton.Item
-                        label="Ascending Ladder"
-                        value="ascending"
-                        labelVariant="bodyLarge"
-                        position="leading"
-                        style={styles.radioItem}
-                        labelStyle={styles.radioLabel}
-                      />
-                      <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
-                        {getLadderStrategy('ascending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.radioOption}>
-                      <RadioButton.Item
-                        label="Descending Ladder"
-                        value="descending"
-                        labelVariant="bodyLarge"
-                        position="leading"
-                        style={styles.radioItem}
-                        labelStyle={styles.radioLabel}
-                      />
-                      <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
-                        {getLadderStrategy('descending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.radioOption}>
-                      <RadioButton.Item
-                        label="Pyramid Ladder"
-                        value="pyramid"
-                        labelVariant="bodyLarge"
-                        position="leading"
-                        style={styles.radioItem}
-                        labelStyle={styles.radioLabel}
-                      />
-                      <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
-                        {getLadderStrategy('pyramid', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
-                      </Text>
-                    </View>
-                  </RadioButton.Group>
-                </Card.Content>
-              </Card>
+                    <RadioButton.Group onValueChange={(value) => setLadderType(value as LadderType)} value={ladderType}>
+                      <View style={styles.radioOption}>
+                        <RadioButton.Item
+                          label="Christmas Ladder"
+                          value="christmas"
+                          labelVariant="bodyLarge"
+                          position="leading"
+                          style={styles.radioItem}
+                          labelStyle={styles.radioLabel}
+                        />
+                        <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
+                          {getLadderStrategy('christmas', 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                        </Text>
+                      </View>
+                      
+                      <View style={styles.radioOption}>
+                        <RadioButton.Item
+                          label="Ascending Ladder"
+                          value="ascending"
+                          labelVariant="bodyLarge"
+                          position="leading"
+                          style={styles.radioItem}
+                          labelStyle={styles.radioLabel}
+                        />
+                        <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
+                          {getLadderStrategy('ascending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                        </Text>
+                      </View>
+                      
+                      <View style={styles.radioOption}>
+                        <RadioButton.Item
+                          label="Descending Ladder"
+                          value="descending"
+                          labelVariant="bodyLarge"
+                          position="leading"
+                          style={styles.radioItem}
+                          labelStyle={styles.radioLabel}
+                        />
+                        <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
+                          {getLadderStrategy('descending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                        </Text>
+                      </View>
+                      
+                      <View style={styles.radioOption}>
+                        <RadioButton.Item
+                          label="Pyramid Ladder"
+                          value="pyramid"
+                          labelVariant="bodyLarge"
+                          position="leading"
+                          style={styles.radioItem}
+                          labelStyle={styles.radioLabel}
+                        />
+                        <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
+                          {getLadderStrategy('pyramid', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                        </Text>
+                      </View>
+                    </RadioButton.Group>
+                  </Card.Content>
+                </Card>
+
+                {/* Next Button */}
+                <Button
+                  mode="contained"
+                  onPress={handleNextStep}
+                  icon="arrow-right"
+                  contentStyle={styles.nextButtonContent}
+                  style={styles.nextButton}
+                >
+                  Next: Configure Workout
+                </Button>
+              </>
             )}
 
-            {/* Max Rounds */}
-            <TextInput
+            {/* STEP 2: Workout Configuration */}
+            {currentStep === 2 && (
+              <>
+                {/* Show selected ladder type for reference when creating new workout */}
+                {!isEditing && (
+                  <Card style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]}>
+                    <Card.Content>
+                      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        SELECTED TYPE
+                      </Text>
+                      <Text variant="titleMedium" style={{ color: theme.colors.primary, marginTop: 4 }}>
+                        {ladderType === 'christmas' && '🎄 Christmas Ladder'}
+                        {ladderType === 'ascending' && '⬆️ Ascending Ladder'}
+                        {ladderType === 'descending' && '⬇️ Descending Ladder'}
+                        {ladderType === 'pyramid' && '🔺 Pyramid Ladder'}
+                      </Text>
+                    </Card.Content>
+                  </Card>
+                )}
+
+                {/* Max Rounds */}
+                <TextInput
               mode="outlined"
               label="Maximum Rounds"
               value={maxRounds}
@@ -266,7 +352,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
               label="Workout Name"
               value={name}
               onChangeText={setName}
-              placeholder="e.g., Morning Ladder, CrossFit WOD"
               style={styles.input}
             />
 
@@ -330,6 +415,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 </Button>
               );
             })()}
+              </>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -353,6 +440,53 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.md,
+  },
+  // Step Indicator Styles
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  stepItem: {
+    alignItems: 'center',
+  },
+  stepCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  stepNumber: {
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  stepLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  stepLine: {
+    width: 40,
+    height: 2,
+    marginHorizontal: spacing.xs,
+    marginBottom: 14,
+  },
+  // Step 1 Styles
+  stepMainTitle: {
+    marginBottom: spacing.sm,
+    fontWeight: 'bold',
+  },
+  nextButton: {
+    marginTop: spacing.lg,
+  },
+  nextButtonContent: {
+    flexDirection: 'row-reverse',
+    paddingVertical: spacing.xs,
   },
   card: {
     marginBottom: spacing.md,

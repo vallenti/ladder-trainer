@@ -64,7 +64,7 @@ const WorkoutDetailsScreen: React.FC = () => {
           <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
             <Card.Content>
               <Text variant="titleMedium" style={styles.label}>
-                Exercises ({workout.exercises.length})
+                Exercises
               </Text>
               {workout.exercises.map((exercise) => (
                 <View key={exercise.position} style={styles.exerciseRow}>

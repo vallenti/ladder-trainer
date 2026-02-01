@@ -322,10 +322,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.md,
+    paddingVertical: spacing.md,
   },
   workoutCard: {
-    marginBottom: spacing.md,
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.xs,
     elevation: 1,
   },
   cardContent: {

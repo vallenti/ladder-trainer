@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "LadFit",
-    "slug": "ladder-trainer-app",
+    "slug": "ladfit-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,25 +9,31 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FF6B35"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.laddertrainer.app"
+      "bundleIdentifier": "com.ladfit.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FF6B35"
       },
-      "package": "com.laddertrainer.app",
-      "permissions": ["WAKE_LOCK"]
+      "package": "com.ladfit.app",
+      "permissions": [ "WAKE_LOCK" ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+},
+    "extra": {
+      "eas": {
+        "projectId": "b4958392-adc4-4d52-a399-aaea9445ab9d"
     }
+},
+    "owner": "vallentin-dev"
   }
 }
