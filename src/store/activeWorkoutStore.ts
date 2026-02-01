@@ -54,6 +54,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       ladderType: template.ladderType,
       maxRounds: template.maxRounds,
       stepSize: template.stepSize,
+      startingReps: template.startingReps,
       startTime: new Date(),
       endTime: undefined,
       status: 'incomplete',

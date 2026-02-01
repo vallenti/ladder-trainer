@@ -70,7 +70,7 @@ const LogbookScreen: React.FC = () => {
     if (!workout) return;
 
     const { dateStr, timeStr } = formatDateTime(workout.startTime);
-    const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds);
+    const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds, workout.startingReps);
     
     // Calculate exercise summary using ladder strategy
     const exerciseTotals = workout.exercises.map(exercise => {
@@ -137,7 +137,7 @@ const LogbookScreen: React.FC = () => {
         {workoutHistory.map((workout) => {
           const isExpanded = expandedWorkoutId === workout.id;
           const { dateStr, timeStr } = formatDateTime(workout.startTime);
-          const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds);
+          const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds, workout.startingReps);
           const exerciseTotals = workout.exercises.map(exercise => {
             const totalAmount = ladderStrategy.calculateTotalReps(exercise, workout.rounds.length);
             return {

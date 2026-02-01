@@ -34,7 +34,8 @@ export interface Template {
   restPeriodSeconds: number; // 0 = no rest
   ladderType: LadderType;
   maxRounds: number;
-  stepSize?: number; // For ascending ladder: step increment (default 1)
+  stepSize?: number; // For ascending/descending ladder: step increment (default 1)
+  startingReps?: number; // For ascending/descending ladder: starting reps (default 1)
   createdAt: Date;
 }
 
@@ -55,6 +56,7 @@ export interface Workout {
   ladderType: LadderType; // snapshot from template
   maxRounds: number; // snapshot from template
   stepSize?: number; // snapshot from template
+  startingReps?: number; // snapshot from template
   startTime: Date;
   endTime?: Date;
   status: WorkoutStatus;

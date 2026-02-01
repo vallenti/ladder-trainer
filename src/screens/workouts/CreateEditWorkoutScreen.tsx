@@ -30,6 +30,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const [ladderType, setLadderType] = useState<LadderType>(existingWorkout?.ladderType || 'christmas');
   const [maxRounds, setMaxRounds] = useState(existingWorkout?.maxRounds?.toString() || '10');
   const [stepSize, setStepSize] = useState(existingWorkout?.stepSize?.toString() || '1');
+  const [startingReps, setStartingReps] = useState(existingWorkout?.startingReps?.toString() || '1');
   const [name, setName] = useState(existingWorkout?.name || '');
   const [hasRest, setHasRest] = useState((existingWorkout?.restPeriodSeconds || 0) > 0);
   const [restPeriod, setRestPeriod] = useState(
@@ -124,6 +125,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       ladderType,
       maxRounds: parseInt(maxRounds, 10),
       stepSize: (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') ? parseInt(stepSize, 10) : undefined,
+      startingReps: (ladderType === 'ascending' || ladderType === 'descending') ? parseInt(startingReps, 10) : undefined,
     };
 
     if (isEditing && workoutId) {
@@ -253,7 +255,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           labelStyle={styles.radioLabel}
                         />
                         <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
-                          {getLadderStrategy('ascending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                          {getLadderStrategy('ascending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10, parseInt(startingReps, 10) || 1).getDescription()}
                         </Text>
                       </View>
                       
@@ -267,7 +269,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           labelStyle={styles.radioLabel}
                         />
                         <Text variant="bodySmall" style={[styles.radioDescription, { color: theme.colors.onSurfaceVariant }]}>
-                          {getLadderStrategy('descending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                          {getLadderStrategy('descending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10, parseInt(startingReps, 10) || 1).getDescription()}
                         </Text>
                       </View>
                       
@@ -331,6 +333,20 @@ const CreateEditWorkoutScreen: React.FC = () => {
               placeholder="10"
               style={styles.input}
             />
+
+            {/* Starting Reps - Only for ascending and descending ladder */}
+            {(ladderType === 'ascending' || ladderType === 'descending') && (
+              <TextInput
+                mode="outlined"
+                label="Starting Reps"
+                value={startingReps}
+                onChangeText={setStartingReps}
+                keyboardType="numeric"
+                placeholder="1"
+                style={styles.input}
+                right={<TextInput.Affix text="reps" />}
+              />
+            )}
 
             {/* Step Size - Only for ascending, descending, and pyramid ladder */}
             {(ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') && (
