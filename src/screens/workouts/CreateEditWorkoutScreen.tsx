@@ -137,9 +137,25 @@ const CreateEditWorkoutScreen: React.FC = () => {
     navigation.goBack();
   };
 
+  const generateDefaultWorkoutName = (): string => {
+    const typeNames = {
+      christmas: 'Christmas',
+      ascending: 'Ascending',
+      descending: 'Descending',
+      pyramid: 'Pyramid',
+    };
+    
+    return `${typeNames[ladderType]} WOD`;
+  };
+
   const handleNextStep = () => {
     setCurrentStep(2);
     setErrors([]); // Clear any errors when moving to next step
+    
+    // Set default workout name if not already set or still has old default
+    if (!name.trim() || name === generateDefaultWorkoutName()) {
+      setName(generateDefaultWorkoutName());
+    }
   };
 
   const handleBackStep = () => {
@@ -332,17 +348,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
                     </RadioButton.Group>
                   </Card.Content>
                 </Card>
-
-                {/* Next Button */}
-                <Button
-                  mode="contained"
-                  onPress={handleNextStep}
-                  icon="arrow-right"
-                  contentStyle={styles.nextButtonContent}
-                  style={styles.nextButton}
-                >
-                  Next: Configure Workout
-                </Button>
               </>
             )}
 
@@ -365,6 +370,16 @@ const CreateEditWorkoutScreen: React.FC = () => {
                     </Card.Content>
                   </Card>
                 )}
+
+                {/* Workout Name */}
+                <TextInput
+                  mode="outlined"
+                  label="Workout Name"
+                  value={name}
+                  onChangeText={setName}
+                  style={styles.input}
+                  placeholder={generateDefaultWorkoutName()}
+                />
 
                 {/* Max Rounds */}
                 <TextInput
@@ -421,15 +436,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 </Card>
               );
             })()}
-
-            {/* Workout Name */}
-            <TextInput
-              mode="outlined"
-              label="Workout Name"
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
-            />
 
             {/* Rest Period */}
             <View style={styles.restSection}>
@@ -495,6 +501,21 @@ const CreateEditWorkoutScreen: React.FC = () => {
             )}
           </View>
         </ScrollView>
+
+        {/* Fixed Next Button for Step 1 */}
+        {currentStep === 1 && !isEditing && (
+          <View style={[styles.buttonContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outline }]}>
+            <Button
+              mode="contained"
+              onPress={handleNextStep}
+              icon="arrow-right"
+              contentStyle={styles.nextButtonContent}
+              style={styles.fixedNextButton}
+            >
+              Next: Configure Workout
+            </Button>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </View>
   );
@@ -557,12 +578,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     fontWeight: 'bold',
   },
+  buttonContainer: {
+    padding: spacing.md,
+    borderTopWidth: 1,
+  },
+  fixedNextButton: {
+    marginTop: 0,
+  },
   nextButton: {
     marginTop: spacing.lg,
   },
   nextButtonContent: {
     flexDirection: 'row-reverse',
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
   },
   previewCard: {
     marginBottom: spacing.md,
