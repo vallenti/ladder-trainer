@@ -389,7 +389,11 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   style={[
                     styles.ladderTypeCard,
                     { backgroundColor: theme.colors.surface },
-                    ladderType === 'christmas' && { borderColor: theme.colors.primary, borderWidth: 2, backgroundColor: `${theme.colors.primary}15` }
+                    ladderType === 'christmas' && { 
+                      borderColor: theme.colors.primary, 
+                      borderWidth: 2, 
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
+                    }
                   ]}
                   onPress={() => setLadderType('christmas')}
                 >
@@ -415,7 +419,11 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   style={[
                     styles.ladderTypeCard,
                     { backgroundColor: theme.colors.surface },
-                    ladderType === 'ascending' && { borderColor: theme.colors.primary, borderWidth: 2, backgroundColor: `${theme.colors.primary}15` }
+                    ladderType === 'ascending' && { 
+                      borderColor: theme.colors.primary, 
+                      borderWidth: 2, 
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
+                    }
                   ]}
                   onPress={() => setLadderType('ascending')}
                 >
@@ -441,7 +449,11 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   style={[
                     styles.ladderTypeCard,
                     { backgroundColor: theme.colors.surface },
-                    ladderType === 'descending' && { borderColor: theme.colors.primary, borderWidth: 2, backgroundColor: `${theme.colors.primary}15` }
+                    ladderType === 'descending' && { 
+                      borderColor: theme.colors.primary, 
+                      borderWidth: 2, 
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
+                    }
                   ]}
                   onPress={() => setLadderType('descending')}
                 >
@@ -467,7 +479,11 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   style={[
                     styles.ladderTypeCard,
                     { backgroundColor: theme.colors.surface },
-                    ladderType === 'pyramid' && { borderColor: theme.colors.primary, borderWidth: 2, backgroundColor: `${theme.colors.primary}15` }
+                    ladderType === 'pyramid' && { 
+                      borderColor: theme.colors.primary, 
+                      borderWidth: 2, 
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
+                    }
                   ]}
                   onPress={() => setLadderType('pyramid')}
                 >
@@ -493,7 +509,11 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   style={[
                     styles.ladderTypeCard,
                     { backgroundColor: theme.colors.surface },
-                    ladderType === 'flexible' && { borderColor: theme.colors.primary, borderWidth: 2, backgroundColor: `${theme.colors.primary}15` }
+                    ladderType === 'flexible' && { 
+                      borderColor: theme.colors.primary, 
+                      borderWidth: 2, 
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
+                    }
                   ]}
                   onPress={() => setLadderType('flexible')}
                 >
@@ -588,12 +608,16 @@ const CreateEditWorkoutScreen: React.FC = () => {
               const preview = generateRepsPreview();
               return preview && (Array.isArray(preview) ? preview.length > 0 : preview) && (
                 <Card style={[styles.previewCard, { 
-                  backgroundColor: 'rgba(255, 140, 97, 0.15)',
-                  borderColor: '#FF8C61',
+                  backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer,
+                  borderColor: theme.colors.primary,
                   borderWidth: 1,
                 }]}>
                   <Card.Content>
-                    <Text variant="labelSmall" style={{ color: '#FF6B35', marginBottom: 4, fontWeight: 'bold' }}>
+                    <Text variant="labelSmall" style={{ 
+                      color: theme.colors.primary, 
+                      marginBottom: 4, 
+                      fontWeight: 'bold' 
+                    }}>
                       REPS PREVIEW
                     </Text>
                     {Array.isArray(preview) ? (
