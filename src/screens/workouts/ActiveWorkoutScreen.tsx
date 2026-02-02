@@ -196,47 +196,106 @@ const ActiveWorkoutScreen: React.FC = () => {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
-            <Text variant="titleMedium" style={styles.cardTitle}>
-              Round {currentRound} of {totalRounds}
-            </Text>
-            {exercisesInRound.map((item) => {
-              const isNewExercise = activeWorkout.ladderType === 'christmas' && item.exercise.position === currentRound;
-              return (
-                <View 
-                  key={item.exercise.position} 
-                  style={[
-                    styles.exerciseRow,
-                    { borderBottomColor: theme.colors.outline },
-                    isNewExercise && [
-                      styles.newExerciseRow,
-                      { 
-                        backgroundColor: theme.dark 
-                          ? 'rgba(255, 140, 97, 0.15)'  // Light orange with transparency for dark mode
-                          : 'rgba(255, 107, 53, 0.1)',  // Light orange with transparency for light mode
-                        borderLeftColor: theme.colors.primary
-                      }
-                    ]
-                  ]}
-                >
-                  <View style={styles.repsContainer}>
-                    <Text variant="titleLarge" style={[
-                      styles.repsNumber,
-                      { color: theme.colors.primary },
-                      isNewExercise && { fontWeight: 'bold' }
-                    ]}>
-                      {item.reps}
-                    </Text>
-                  </View>
-                  <Text variant="bodyLarge" style={[
-                    styles.exerciseName,
-                    { color: theme.colors.onSurface },
-                    isNewExercise && { fontWeight: 'bold' }
-                  ]}>
-                    {(item.exercise.unit || '').toLowerCase()} {item.exercise.name}
-                  </Text>
-                </View>
-              );
-            })}
+            {activeWorkout.ladderType === 'chipper' ? (
+              <>
+                <Text variant="titleMedium" style={styles.cardTitle}>
+                  {currentRound} of {totalRounds} Complete
+                </Text>
+                {activeWorkout.exercises.map((exercise, index) => {
+                  const roundNumber = index + 1;
+                  const isCompleted = roundNumber <= currentRound - 1;
+                  const isCurrent = roundNumber === currentRound;
+                  
+                  return (
+                    <View 
+                      key={exercise.position} 
+                      style={[
+                        styles.exerciseRow,
+                        { borderBottomColor: theme.colors.outline },
+                        isCurrent && [
+                          styles.newExerciseRow,
+                          { 
+                            backgroundColor: theme.dark 
+                              ? 'rgba(255, 140, 97, 0.15)'
+                              : 'rgba(255, 107, 53, 0.1)',
+                            borderLeftColor: theme.colors.primary
+                          }
+                        ],
+                        isCompleted && styles.completedExerciseRow
+                      ]}
+                    >
+                      <View style={styles.repsContainer}>
+                        {isCompleted ? (
+                          <Text variant="titleLarge" style={[styles.checkmark, { color: theme.colors.primary }]}>
+                            ✓
+                          </Text>
+                        ) : (
+                          <Text variant="titleLarge" style={[
+                            styles.repsNumber,
+                            { color: theme.colors.primary },
+                            isCurrent && { fontWeight: 'bold' }
+                          ]}>
+                            {exercise.fixedReps}
+                          </Text>
+                        )}
+                      </View>
+                      <Text variant="bodyLarge" style={[
+                        styles.exerciseName,
+                        { color: theme.colors.onSurface },
+                        isCurrent && { fontWeight: 'bold' },
+                        isCompleted && { textDecorationLine: 'line-through', opacity: 0.6 }
+                      ]}>
+                        {(exercise.unit || '').toLowerCase()} {exercise.name}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </>
+            ) : (
+              <>
+                <Text variant="titleMedium" style={styles.cardTitle}>
+                  Round {currentRound} of {totalRounds}
+                </Text>
+                {exercisesInRound.map((item) => {
+                  const isNewExercise = activeWorkout.ladderType === 'christmas' && item.exercise.position === currentRound;
+                  return (
+                    <View 
+                      key={item.exercise.position} 
+                      style={[
+                        styles.exerciseRow,
+                        { borderBottomColor: theme.colors.outline },
+                        isNewExercise && [
+                          styles.newExerciseRow,
+                          { 
+                            backgroundColor: theme.dark 
+                              ? 'rgba(255, 140, 97, 0.15)'
+                              : 'rgba(255, 107, 53, 0.1)',
+                            borderLeftColor: theme.colors.primary
+                          }
+                        ]
+                      ]}
+                    >
+                      <View style={styles.repsContainer}>
+                        <Text variant="titleLarge" style={[
+                          styles.repsNumber,
+                          { color: theme.colors.primary },
+                          isNewExercise && { fontWeight: 'bold' }
+                        ]}>
+                          {item.reps}
+                        </Text>
+                      </View>
+                      <Text variant="bodyLarge" style={[
+                        styles.exerciseName,
+                        { color: theme.colors.onSurface },
+                        isNewExercise && { fontWeight: 'bold' }
+                      ]}>
+                        {(item.exercise.unit || '').toLowerCase()} {item.exercise.name}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </>
+            )}
           </Card.Content>
         </Card>
       </ScrollView>
@@ -377,6 +436,13 @@ const styles = StyleSheet.create({
   },
   repsNumber: {
     fontWeight: 'bold',
+  },
+  checkmark: {
+    fontWeight: 'bold',
+    fontSize: 28,
+  },
+  completedExerciseRow: {
+    opacity: 0.7,
   },
   newExerciseText: {
     fontWeight: 'bold',

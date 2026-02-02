@@ -283,6 +283,46 @@ export class FlexibleLadderStrategy implements LadderStrategy {
 }
 
 /**
+ * Chipper Ladder Strategy
+ * Pattern: Each exercise is performed once with its fixed reps count
+ * Each exercise = 1 round
+ * Round 1: Exercise 1 with fixedReps
+ * Round 2: Exercise 2 with fixedReps
+ * Round 3: Exercise 3 with fixedReps
+ */
+export class ChipperLadderStrategy implements LadderStrategy {
+  getExercisesForRound(
+    roundNumber: number,
+    exercises: Exercise[]
+  ): Array<{ exercise: Exercise; reps: number }> {
+    // Each round performs only one exercise - the exercise at that position
+    const exercise = exercises.find(ex => ex.position === roundNumber);
+    
+    if (!exercise) {
+      return [];
+    }
+    
+    return [{
+      exercise: exercise,
+      reps: exercise.fixedReps || 0,
+    }];
+  }
+
+  calculateTotalReps(exercise: Exercise, totalRounds: number): number {
+    // Exercise is only performed once (in its own round)
+    // Only count if that round has been completed
+    if (totalRounds >= exercise.position) {
+      return exercise.fixedReps || 0;
+    }
+    return 0;
+  }
+
+  getDescription(): string {
+    return 'Complete each exercise once in order. Each exercise is one round with a fixed number of reps.';
+  }
+}
+
+/**
  * Factory function to get the appropriate ladder strategy
  */
 export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, maxRounds?: number, startingReps?: number): LadderStrategy {
@@ -297,6 +337,8 @@ export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, 
       return new PyramidLadderStrategy(stepSize, maxRounds);
     case 'flexible':
       return new FlexibleLadderStrategy(maxRounds);
+    case 'chipper':
+      return new ChipperLadderStrategy();
     default:
       throw new Error(`Unknown ladder type: ${ladderType}`);
   }

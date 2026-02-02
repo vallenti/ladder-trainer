@@ -19,7 +19,7 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
-export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'flexible';
+export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'flexible' | 'chipper';
 
 export interface Exercise {
   position: number; // 1-12
@@ -29,6 +29,8 @@ export interface Exercise {
   direction?: 'ascending' | 'descending' | 'constant';
   startingReps?: number;
   stepSize?: number;
+  // Chipper ladder per-exercise fixed count
+  fixedReps?: number;
 }
 
 export interface Template {

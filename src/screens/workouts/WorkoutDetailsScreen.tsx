@@ -78,7 +78,7 @@ const WorkoutDetailsScreen: React.FC = () => {
                     </View>
                   )}
                   <Text variant="bodyLarge" style={styles.exerciseText}>
-                    {exercise.unit && `${exercise.unit} `}{exercise.name}
+                    {exercise.fixedReps && `${exercise.fixedReps} `}{exercise.unit && `${exercise.unit} `}{exercise.name}
                   </Text>
                 </View>
               ))}

@@ -26,6 +26,8 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
         return 'Pyramid';
       case 'flexible':
         return 'Flexible';
+      case 'chipper':
+        return 'Chipper';
       default:
         return 'Christmas';
     }

@@ -5,6 +5,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import ExerciseInput from '../../components/ExerciseInput';
 import FlexibleExerciseInput from '../../components/FlexibleExerciseInput';
+import ChipperExerciseInput from '../../components/ChipperExerciseInput';
 import { Exercise, LadderType } from '../../types';
 import { spacing } from '../../constants/theme';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
@@ -50,6 +51,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
         direction: 'ascending' as const,
         startingReps: 1,
         stepSize: 1
+      } : ladderType === 'chipper' ? {
+        fixedReps: 0
       } : {})
     }]
   );
@@ -71,15 +74,23 @@ const CreateEditWorkoutScreen: React.FC = () => {
       prevExercises.map(ex => {
         if (ladderType === 'flexible') {
           // Add flexible ladder fields if not present
+          const { fixedReps, ...rest } = ex;
           return {
-            ...ex,
+            ...rest,
             direction: ex.direction || 'ascending',
             startingReps: ex.startingReps || 1,
             stepSize: ex.stepSize || 1
           };
-        } else {
-          // Remove flexible ladder fields for other types
+        } else if (ladderType === 'chipper') {
+          // Add chipper fields if not present
           const { direction, startingReps: exStartingReps, stepSize: exStepSize, ...rest } = ex;
+          return {
+            ...rest,
+            fixedReps: ex.fixedReps || 0
+          };
+        } else {
+          // Remove flexible and chipper ladder fields for other types
+          const { direction, startingReps: exStartingReps, stepSize: exStepSize, fixedReps, ...rest } = ex;
           return rest as Exercise;
         }
       })
@@ -96,6 +107,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
           direction: 'ascending',
           startingReps: 1,
           stepSize: 1,
+        }),
+        ...(ladderType === 'chipper' && {
+          fixedReps: 0,
         }),
       };
       setExercises([...exercises, newExercise]);
@@ -194,6 +208,15 @@ const CreateEditWorkoutScreen: React.FC = () => {
       });
     }
 
+    if (ladderType === 'chipper') {
+      // Validate that each exercise has fixedReps
+      exercises.forEach((ex, index) => {
+        if (!ex.fixedReps || ex.fixedReps <= 0) {
+          newErrors.push(`Exercise ${index + 1}: Count must be a positive number`);
+        }
+      });
+    }
+
     setErrors(newErrors);
     return newErrors.length === 0;
   };
@@ -201,12 +224,15 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const handleSave = async () => {
     if (!validate()) return;
 
+    // For chipper, maxRounds equals number of exercises
+    const finalMaxRounds = ladderType === 'chipper' ? exercises.length : parseInt(maxRounds, 10);
+
     const workoutData = {
       name: name.trim(),
       exercises,
       restPeriodSeconds: hasRest ? parseInt(restPeriod, 10) : 0,
       ladderType,
-      maxRounds: parseInt(maxRounds, 10),
+      maxRounds: finalMaxRounds,
       stepSize: (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') ? parseInt(stepSize, 10) : undefined,
       startingReps: (ladderType === 'ascending' || ladderType === 'descending') ? parseInt(startingReps, 10) : undefined,
     };
@@ -227,6 +253,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       descending: 'Descending',
       pyramid: 'Pyramid',
       flexible: 'Flexible',
+      chipper: 'Chipper',
     };
     
     return `${typeNames[ladderType]} WOD`;
@@ -533,6 +560,36 @@ const CreateEditWorkoutScreen: React.FC = () => {
                     )}
                   </Card.Content>
                 </Card>
+
+                {/* Chipper Ladder Card */}
+                <Card 
+                  style={[
+                    styles.ladderTypeCard,
+                    { backgroundColor: theme.colors.surface },
+                    ladderType === 'chipper' && { 
+                      borderColor: theme.colors.primary, 
+                      borderWidth: 2, 
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
+                    }
+                  ]}
+                  onPress={() => setLadderType('chipper')}
+                >
+                  <Card.Content>
+                    <View style={styles.ladderTypeHeader}>
+                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'chipper' && { color: theme.colors.primary }]}>
+                        Chipper
+                      </Text>
+                      {ladderType === 'chipper' && (
+                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                      )}
+                    </View>
+                    {ladderType === 'chipper' && (
+                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                        {getLadderStrategy('chipper', 1, parseInt(maxRounds, 10) || 5).getDescription()}
+                      </Text>
+                    )}
+                  </Card.Content>
+                </Card>
               </>
             )}
 
@@ -547,11 +604,14 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         SELECTED TYPE
                       </Text>
                       <Text variant="titleMedium" style={{ color: theme.colors.primary, marginTop: 4 }}>
-                        {ladderType === 'christmas' && 'Christmas Ladder'}
-                        {ladderType === 'ascending' && 'Ascending Ladder'}
-                        {ladderType === 'descending' && 'Descending Ladder'}
-                        {ladderType === 'pyramid' && 'Pyramid Ladder'}
-                        {ladderType === 'flexible' && 'Flexible Ladder'}
+                        {{
+                          christmas: 'Christmas Ladder',
+                          ascending: 'Ascending Ladder',
+                          descending: 'Descending Ladder',
+                          pyramid: 'Pyramid Ladder',
+                          flexible: 'Flexible Ladder',
+                          chipper: 'Chipper Ladder',
+                        }[ladderType]}
                       </Text>
                     </Card.Content>
                   </Card>
@@ -567,15 +627,17 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   placeholder={generateDefaultWorkoutName()}
                 />
 
-                {/* Max Rounds */}
-                <TextInput
-              mode="outlined"
-              label="Maximum Rounds"
-              value={maxRounds}
-              onChangeText={setMaxRounds}
-              keyboardType="numeric"
-              style={styles.input}
-            />
+            {/* Max Rounds - Not shown for chipper (auto-calculated from exercise count) */}
+            {ladderType !== 'chipper' && (
+              <TextInput
+                mode="outlined"
+                label="Maximum Rounds"
+                value={maxRounds}
+                onChangeText={setMaxRounds}
+                keyboardType="numeric"
+                style={styles.input}
+              />
+            )}
 
             {/* Starting Reps - Only for ascending and descending ladder */}
             {(ladderType === 'ascending' || ladderType === 'descending') && (
@@ -689,6 +751,16 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
                   exerciseNumber={index + 1}
+                />
+              ))
+            ) : ladderType === 'chipper' ? (
+              exercises.map((exercise, index) => (
+                <ChipperExerciseInput
+                  key={index}
+                  exercise={exercise}
+                  onChange={(ex) => handleExerciseChange(index, ex)}
+                  onDelete={() => handleDeleteExercise(index)}
+                  canDelete={exercises.length > 1}
                 />
               ))
             ) : (

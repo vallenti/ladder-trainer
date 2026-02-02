@@ -32,6 +32,11 @@ export const LADDER_DEFAULTS: Record<LadderType, LadderDefaults> = {
     stepSize: 1, // Not relevant/used (per exercise)
     startingReps: 1, // Not relevant/used (per exercise)
   },
+  chipper: {
+    maxRounds: 5, // Default starting count, will match exercise count
+    stepSize: 1, // Not relevant/used
+    startingReps: 1, // Not relevant/used (per exercise fixedReps)
+  },
 };
 
 export const getLadderDefaults = (ladderType: LadderType): LadderDefaults => {
