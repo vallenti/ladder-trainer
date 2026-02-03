@@ -30,6 +30,8 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
         return 'Chipper';
       case 'amrap':
         return 'AMRAP';
+      case 'forreps':
+        return 'For Reps';
       default:
         return 'Christmas';
     }

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Button, Card, Appbar, Portal, Dialog, useTheme } from 'react-native-paper';
+import { Text, Button, Card, Appbar, Portal, Dialog, useTheme, Chip, Divider } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { spacing } from '../../constants/theme';
+import { Exercise } from '../../types';
 
 type RouteParams = {
   WorkoutDetails: {
@@ -50,6 +51,214 @@ const WorkoutDetailsScreen: React.FC = () => {
     navigation.navigate('Countdown', { workoutId: workout.id });
   };
 
+  // Get ladder type display name
+  const getLadderTypeDisplay = (): string => {
+    switch (workout.ladderType) {
+      case 'ascending':
+        return 'Ascending Ladder';
+      case 'descending':
+        return 'Descending Ladder';
+      case 'pyramid':
+        return 'Pyramid Ladder';
+      case 'christmas':
+        return 'Christmas Ladder';
+      case 'flexible':
+        return 'Flexible Ladder';
+      case 'chipper':
+        return 'Chipper';
+      case 'amrap':
+        return 'AMRAP';
+      case 'forreps':
+        return 'For Reps';
+      default:
+        return workout.ladderType;
+    }
+  };
+
+  // Get progression icon for an exercise
+  const getExerciseProgression = (exercise: Exercise): string => {
+    if (workout.ladderType === 'flexible') {
+      if (exercise.direction === 'ascending') return '↑';
+      if (exercise.direction === 'descending') return '↓';
+      return '→';
+    }
+    if (workout.ladderType === 'ascending') return '↑';
+    if (workout.ladderType === 'descending') return '↓';
+    if (workout.ladderType === 'pyramid') return '↕';
+    if (workout.ladderType === 'chipper' || workout.ladderType === 'forreps') return '→';
+    return '';
+  };
+
+  // Get exercise display text with reps info
+  const getExerciseDisplay = (exercise: Exercise): string => {
+    let repsInfo = '';
+    
+    if (workout.ladderType === 'flexible') {
+      const start = exercise.startingReps || 1;
+      const step = exercise.stepSize || 1;
+      if (exercise.direction === 'constant') {
+        repsInfo = `${start} `;
+      } else {
+        repsInfo = `Start: ${start}, Step: ${step} `;
+      }
+    } else if (workout.ladderType === 'chipper') {
+      repsInfo = `${exercise.fixedReps || 0} `;
+    } else if (workout.ladderType === 'forreps') {
+      repsInfo = `${exercise.repsPerRound || 0} `;
+    } else if (workout.ladderType === 'amrap') {
+      const start = exercise.startingReps || 1;
+      const step = exercise.stepSize || 0;
+      if (step === 0) {
+        repsInfo = `${start} `;
+      } else {
+        repsInfo = `Start: ${start}, Step: ${step} `;
+      }
+    }
+    
+    return `${repsInfo}${exercise.unit ? exercise.unit + ' ' : ''}${exercise.name}`;
+  };
+
+  // Generate detailed round preview
+  const generateDetailedRoundPreview = (): React.ReactNode[] => {
+    const rounds = workout.maxRounds || 0;
+    const maxPreviewRounds = 10; // Show first 10
+    const previewRounds: React.ReactNode[] = [];
+
+    if (workout.ladderType === 'christmas') {
+      for (let r = 1; r <= Math.min(rounds, maxPreviewRounds); r++) {
+        const exercisesInRound = workout.exercises
+          .filter(ex => ex.position <= r)
+          .sort((a, b) => b.position - a.position);
+        
+        previewRounds.push(
+          <View key={r} style={styles.roundPreviewItem}>
+            <Text variant="labelMedium" style={styles.roundNumber}>Round {r}</Text>
+            {exercisesInRound.map((ex, idx) => (
+              <Text key={idx} variant="bodyMedium" style={styles.exerciseLineItem}>
+                {ex.position}{ex.unit ? ' ' + ex.unit : ''} {ex.name}
+              </Text>
+            ))}
+          </View>
+        );
+      }
+    } else if (workout.ladderType === 'ascending' || workout.ladderType === 'descending' || workout.ladderType === 'pyramid') {
+      const step = workout.stepSize || 1;
+      const starting = workout.startingReps || 1;
+      
+      for (let r = 1; r <= Math.min(rounds, maxPreviewRounds); r++) {
+        let reps = 0;
+        if (workout.ladderType === 'ascending') {
+          reps = starting + (r - 1) * step;
+        } else if (workout.ladderType === 'descending') {
+          reps = starting - (r - 1) * step;
+        } else { // pyramid
+          const peak = Math.ceil(rounds / 2);
+          reps = r <= peak ? r * step : (rounds - r + 1) * step;
+        }
+        
+        previewRounds.push(
+          <View key={r} style={styles.roundPreviewItem}>
+            <Text variant="labelMedium" style={styles.roundNumber}>Round {r}</Text>
+            {workout.exercises.map((ex, idx) => (
+              <Text key={idx} variant="bodyMedium" style={styles.exerciseLineItem}>
+                {reps}{ex.unit ? ' ' + ex.unit : ''} {ex.name}
+              </Text>
+            ))}
+          </View>
+        );
+      }
+    } else if (workout.ladderType === 'flexible') {
+      for (let r = 1; r <= Math.min(rounds, maxPreviewRounds); r++) {
+        previewRounds.push(
+          <View key={r} style={styles.roundPreviewItem}>
+            <Text variant="labelMedium" style={styles.roundNumber}>Round {r}</Text>
+            {workout.exercises.map((ex, idx) => {
+              const start = ex.startingReps || 1;
+              const step = ex.stepSize || 1;
+              let reps = start;
+              
+              if (ex.direction === 'ascending') {
+                reps = start + (r - 1) * step;
+              } else if (ex.direction === 'descending') {
+                reps = start - (r - 1) * step;
+              }
+              
+              return (
+                <Text key={idx} variant="bodyMedium" style={styles.exerciseLineItem}>
+                  {reps}{ex.unit ? ' ' + ex.unit : ''} {ex.name}
+                </Text>
+              );
+            })}
+          </View>
+        );
+      }
+    } else if (workout.ladderType === 'chipper') {
+      // Chipper: Each round has one exercise, cycling through the exercises
+      for (let r = 1; r <= Math.min(rounds, maxPreviewRounds); r++) {
+        const exerciseIndex = (r - 1) % workout.exercises.length;
+        const ex = workout.exercises[exerciseIndex];
+        const reps = ex.fixedReps;
+        
+        previewRounds.push(
+          <View key={r} style={styles.roundPreviewItem}>
+            <Text variant="labelMedium" style={styles.roundNumber}>Round {r}</Text>
+            <Text variant="bodyMedium" style={styles.exerciseLineItem}>
+              {reps || 0}{ex.unit ? ' ' + ex.unit : ''} {ex.name}
+            </Text>
+          </View>
+        );
+      }
+    } else if (workout.ladderType === 'forreps') {
+      for (let r = 1; r <= Math.min(rounds, maxPreviewRounds); r++) {
+        previewRounds.push(
+          <View key={r} style={styles.roundPreviewItem}>
+            <Text variant="labelMedium" style={styles.roundNumber}>Round {r}</Text>
+            {workout.exercises.map((ex, idx) => {
+              const reps = ex.repsPerRound;
+              return (
+                <Text key={idx} variant="bodyMedium" style={styles.exerciseLineItem}>
+                  {reps || 0}{ex.unit ? ' ' + ex.unit : ''} {ex.name}
+                </Text>
+              );
+            })}
+          </View>
+        );
+      }
+    } else if (workout.ladderType === 'amrap') {
+      for (let r = 1; r <= Math.min(rounds, maxPreviewRounds); r++) {
+        previewRounds.push(
+          <View key={r} style={styles.roundPreviewItem}>
+            <Text variant="labelMedium" style={styles.roundNumber}>Round {r}</Text>
+            {workout.exercises.map((ex, idx) => {
+              const start = ex.startingReps || 1;
+              const step = ex.stepSize || 0;
+              const reps = step === 0 ? start : start + (r - 1) * step;
+              return (
+                <Text key={idx} variant="bodyMedium" style={styles.exerciseLineItem}>
+                  {reps}{ex.unit ? ' ' + ex.unit : ''} {ex.name}
+                </Text>
+              );
+            })}
+          </View>
+        );
+      }
+    }
+
+    if (workout.ladderType !== 'amrap') {
+      if (rounds > maxPreviewRounds) {
+            previewRounds.push(
+              <Text key="more" variant="bodySmall" style={styles.moreRounds}>
+                ... and {rounds - maxPreviewRounds} more round{rounds - maxPreviewRounds > 1 ? 's' : ''}
+              </Text>
+            );
+          }
+    }
+    
+    return previewRounds;
+  };
+
+
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
@@ -61,42 +270,133 @@ const WorkoutDetailsScreen: React.FC = () => {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          {/* Header Info Card */}
+          <Card style={[styles.headerCard, { backgroundColor: theme.colors.primaryContainer }]}>
             <Card.Content>
-              <Text variant="titleMedium" style={styles.label}>
-                Exercises
+              <Text variant="headlineSmall" style={[styles.workoutTypeTitle, { color: theme.colors.primary }]}>
+                {getLadderTypeDisplay()}
               </Text>
-              {workout.exercises.map((exercise) => (
-                <View key={exercise.position} style={styles.exerciseRow}>
-                  {workout.ladderType === 'christmas' ? (
-                    <View style={[styles.positionBadge, { backgroundColor: theme.colors.primary }]}>
-                      <Text style={[styles.positionText, { color: '#FFFFFF' }]}>{exercise.position}</Text>
-                    </View>
-                  ) : (
-                    <View style={[styles.bulletBadge, { backgroundColor: theme.colors.primary }]}>
-                      <View style={[styles.bulletDot, { backgroundColor: '#FFFFFF' }]} />
-                    </View>
-                  )}
-                  <Text variant="bodyLarge" style={styles.exerciseText}>
-                    {exercise.fixedReps && `${exercise.fixedReps} `}{exercise.unit && `${exercise.unit} `}{exercise.name}
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>ROUNDS</Text>
+                  <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                    {workout.ladderType === 'amrap' ? 'Max' : workout.maxRounds}
                   </Text>
                 </View>
-              ))}
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>EXERCISES</Text>
+                  <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                    {workout.exercises.length}
+                  </Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>REST</Text>
+                  <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                    {workout.restPeriodSeconds === 0 ? 'None' : `${workout.restPeriodSeconds}s`}
+                  </Text>
+                </View>
+                {workout.ladderType === 'amrap' && workout.timeCap && (
+                  <>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statItem}>
+                      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>TIME CAP</Text>
+                      <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                        {Math.floor(workout.timeCap / 60)}:{(workout.timeCap % 60).toString().padStart(2, '0')}
+                      </Text>
+                    </View>
+                  </>
+                )}
+              </View>
             </Card.Content>
           </Card>
 
+          {/* Exercises Card */}
           <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
             <Card.Content>
-              <Text variant="titleMedium" style={styles.label}>
-                Rest Period
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Exercises
               </Text>
-              <Text variant="bodyLarge">
-                {workout.restPeriodSeconds === 0
-                  ? 'No rest'
-                  : `${workout.restPeriodSeconds} seconds`}
-              </Text>
+              {workout.exercises.map((exercise, index) => {
+                const progression = getExerciseProgression(exercise);
+                return (
+                  <View key={exercise.position} style={styles.exerciseRow}>
+                    <View style={[styles.exerciseNumberBadge, { backgroundColor: theme.colors.primary }]}>
+                      <Text style={[styles.exerciseNumber, { color: '#FFFFFF' }]}>
+                        {workout.ladderType === 'christmas' ? exercise.position : index + 1}
+                      </Text>
+                    </View>
+                    <View style={styles.exerciseInfo}>
+                      <Text variant="bodyLarge" style={styles.exerciseName}>
+                        {getExerciseDisplay(exercise)}
+                      </Text>
+                      {progression && (
+                        <View style={styles.progressionContainer}>
+                          <Text style={[styles.progressionIcon, { color: theme.colors.primary }]}>
+                            {progression}
+                          </Text>
+                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                            {workout.ladderType === 'flexible' 
+                              ? exercise.direction === 'constant' ? 'Constant' : 
+                                exercise.direction === 'ascending' ? 'Ascending' : 'Descending'
+                              : workout.ladderType === 'ascending' ? 'Ascending' :
+                                workout.ladderType === 'descending' ? 'Descending' :
+                                workout.ladderType === 'pyramid' ? 'Pyramid' :
+                                'Fixed'}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
             </Card.Content>
           </Card>
+
+          {/* Round Preview Card */}
+          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Round-by-Round Preview
+              </Text>
+              <Text variant="bodySmall" style={[styles.previewSubtext, { color: theme.colors.onSurfaceVariant }]}>
+                What you'll do in each round
+              </Text>
+              <Divider style={styles.previewDivider} />
+              {generateDetailedRoundPreview()}
+            </Card.Content>
+          </Card>
+
+          {/* Workout Configuration Card */}
+          {(workout.stepSize || workout.startingReps) && workout.ladderType !== 'flexible' && 
+           workout.ladderType !== 'chipper' && workout.ladderType !== 'forreps' && (
+            <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+              <Card.Content>
+                <Text variant="titleMedium" style={styles.sectionTitle}>
+                  Configuration
+                </Text>
+                <View style={styles.configRow}>
+                  {workout.startingReps && (
+                    <View style={styles.configItem}>
+                      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Starting Reps
+                      </Text>
+                      <Text variant="bodyLarge">{workout.startingReps}</Text>
+                    </View>
+                  )}
+                  {workout.stepSize && workout.ladderType !== 'amrap' && (
+                    <View style={styles.configItem}>
+                      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Step Size
+                      </Text>
+                      <Text variant="bodyLarge">{workout.stepSize}</Text>
+                    </View>
+                  )}
+                </View>
+              </Card.Content>
+            </Card>
+          )}
         </View>
       </ScrollView>
 
@@ -156,44 +456,100 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.md,
   },
+  headerCard: {
+    marginBottom: spacing.md,
+    elevation: 2,
+  },
+  workoutTypeTitle: {
+    fontWeight: 'bold',
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#00000020',
+  },
   card: {
     marginBottom: spacing.md,
   },
-  label: {
+  sectionTitle: {
     marginBottom: spacing.md,
     fontWeight: 'bold',
   },
   exerciseRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
   },
-  positionBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  exerciseNumberBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
   },
-  bulletBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  bulletDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  positionText: {
+  exerciseNumber: {
     fontWeight: 'bold',
     fontSize: 14,
   },
-  exerciseText: {
+  exerciseInfo: {
+    flex: 1,
+  },
+  exerciseName: {
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  progressionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  progressionIcon: {
+    fontSize: 16,
+    marginRight: 6,
+    fontWeight: 'bold',
+  },
+  previewSubtext: {
+    marginBottom: spacing.sm,
+  },
+  previewDivider: {
+    marginBottom: spacing.md,
+  },
+  roundPreviewItem: {
+    marginBottom: spacing.md,
+    paddingLeft: spacing.sm,
+  },
+  roundNumber: {
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  exerciseLineItem: {
+    marginLeft: spacing.md,
+    marginBottom: 2,
+  },
+  moreRounds: {
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginTop: spacing.sm,
+    opacity: 0.7,
+  },
+  configRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+  },
+  configItem: {
     flex: 1,
   },
   buttonContainer: {
