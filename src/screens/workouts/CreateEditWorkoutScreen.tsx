@@ -7,6 +7,7 @@ import ExerciseInput from '../../components/ExerciseInput';
 import FlexibleExerciseInput from '../../components/FlexibleExerciseInput';
 import ChipperExerciseInput from '../../components/ChipperExerciseInput';
 import AMRAPExerciseInput from '../../components/AMRAPExerciseInput';
+import ForRepsExerciseInput from '../../components/ForRepsExerciseInput';
 import NumberStepper from '../../components/NumberStepper';
 import { Exercise, LadderType } from '../../types';
 import { spacing } from '../../constants/theme';
@@ -61,6 +62,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
         stepSize: 1
       } : ladderType === 'chipper' ? {
         fixedReps: 0
+      } : ladderType === 'forreps' ? {
+        repsPerRound: 0
       } : {})
     }]
   );
@@ -101,15 +104,22 @@ const CreateEditWorkoutScreen: React.FC = () => {
           };
         } else if (ladderType === 'amrap') {
           // Add AMRAP fields if not present
-          const { fixedReps, ...rest } = ex;
+          const { fixedReps, repsPerRound, ...rest } = ex;
           return {
             ...rest,
             startingReps: ex.startingReps || 1,
             stepSize: ex.stepSize || 0
           };
-        } else {
-          // Remove flexible, chipper, and AMRAP ladder fields for other types
+        } else if (ladderType === 'forreps') {
+          // Add forreps fields if not present
           const { direction, startingReps: exStartingReps, stepSize: exStepSize, fixedReps, ...rest } = ex;
+          return {
+            ...rest,
+            repsPerRound: ex.repsPerRound || 0
+          };
+        } else {
+          // Remove flexible, chipper, AMRAP, and forreps ladder fields for other types
+          const { direction, startingReps: exStartingReps, stepSize: exStepSize, fixedReps, repsPerRound, ...rest } = ex;
           return rest as Exercise;
         }
       })
@@ -133,6 +143,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
         ...(ladderType === 'amrap' && {
           startingReps: 1,
           stepSize: 0,
+        }),
+        ...(ladderType === 'forreps' && {
+          repsPerRound: 0,
         }),
       };
       setExercises([...exercises, newExercise]);
@@ -256,6 +269,15 @@ const CreateEditWorkoutScreen: React.FC = () => {
       });
     }
 
+    if (ladderType === 'forreps') {
+      // Validate that each exercise has repsPerRound
+      exercises.forEach((ex, index) => {
+        if (!ex.repsPerRound || ex.repsPerRound <= 0) {
+          newErrors.push(`Exercise ${index + 1}: Reps per round must be a positive number`);
+        }
+      });
+    }
+
     setErrors(newErrors);
     return newErrors.length === 0;
   };
@@ -303,6 +325,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       flexible: 'Flexible',
       chipper: 'Chipper',
       amrap: 'AMRAP',
+      forreps: 'For Reps',
     };
     
     return `${typeNames[ladderType]} WOD`;
@@ -669,6 +692,36 @@ const CreateEditWorkoutScreen: React.FC = () => {
                     )}
                   </Card.Content>
                 </Card>
+
+                {/* For Reps Ladder Card */}
+                <Card 
+                  style={[
+                    styles.ladderTypeCard,
+                    { backgroundColor: theme.colors.surface },
+                    ladderType === 'forreps' && { 
+                      borderColor: theme.colors.primary, 
+                      borderWidth: 2, 
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
+                    }
+                  ]}
+                  onPress={() => setLadderType('forreps')}
+                >
+                  <Card.Content>
+                    <View style={styles.ladderTypeHeader}>
+                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'forreps' && { color: theme.colors.primary }]}>
+                        For Reps
+                      </Text>
+                      {ladderType === 'forreps' && (
+                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                      )}
+                    </View>
+                    {ladderType === 'forreps' && (
+                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                        {getLadderStrategy('forreps', 1, parseInt(maxRounds, 10) || 5).getDescription()}
+                      </Text>
+                    )}
+                  </Card.Content>
+                </Card>
               </>
             )}
 
@@ -691,6 +744,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           flexible: 'Flexible Ladder',
                           chipper: 'Chipper Ladder',
                           amrap: 'AMRAP',
+                          forreps: 'For Reps',
                         }[ladderType]}
                       </Text>
                     </Card.Content>
@@ -900,6 +954,16 @@ const CreateEditWorkoutScreen: React.FC = () => {
             ) : ladderType === 'chipper' ? (
               exercises.map((exercise, index) => (
                 <ChipperExerciseInput
+                  key={index}
+                  exercise={exercise}
+                  onChange={(ex) => handleExerciseChange(index, ex)}
+                  onDelete={() => handleDeleteExercise(index)}
+                  canDelete={exercises.length > 1}
+                />
+              ))
+            ) : ladderType === 'forreps' ? (
+              exercises.map((exercise, index) => (
+                <ForRepsExerciseInput
                   key={index}
                   exercise={exercise}
                   onChange={(ex) => handleExerciseChange(index, ex)}

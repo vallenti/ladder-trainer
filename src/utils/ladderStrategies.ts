@@ -376,6 +376,36 @@ export class AMRAPLadderStrategy implements LadderStrategy {
 }
 
 /**
+ * ForReps Ladder Strategy
+ * Pattern: Fixed number of rounds where each round contains all exercises with fixed reps
+ * Round 1: All exercises with their repsPerRound
+ * Round 2: All exercises with their repsPerRound
+ * Round 3: All exercises with their repsPerRound
+ * Example: 5 rounds of 40 lunges, 30 squats, 20 sit-ups, 10 burpees
+ */
+export class ForRepsLadderStrategy implements LadderStrategy {
+  getExercisesForRound(
+    roundNumber: number,
+    exercises: Exercise[]
+  ): Array<{ exercise: Exercise; reps: number }> {
+    // Each round performs all exercises with their fixed repsPerRound
+    return exercises.map(ex => ({
+      exercise: ex,
+      reps: ex.repsPerRound || 0,
+    }));
+  }
+
+  calculateTotalReps(exercise: Exercise, totalRounds: number): number {
+    // Total reps = repsPerRound * totalRounds
+    return (exercise.repsPerRound || 0) * totalRounds;
+  }
+
+  getDescription(): string {
+    return 'Complete a fixed number of rounds where each round has the same exercises with the same reps';
+  }
+}
+
+/**
  * Factory function to get the appropriate ladder strategy
  */
 export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, maxRounds?: number, startingReps?: number): LadderStrategy {
@@ -394,6 +424,8 @@ export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, 
       return new ChipperLadderStrategy();
     case 'amrap':
       return new AMRAPLadderStrategy();
+    case 'forreps':
+      return new ForRepsLadderStrategy();
     default:
       throw new Error(`Unknown ladder type: ${ladderType}`);
   }

@@ -44,6 +44,11 @@ export const LADDER_DEFAULTS: Record<LadderType, LadderDefaults> = {
     startingReps: 1, // Not relevant/used (per exercise)
     timeCap: 600, // Default 10 minutes
   },
+  forreps: {
+    maxRounds: 5, // Default 5 rounds
+    stepSize: 1, // Not relevant/used
+    startingReps: 1, // Not relevant/used (per exercise repsPerRound)
+  },
 };
 
 export const getLadderDefaults = (ladderType: LadderType): LadderDefaults => {

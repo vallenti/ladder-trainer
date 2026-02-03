@@ -19,7 +19,7 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
-export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'flexible' | 'chipper' | 'amrap';
+export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'flexible' | 'chipper' | 'amrap' | 'forreps';
 
 export interface Exercise {
   position: number; // 1-12
@@ -33,6 +33,8 @@ export interface Exercise {
   fixedReps?: number;
   // AMRAP partial round completion
   partialReps?: number;
+  // ForReps per-exercise reps (each round uses this value)
+  repsPerRound?: number;
 }
 
 export interface Template {

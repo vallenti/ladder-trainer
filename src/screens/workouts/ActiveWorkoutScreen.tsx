@@ -207,6 +207,19 @@ const ActiveWorkoutScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Progress Bar */}
+      <View style={styles.progressBarContainer}>
+        <ProgressBar
+          progress={
+            activeWorkout.ladderType === 'amrap' && activeWorkout.timeCap
+              ? Math.min(elapsedTime / activeWorkout.timeCap, 1)
+              : activeWorkout.currentRoundIndex / totalRounds
+          }
+          color={theme.colors.primary}
+          style={styles.progressBar}
+        />
+      </View>
+
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
@@ -412,6 +425,14 @@ const styles = StyleSheet.create({
   pauseButton: {
     position: 'absolute',
     right: spacing.md,
+  },
+  progressBarContainer: {
+    width: '100%',
+    paddingHorizontal: 0,
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 0,
   },
   scrollView: {
     flex: 1,
