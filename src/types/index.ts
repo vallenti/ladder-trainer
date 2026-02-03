@@ -19,7 +19,7 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
-export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'flexible' | 'chipper';
+export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'flexible' | 'chipper' | 'amrap';
 
 export interface Exercise {
   position: number; // 1-12
@@ -31,6 +31,8 @@ export interface Exercise {
   stepSize?: number;
   // Chipper ladder per-exercise fixed count
   fixedReps?: number;
+  // AMRAP partial round completion
+  partialReps?: number;
 }
 
 export interface Template {
@@ -42,6 +44,7 @@ export interface Template {
   maxRounds: number;
   stepSize?: number; // For ascending/descending ladder: step increment (default 1)
   startingReps?: number; // For ascending/descending ladder: starting reps (default 1)
+  timeCap?: number; // For AMRAP: time cap in seconds
   createdAt: Date;
 }
 
@@ -63,6 +66,7 @@ export interface Workout {
   maxRounds: number; // snapshot from template
   stepSize?: number; // snapshot from template
   startingReps?: number; // snapshot from template
+  timeCap?: number; // snapshot from template - for AMRAP
   startTime: Date;
   endTime?: Date;
   status: WorkoutStatus;

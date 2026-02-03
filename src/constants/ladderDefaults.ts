@@ -4,6 +4,7 @@ interface LadderDefaults {
   maxRounds: number;
   stepSize: number;
   startingReps: number;
+  timeCap?: number; // For AMRAP: time cap in seconds
 }
 
 export const LADDER_DEFAULTS: Record<LadderType, LadderDefaults> = {
@@ -36,6 +37,12 @@ export const LADDER_DEFAULTS: Record<LadderType, LadderDefaults> = {
     maxRounds: 5, // Default starting count, will match exercise count
     stepSize: 1, // Not relevant/used
     startingReps: 1, // Not relevant/used (per exercise fixedReps)
+  },
+  amrap: {
+    maxRounds: 999, // Not used - rounds are unlimited until time cap
+    stepSize: 1, // Not relevant/used (per exercise)
+    startingReps: 1, // Not relevant/used (per exercise)
+    timeCap: 600, // Default 10 minutes
   },
 };
 

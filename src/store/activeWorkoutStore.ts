@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Workout, Round, Template } from '../types';
+import { Workout, Round, Template, Exercise } from '../types';
 import { saveWorkoutHistory, loadWorkoutHistory } from '../utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -31,6 +31,7 @@ interface ActiveWorkoutStore {
   resumeWorkout: () => void;
   discardPausedWorkout: () => Promise<void>;
   loadPausedWorkout: () => Promise<boolean>;
+  savePartialRoundReps: (workoutId: string, exercises: Exercise[]) => Promise<void>;
   
   // History
   workoutHistory: Workout[];
@@ -58,6 +59,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       maxRounds: template.maxRounds,
       stepSize: template.stepSize,
       startingReps: template.startingReps,
+      timeCap: template.timeCap,
       startTime: new Date(),
       endTime: undefined,
       status: 'incomplete',
@@ -265,6 +267,21 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
   deleteWorkoutFromHistory: async (workoutId: string) => {
     const { workoutHistory } = get();
     const updatedHistory = workoutHistory.filter(w => w.id !== workoutId);
+    await saveWorkoutHistory(updatedHistory);
+    set({ workoutHistory: updatedHistory });
+  },
+
+  savePartialRoundReps: async (workoutId: string, exercises: Exercise[]) => {
+    const { workoutHistory } = get();
+    const updatedHistory = workoutHistory.map(w => {
+      if (w.id === workoutId) {
+        return {
+          ...w,
+          exercises: exercises,
+        };
+      }
+      return w;
+    });
     await saveWorkoutHistory(updatedHistory);
     set({ workoutHistory: updatedHistory });
   },

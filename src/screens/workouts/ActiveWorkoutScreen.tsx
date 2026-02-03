@@ -66,6 +66,12 @@ const ActiveWorkoutScreen: React.FC = () => {
         const totalElapsedMs = new Date().getTime() - activeWorkout.startTime.getTime();
         const elapsed = (totalElapsedMs / 1000) - totalPausedTime;
         setElapsedTime(elapsed);
+        
+        // Check time cap for AMRAP workouts
+        if (activeWorkout.ladderType === 'amrap' && activeWorkout.timeCap && elapsed >= activeWorkout.timeCap) {
+          // Time cap reached - trigger partial round completion
+          handleTimeCapReached();
+        }
       } else if (isPaused) {
         // Keep showing the frozen time while paused
         setElapsedTime(frozenElapsedTime);
@@ -122,6 +128,14 @@ const ActiveWorkoutScreen: React.FC = () => {
     await completeWorkout();
     // @ts-ignore
     navigation.replace('WorkoutComplete', { workoutId: activeWorkout.id });
+  };
+
+  const handleTimeCapReached = async () => {
+    // For AMRAP, complete the current round and navigate to workout complete with partial round input
+    completeRound();
+    await completeWorkout();
+    // @ts-ignore
+    navigation.replace('WorkoutComplete', { workoutId: activeWorkout.id, showPartialRoundInput: true });
   };
 
   const handleQuit = () => {
@@ -254,7 +268,7 @@ const ActiveWorkoutScreen: React.FC = () => {
             ) : (
               <>
                 <Text variant="titleMedium" style={styles.cardTitle}>
-                  Round {currentRound} of {totalRounds}
+                  {activeWorkout.ladderType === 'amrap' ? `Round ${currentRound}` : `Round ${currentRound} of ${totalRounds}`}
                 </Text>
                 {exercisesInRound.map((item) => {
                   const isNewExercise = activeWorkout.ladderType === 'christmas' && item.exercise.position === currentRound;

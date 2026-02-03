@@ -323,6 +323,59 @@ export class ChipperLadderStrategy implements LadderStrategy {
 }
 
 /**
+ * AMRAP Ladder Strategy
+ * Pattern: As Many Rounds As Possible within a time cap
+ * Each exercise has independent starting reps and step size
+ * Round 1: Each exercise performed with startingReps
+ * Round 2: Each exercise performed with startingReps + stepSize (or same if stepSize = 0)
+ * Round 3: Each exercise performed with startingReps + 2*stepSize
+ * Continues until time cap is reached
+ */
+export class AMRAPLadderStrategy implements LadderStrategy {
+  getExercisesForRound(
+    roundNumber: number,
+    exercises: Exercise[]
+  ): Array<{ exercise: Exercise; reps: number }> {
+    return exercises.map(ex => {
+      const startingReps = ex.startingReps || 1;
+      const stepSize = ex.stepSize || 0;
+      
+      // Calculate reps for this round
+      const reps = startingReps + (roundNumber - 1) * stepSize;
+      
+      return {
+        exercise: ex,
+        reps: Math.max(0, reps), // Ensure non-negative
+      };
+    });
+  }
+
+  calculateTotalReps(exercise: Exercise, totalRounds: number): number {
+    const startingReps = exercise.startingReps || 1;
+    const stepSize = exercise.stepSize || 0;
+    
+    // If constant (stepSize = 0), total is startingReps * totalRounds
+    if (stepSize === 0) {
+      return startingReps * totalRounds;
+    }
+    
+    // Sum of arithmetic sequence: n * (first + last) / 2
+    const firstReps = startingReps;
+    const lastReps = startingReps + (totalRounds - 1) * stepSize;
+    const totalFromCompleteRounds = (totalRounds * (firstReps + lastReps)) / 2;
+    
+    // Add partial reps if they exist
+    const partialReps = exercise.partialReps || 0;
+    
+    return totalFromCompleteRounds + partialReps;
+  }
+
+  getDescription(): string {
+    return 'AMRAP (As Many Rounds As Possible) - Complete as many rounds as possible within the time cap. Each exercise can have independent starting reps and step size.';
+  }
+}
+
+/**
  * Factory function to get the appropriate ladder strategy
  */
 export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, maxRounds?: number, startingReps?: number): LadderStrategy {
@@ -339,6 +392,8 @@ export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, 
       return new FlexibleLadderStrategy(maxRounds);
     case 'chipper':
       return new ChipperLadderStrategy();
+    case 'amrap':
+      return new AMRAPLadderStrategy();
     default:
       throw new Error(`Unknown ladder type: ${ladderType}`);
   }

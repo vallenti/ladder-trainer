@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card } from 'react-native-paper';
+import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card, Chip } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import ExerciseInput from '../../components/ExerciseInput';
 import FlexibleExerciseInput from '../../components/FlexibleExerciseInput';
 import ChipperExerciseInput from '../../components/ChipperExerciseInput';
+import AMRAPExerciseInput from '../../components/AMRAPExerciseInput';
+import NumberStepper from '../../components/NumberStepper';
 import { Exercise, LadderType } from '../../types';
 import { spacing } from '../../constants/theme';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
@@ -37,6 +39,12 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const [maxRounds, setMaxRounds] = useState(existingWorkout?.maxRounds?.toString() || initialDefaults.maxRounds.toString());
   const [stepSize, setStepSize] = useState(existingWorkout?.stepSize?.toString() || initialDefaults.stepSize.toString());
   const [startingReps, setStartingReps] = useState(existingWorkout?.startingReps?.toString() || initialDefaults.startingReps.toString());
+  
+  // AMRAP time cap - stored as minutes and seconds separately for better UX
+  const initialTimeCap = existingWorkout?.timeCap || initialDefaults.timeCap || 600;
+  const [timeCapMinutes, setTimeCapMinutes] = useState(Math.floor(initialTimeCap / 60));
+  const [timeCapSeconds, setTimeCapSeconds] = useState(initialTimeCap % 60);
+  
   const [name, setName] = useState(existingWorkout?.name || '');
   const [hasRest, setHasRest] = useState((existingWorkout?.restPeriodSeconds || 0) > 0);
   const [restPeriod, setRestPeriod] = useState(
@@ -65,6 +73,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
       setMaxRounds(defaults.maxRounds.toString());
       setStepSize(defaults.stepSize.toString());
       setStartingReps(defaults.startingReps.toString());
+      const defaultTimeCap = defaults.timeCap || 600;
+      setTimeCapMinutes(Math.floor(defaultTimeCap / 60));
+      setTimeCapSeconds(defaultTimeCap % 60);
     }
   }, [ladderType, isEditing]);
 
@@ -88,8 +99,16 @@ const CreateEditWorkoutScreen: React.FC = () => {
             ...rest,
             fixedReps: ex.fixedReps || 0
           };
+        } else if (ladderType === 'amrap') {
+          // Add AMRAP fields if not present
+          const { fixedReps, ...rest } = ex;
+          return {
+            ...rest,
+            startingReps: ex.startingReps || 1,
+            stepSize: ex.stepSize || 0
+          };
         } else {
-          // Remove flexible and chipper ladder fields for other types
+          // Remove flexible, chipper, and AMRAP ladder fields for other types
           const { direction, startingReps: exStartingReps, stepSize: exStepSize, fixedReps, ...rest } = ex;
           return rest as Exercise;
         }
@@ -110,6 +129,10 @@ const CreateEditWorkoutScreen: React.FC = () => {
         }),
         ...(ladderType === 'chipper' && {
           fixedReps: 0,
+        }),
+        ...(ladderType === 'amrap' && {
+          startingReps: 1,
+          stepSize: 0,
         }),
       };
       setExercises([...exercises, newExercise]);
@@ -157,8 +180,24 @@ const CreateEditWorkoutScreen: React.FC = () => {
     }
 
     const rounds = parseInt(maxRounds, 10);
-    if (isNaN(rounds) || rounds <= 0) {
+    if (ladderType !== 'amrap' && (isNaN(rounds) || rounds <= 0)) {
       newErrors.push('Max rounds must be a positive number');
+    }
+
+    if (ladderType === 'amrap') {
+      const totalCap = timeCapMinutes * 60 + timeCapSeconds;
+      if (totalCap <= 0) {
+        newErrors.push('Time cap must be greater than 0');
+      }
+      // Validate that each exercise has startingReps and stepSize
+      exercises.forEach((ex, index) => {
+        if (!ex.startingReps || ex.startingReps <= 0) {
+          newErrors.push(`Exercise ${index + 1}: Starting reps must be a positive number`);
+        }
+        if (ex.stepSize === undefined || ex.stepSize < 0) {
+          newErrors.push(`Exercise ${index + 1}: Step size must be 0 or greater`);
+        }
+      });
     }
 
     if (ladderType === 'christmas') {
@@ -224,8 +263,11 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const handleSave = async () => {
     if (!validate()) return;
 
-    // For chipper, maxRounds equals number of exercises
-    const finalMaxRounds = ladderType === 'chipper' ? exercises.length : parseInt(maxRounds, 10);
+    // For chipper, maxRounds equals number of exercises; for AMRAP, set high number
+    const finalMaxRounds = ladderType === 'chipper' ? exercises.length : ladderType === 'amrap' ? 999 : parseInt(maxRounds, 10);
+    
+    // Calculate total time cap in seconds from minutes and seconds
+    const totalTimeCap = timeCapMinutes * 60 + timeCapSeconds;
 
     const workoutData = {
       name: name.trim(),
@@ -235,6 +277,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       maxRounds: finalMaxRounds,
       stepSize: (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') ? parseInt(stepSize, 10) : undefined,
       startingReps: (ladderType === 'ascending' || ladderType === 'descending') ? parseInt(startingReps, 10) : undefined,
+      timeCap: ladderType === 'amrap' ? totalTimeCap : undefined,
     };
 
     if (isEditing && workoutId) {
@@ -246,6 +289,11 @@ const CreateEditWorkoutScreen: React.FC = () => {
     navigation.goBack();
   };
 
+  const handleTimeCapPreset = (minutes: number) => {
+    setTimeCapMinutes(minutes);
+    setTimeCapSeconds(0);
+  };
+
   const generateDefaultWorkoutName = (): string => {
     const typeNames = {
       christmas: 'Christmas',
@@ -254,6 +302,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       pyramid: 'Pyramid',
       flexible: 'Flexible',
       chipper: 'Chipper',
+      amrap: 'AMRAP',
     };
     
     return `${typeNames[ladderType]} WOD`;
@@ -590,6 +639,36 @@ const CreateEditWorkoutScreen: React.FC = () => {
                     )}
                   </Card.Content>
                 </Card>
+
+                {/* AMRAP Ladder Card */}
+                <Card 
+                  style={[
+                    styles.ladderTypeCard,
+                    { backgroundColor: theme.colors.surface },
+                    ladderType === 'amrap' && { 
+                      borderColor: theme.colors.primary, 
+                      borderWidth: 2, 
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
+                    }
+                  ]}
+                  onPress={() => setLadderType('amrap')}
+                >
+                  <Card.Content>
+                    <View style={styles.ladderTypeHeader}>
+                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'amrap' && { color: theme.colors.primary }]}>
+                        AMRAP
+                      </Text>
+                      {ladderType === 'amrap' && (
+                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                      )}
+                    </View>
+                    {ladderType === 'amrap' && (
+                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                        {getLadderStrategy('amrap', 1, parseInt(maxRounds, 10) || 999).getDescription()}
+                      </Text>
+                    )}
+                  </Card.Content>
+                </Card>
               </>
             )}
 
@@ -611,6 +690,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           pyramid: 'Pyramid Ladder',
                           flexible: 'Flexible Ladder',
                           chipper: 'Chipper Ladder',
+                          amrap: 'AMRAP',
                         }[ladderType]}
                       </Text>
                     </Card.Content>
@@ -627,8 +707,61 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   placeholder={generateDefaultWorkoutName()}
                 />
 
-            {/* Max Rounds - Not shown for chipper (auto-calculated from exercise count) */}
-            {ladderType !== 'chipper' && (
+            {/* Time Cap - Only for AMRAP */}
+            {ladderType === 'amrap' && (
+              <View style={styles.timeCapSection}>
+                <Text variant="labelLarge" style={[styles.timeCapLabel, { color: theme.colors.onSurface }]}>
+                  Time Cap
+                </Text>
+                
+                {/* Quick Preset Chips */}
+                <View style={styles.presetChipsContainer}>
+                  {[5, 10, 15, 20].map((minutes) => (
+                    <Chip
+                      key={minutes}
+                      selected={timeCapMinutes === minutes && timeCapSeconds === 0}
+                      onPress={() => handleTimeCapPreset(minutes)}
+                      style={styles.presetChip}
+                      textStyle={styles.presetChipText}
+                    >
+                      {minutes}m
+                    </Chip>
+                  ))}
+                </View>
+
+                {/* Fine-tune with steppers */}
+                <View style={styles.timeSteppersContainer}>
+                  <View style={styles.timeStepperWrapper}>
+                    <NumberStepper
+                      label="Minutes"
+                      value={timeCapMinutes}
+                      onChange={setTimeCapMinutes}
+                      min={0}
+                      max={60}
+                      step={1}
+                    />
+                  </View>
+                  <View style={styles.timeStepperWrapper}>
+                    <NumberStepper
+                      label="Seconds"
+                      value={timeCapSeconds}
+                      onChange={setTimeCapSeconds}
+                      min={0}
+                      max={59}
+                      step={15}
+                    />
+                  </View>
+                </View>
+
+                {/* Display total time */}
+                <Text variant="bodySmall" style={[styles.totalTimeDisplay, { color: theme.colors.primary }]}>
+                  Total: {timeCapMinutes}:{timeCapSeconds.toString().padStart(2, '0')} 
+                </Text>
+              </View>
+            )}
+
+            {/* Max Rounds - Not shown for chipper (auto-calculated from exercise count) or AMRAP (unlimited) */}
+            {ladderType !== 'chipper' && ladderType !== 'amrap' && (
               <TextInput
                 mode="outlined"
                 label="Maximum Rounds"
@@ -745,6 +878,17 @@ const CreateEditWorkoutScreen: React.FC = () => {
             {ladderType === 'flexible' ? (
               exercises.map((exercise, index) => (
                 <FlexibleExerciseInput
+                  key={index}
+                  exercise={exercise}
+                  onChange={(ex) => handleExerciseChange(index, ex)}
+                  onDelete={() => handleDeleteExercise(index)}
+                  canDelete={exercises.length > 1}
+                  exerciseNumber={index + 1}
+                />
+              ))
+            ) : ladderType === 'amrap' ? (
+              exercises.map((exercise, index) => (
+                <AMRAPExerciseInput
                   key={index}
                   exercise={exercise}
                   onChange={(ex) => handleExerciseChange(index, ex)}
@@ -965,6 +1109,38 @@ const styles = StyleSheet.create({
   },
   errorText: {
     marginVertical: 2,
+  },
+  timeCapSection: {
+    marginBottom: spacing.md,
+  },
+  timeCapLabel: {
+    marginBottom: spacing.sm,
+    fontWeight: '600',
+  },
+  presetChipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  presetChip: {
+    marginRight: 0,
+  },
+  presetChipText: {
+    fontSize: 14,
+  },
+  timeSteppersContainer: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  timeStepperWrapper: {
+    flex: 1,
+  },
+  totalTimeDisplay: {
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 

@@ -68,9 +68,11 @@ const CountdownScreen: React.FC = () => {
       <Text variant="titleMedium" style={[styles.subtitle, { color: '#FFFFFF' }]}>
         Get Ready!
       </Text>
-      <Text variant="bodyLarge" style={[styles.info, { color: '#FFFFFF' }]}>
-        {template.maxRounds} rounds
-      </Text>
+      {template.ladderType !== 'amrap' && (
+        <Text variant="bodyLarge" style={[styles.info, { color: '#FFFFFF' }]}>
+          {template.maxRounds} rounds
+        </Text>
+      )}
       {template.restPeriodSeconds > 0 && (
         <Text variant="bodyMedium" style={[styles.info, { color: '#FFFFFF' }]}>
           {template.restPeriodSeconds}s rest between rounds

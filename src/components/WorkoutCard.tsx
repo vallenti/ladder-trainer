@@ -28,6 +28,8 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
         return 'Flexible';
       case 'chipper':
         return 'Chipper';
+      case 'amrap':
+        return 'AMRAP';
       default:
         return 'Christmas';
     }
@@ -64,6 +66,19 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
                   {workout.exercises.length} {workout.exercises.length === 1 ? 'exercise' : 'exercises'}
                 </Text>
               </View>
+              
+              {workout.ladderType === 'amrap' && workout.timeCap && (
+                <View style={styles.statBadge}>
+                  <MaterialCommunityIcons 
+                    name="clock-outline" 
+                    size={16} 
+                    color={theme.colors.primary} 
+                  />
+                  <Text variant="bodySmall" style={[styles.statText, { color: theme.colors.onSurfaceVariant }]}>
+                    {Math.floor(workout.timeCap / 60)}:{(workout.timeCap % 60).toString().padStart(2, '0')}
+                  </Text>
+                </View>
+              )}
               
               {workout.restPeriodSeconds > 0 && (
                 <View style={styles.statBadge}>
