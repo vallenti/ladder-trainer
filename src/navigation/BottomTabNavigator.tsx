@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { BackHandler } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
@@ -11,6 +12,16 @@ const Tab = createBottomTabNavigator<HomeTabParamList>();
 
 const BottomTabNavigator: React.FC = () => {
   const theme = useTheme();
+  
+  // Handle Android back button on main tabs - exit app
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Return false to allow default behavior (exit app)
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, []);
   
   return (
     <Tab.Navigator

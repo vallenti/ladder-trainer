@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Platform, BackHandler } from 'react-native';
+import { View, ScrollView, StyleSheet, Platform, BackHandler, useWindowDimensions } from 'react-native';
 import { Text, Button, Card, ProgressBar, Appbar, Portal, Dialog, IconButton, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
@@ -30,6 +30,9 @@ const formatTimeWithMs = (totalSeconds: number): { main: string; ms: string } =>
 const ActiveWorkoutScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  
   const { 
     activeWorkout, 
     completeRound, 
@@ -43,6 +46,8 @@ const ActiveWorkoutScreen: React.FC = () => {
     discardPausedWorkout,
     isMuted,
     toggleMute,
+    isTimerFocusMode,
+    setTimerFocusMode,
   } = useActiveWorkoutStore();
   const [elapsedTime, setElapsedTime] = useState(storeElapsedTime);
   const [isPaused, setIsPaused] = useState(storePaused);
@@ -85,14 +90,18 @@ const ActiveWorkoutScreen: React.FC = () => {
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (!isPaused) {
-        handlePause();
+        // Pause the workout when back button is pressed
+        setFrozenElapsedTime(elapsedTime);
+        setIsPaused(true);
+        setPauseDialogVisible(true);
+        pauseWorkout(elapsedTime, totalPausedTime);
         return true; // Prevent default back behavior
       }
       return false; // Allow default behavior when already paused
     });
 
     return () => backHandler.remove();
-  }, [isPaused]);
+  }, [isPaused, elapsedTime, totalPausedTime, pauseWorkout]);
 
   if (!activeWorkout) {
     return (
@@ -168,6 +177,10 @@ const ActiveWorkoutScreen: React.FC = () => {
     navigation.navigate('HomeTabs' as never);
   };
 
+  const toggleViewMode = () => {
+    setTimerFocusMode(!isTimerFocusMode);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.timerContainer, { backgroundColor: theme.colors.surface }]}>
@@ -180,24 +193,44 @@ const ActiveWorkoutScreen: React.FC = () => {
             style={styles.muteButton}
             hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           />
-          <View style={styles.timerContent}>
-            <View style={styles.timerTextContainer}>
-              <Text variant="displayMedium" style={[styles.timer, { color: theme.colors.primary }]}>
-                {formatTimeWithMs(elapsedTime).main}
-              </Text>
-              <Text variant="headlineSmall" style={[styles.timerMs, { color: theme.colors.primary }]}>
-                {formatTimeWithMs(elapsedTime).ms}
-              </Text>
+          <IconButton
+            icon={isTimerFocusMode ? "format-list-bulleted" : "timer"}
+            size={28}
+            iconColor={theme.colors.primary}
+            onPress={toggleViewMode}
+            style={styles.toggleButton}
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+          />
+          {!isTimerFocusMode && (
+            <View style={styles.timerContent}>
+              <View style={styles.timerTextContainer}>
+                <Text 
+                  variant="displayMedium"
+                  style={[styles.timer, { color: theme.colors.primary }]}
+                >
+                  {formatTimeWithMs(elapsedTime).main}
+                </Text>
+                <Text 
+                  variant="headlineSmall"
+                  style={[styles.timerMs, { color: theme.colors.primary }]}
+                >
+                  {formatTimeWithMs(elapsedTime).ms}
+                </Text>
+              </View>
+              {isPaused && (
+                <Text 
+                  variant="bodyMedium"
+                  style={[styles.pausedLabel, { color: theme.colors.error }]}
+                >
+                  PAUSED
+                </Text>
+              )}
             </View>
-            {isPaused && (
-              <Text variant="bodyMedium" style={[styles.pausedLabel, { color: theme.colors.error }]}>
-                PAUSED
-              </Text>
-            )}
-          </View>
+          )}
+          {isTimerFocusMode && <View style={[styles.timerContent, styles.timerContentPlaceholder]} />}
           <IconButton
             icon={isPaused ? "play" : "pause"}
-            size={32}
+            size={28}
             iconColor={theme.colors.primary}
             onPress={handlePause}
             disabled={isPaused}
@@ -220,7 +253,9 @@ const ActiveWorkoutScreen: React.FC = () => {
         />
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      {/* Exercise List View - Hidden in Timer Focus Mode */}
+      {!isTimerFocusMode && (
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             {activeWorkout.ladderType === 'chipper' ? (
@@ -326,9 +361,61 @@ const ActiveWorkoutScreen: React.FC = () => {
           </Card.Content>
         </Card>
       </ScrollView>
+      )}
+
+      {/* Timer Focus Mode - Show centered large timer */}
+      {isTimerFocusMode && (
+        <View style={[
+          styles.timerFocusContent,
+          isLandscape && styles.timerFocusContentLandscape
+        ]}>
+          <View style={styles.timerFocusDisplay}>
+            <View style={[
+              styles.timerTextContainer,
+              isLandscape && styles.timerTextContainerLandscape
+            ]}>
+              <Text 
+                variant="displayLarge"
+                style={[
+                  styles.timer, 
+                  { color: theme.colors.primary },
+                  styles.timerFocus,
+                  isLandscape && styles.timerLandscape
+                ]}
+              >
+                {formatTimeWithMs(elapsedTime).main}
+              </Text>
+              <Text 
+                variant="headlineLarge"
+                style={[
+                  styles.timerMs, 
+                  { color: theme.colors.primary },
+                  styles.timerMsFocus,
+                  isLandscape && styles.timerMsLandscape
+                ]}
+              >
+                {formatTimeWithMs(elapsedTime).ms}
+              </Text>
+            </View>
+            {isPaused && (
+              <Text 
+                variant="headlineSmall"
+                style={[
+                  styles.pausedLabel, 
+                  { color: theme.colors.error },
+                  styles.pausedLabelFocus
+                ]}
+              >
+                PAUSED
+              </Text>
+            )}
+          </View>
+        </View>
+      )}
 
       <View style={[
-        styles.buttonContainer, 
+        isTimerFocusMode ? styles.buttonContainerFocus : styles.buttonContainer,
+        isLandscape && styles.buttonContainerLandscape,
         { 
           backgroundColor: theme.colors.surface, 
           borderTopColor: theme.colors.outline,
@@ -339,9 +426,10 @@ const ActiveWorkoutScreen: React.FC = () => {
           mode="contained"
           onPress={handleRoundComplete}
           style={styles.completeButton}
-          contentStyle={styles.completeButtonContent}
+          contentStyle={isTimerFocusMode ? styles.completeButtonContentFocus : styles.completeButtonContent}
           buttonColor={theme.colors.primary}
           textColor="#FFFFFF"
+          labelStyle={isTimerFocusMode && styles.completeButtonLabelFocus}
         >
           {currentRound >= totalRounds ? 'Finish Workout' : 'Complete Round'}
         </Button>
@@ -402,6 +490,10 @@ const styles = StyleSheet.create({
   timerContent: {
     alignItems: 'center',
     flex: 1,
+    minHeight: 50,
+  },
+  timerContentPlaceholder: {
+    minHeight: 50,
   },
   timerTextContainer: {
     flexDirection: 'row',
@@ -422,6 +514,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.md,
   },
+  toggleButton: {
+    position: 'absolute',
+    right: spacing.md + 48,
+  },
   pauseButton: {
     position: 'absolute',
     right: spacing.md,
@@ -440,6 +536,22 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.md,
     paddingBottom: spacing.sm,
+  },
+  // Timer Focus Mode Content Area
+  timerFocusContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    overflow: 'visible',
+  },
+  timerFocusContentLandscape: {
+    paddingHorizontal: spacing.xl,
+  },
+  timerFocusDisplay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   card: {
     marginBottom: 0,
@@ -499,6 +611,60 @@ const styles = StyleSheet.create({
   },
   completeButtonContent: {
     paddingVertical: spacing.sm,
+  },
+  // Timer Focus Mode Styles
+  timerTextContainerLandscape: {
+    transform: [{ scale: 1.2 }],
+  },
+  timerFocus: {
+    fontSize: 96,
+    fontWeight: 'bold',
+    lineHeight: 110,
+    includeFontPadding: false,
+  },
+  timerLandscape: {
+    fontSize: 120,
+    lineHeight: 140,
+  },
+  timerMsFocus: {
+    fontSize: 48,
+    opacity: 0.8,
+    lineHeight: 58,
+    includeFontPadding: false,
+  },
+  timerMsLandscape: {
+    fontSize: 56,
+    lineHeight: 68,
+  },
+  pausedLabelFocus: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginTop: spacing.md,
+    letterSpacing: 4,
+  },
+  buttonContainerFocus: {
+    padding: spacing.md,
+    paddingBottom: Platform.OS === 'android' ? 40 : spacing.md,
+    borderTopWidth: 1,
+    elevation: 8,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  buttonContainerLandscape: {
+    paddingVertical: spacing.sm,
+    paddingBottom: Platform.OS === 'android' ? spacing.md : spacing.sm,
+  },
+  completeButtonContentFocus: {
+    paddingVertical: spacing.md,
+  },
+  completeButtonLabelFocus: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 

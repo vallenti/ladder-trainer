@@ -11,6 +11,7 @@ interface PausedWorkoutState {
   elapsedTime: number;
   totalPausedTime: number;
   pauseStartTime: number;
+  isTimerFocusMode: boolean;
 }
 
 interface ActiveWorkoutStore {
@@ -21,9 +22,11 @@ interface ActiveWorkoutStore {
   totalPausedTime: number;
   pauseStartTime: number;
   isMuted: boolean;
+  isTimerFocusMode: boolean;
   
   startWorkout: (template: Template) => void;
   toggleMute: () => void;
+  setTimerFocusMode: (isTimerFocusMode: boolean) => void;
   completeRound: () => void;
   startNextRound: () => void;
   completeWorkout: () => Promise<void>;
@@ -47,6 +50,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
   totalPausedTime: 0,
   pauseStartTime: 0,
   isMuted: false,
+  isTimerFocusMode: false,
   workoutHistory: [],
 
   startWorkout: (template: Template) => {
@@ -146,7 +150,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
   },
 
   pauseWorkout: async (elapsedTime: number, totalPausedTime: number) => {
-    const { activeWorkout, currentRoundStartTime } = get();
+    const { activeWorkout, currentRoundStartTime, isTimerFocusMode } = get();
     if (!activeWorkout) return;
 
     const pauseStartTime = Date.now();
@@ -160,6 +164,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       elapsedTime,
       totalPausedTime,
       pauseStartTime,
+      isTimerFocusMode,
     };
 
     try {
@@ -232,6 +237,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
         elapsedTime: pausedState.elapsedTime,
         totalPausedTime: pausedState.totalPausedTime,
         pauseStartTime: pausedState.pauseStartTime, // Use the saved pause start time
+        isTimerFocusMode: pausedState.isTimerFocusMode || false, // Restore view mode, default to false for old saved states
       });
 
       return true;
@@ -289,5 +295,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
   toggleMute: () => {
     const { isMuted } = get();
     set({ isMuted: !isMuted });
+  },
+
+  setTimerFocusMode: (isTimerFocusMode: boolean) => {
+    set({ isTimerFocusMode });
   },
 }));
