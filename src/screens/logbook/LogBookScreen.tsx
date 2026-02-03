@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Share } from 'react-native';
-import { Text, Card, IconButton, Portal, Dialog, Button, useTheme, Divider } from 'react-native-paper';
+import { Text, Card, IconButton, Portal, Dialog, Button, useTheme, Divider, Snackbar } from 'react-native-paper';
+import ViewShot from 'react-native-view-shot';
 import { spacing } from '../../constants/theme';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { formatTime } from '../../utils/calculations';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ShareableWorkoutCard } from '../../components/ShareableWorkoutCard';
+import { shareWorkoutImage } from '../../utils/shareUtils';
 
 const formatTimeWithMs = (totalSeconds: number): string => {
   const seconds = Math.floor(totalSeconds);
@@ -46,6 +49,10 @@ const LogbookScreen: React.FC = () => {
   const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [workoutToDelete, setWorkoutToDelete] = useState<string | null>(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const shareViewRefs = useRef<{ [key: string]: any }>({});
 
   useEffect(() => {
     loadHistory();
@@ -62,6 +69,24 @@ const LogbookScreen: React.FC = () => {
       setDeleteDialogVisible(false);
       setWorkoutToDelete(null);
       setExpandedWorkoutId(null);
+    }
+  };
+
+  const handleShareAsImage = async (workoutId: string) => {
+    const workout = workoutHistory.find(w => w.id === workoutId);
+    if (!workout || !shareViewRefs.current[workoutId]) return;
+
+    setIsGeneratingImage(true);
+    try {
+      await shareWorkoutImage(shareViewRefs.current[workoutId], workout.templateName);
+      setSnackbarMessage('Workout shared successfully!');
+      setSnackbarVisible(true);
+    } catch (error) {
+      console.error('Share as image failed:', error);
+      setSnackbarMessage('Failed to share workout. Please try again.');
+      setSnackbarVisible(true);
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -247,25 +272,44 @@ const LogbookScreen: React.FC = () => {
                           ))}
                         </View>
                         
-                        <View style={styles.actionButtons}>
-                          <Button
-                            mode="outlined"
-                            icon="share-variant"
-                            onPress={() => handleShare(workout.id)}
-                            style={styles.stravaButton}
-                            compact
-                            textColor={theme.colors.primary}
-                          >
-                            Share Workout
-                          </Button>
-                          <IconButton
-                            icon="delete"
-                            iconColor={theme.colors.error}
-                            size={22}
-                            onPress={() => handleDelete(workout.id)}
-                            style={styles.deleteButton}
-                          />
+                        <View style={styles.shareSection}>
+                          <Text variant="titleMedium" style={[styles.shareLabel, { color: theme.colors.onSurface }]}>
+                            Share
+                          </Text>
+                          <View style={styles.shareButtons}>
+                            <Button
+                              mode="contained"
+                              icon="image"
+                              onPress={() => handleShareAsImage(workout.id)}
+                              style={styles.shareButton}
+                              contentStyle={styles.shareButtonContent}
+                              textColor="#fff"
+                              loading={isGeneratingImage}
+                              disabled={isGeneratingImage}
+                            >
+                              Image
+                            </Button>
+                            <Button
+                              mode="contained"
+                              icon="share-variant"
+                              onPress={() => handleShare(workout.id)}
+                              style={styles.shareButton}
+                              contentStyle={styles.shareButtonContent}
+                              textColor="#fff"
+                            >
+                              Text
+                            </Button>
+                          </View>
                         </View>
+
+                        <TouchableOpacity 
+                          onPress={() => handleDelete(workout.id)}
+                          style={styles.deleteSection}
+                        >
+                          <Text variant="bodyMedium" style={[styles.deleteText, { color: theme.colors.error }]}>
+                            Delete workout
+                          </Text>
+                        </TouchableOpacity>
                       </View>
                     </>
                   )}
@@ -275,6 +319,20 @@ const LogbookScreen: React.FC = () => {
           );
         })}
       </ScrollView>
+
+      {/* Hidden ViewShots for generating shareable images */}
+      {workoutHistory.map((workout) => (
+        <ViewShot
+          key={`viewshot-${workout.id}`}
+          ref={(ref) => {
+            if (ref) shareViewRefs.current[workout.id] = ref;
+          }}
+          style={styles.hiddenShareView}
+          options={{ format: 'png', quality: 1 }}
+        >
+          <ShareableWorkoutCard workout={workout} />
+        </ViewShot>
+      ))}
 
       <Portal>
         <Dialog 
@@ -301,6 +359,19 @@ const LogbookScreen: React.FC = () => {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      {/* Snackbar for feedback */}
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+        action={{
+          label: 'OK',
+          onPress: () => setSnackbarVisible(false),
+        }}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 };
@@ -415,19 +486,40 @@ const styles = StyleSheet.create({
   roundTime: {
     fontWeight: '600',
   },
-  actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.sm,
+  shareSection: {
+    marginTop: spacing.lg,
     paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.08)',
   },
-  stravaButton: {
+  shareLabel: {
+    fontWeight: '700',
+    marginBottom: spacing.md,
+    fontSize: 18,
+  },
+  shareButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  shareButton: {
     flex: 1,
-    marginRight: spacing.sm,
   },
-  deleteButton: {
-    margin: 0,
+  shareButtonContent: {
+    paddingVertical: spacing.xs,
+  },
+  deleteSection: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    marginTop: spacing.md,
+  },
+  deleteText: {
+    fontWeight: '700',
+    fontSize: 15
+  },
+  hiddenShareView: {
+    position: 'absolute',
+    left: -10000,
+    top: -10000,
   },
 });
 

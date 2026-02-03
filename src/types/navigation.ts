@@ -8,6 +8,7 @@ export type RootStackParamList = {
   ActiveWorkout: { workoutId: string };
   Rest: { workoutId: string };
   WorkoutComplete: { workoutId: string };
+  Legal: undefined;
 };
 
 export type HomeTabParamList = {

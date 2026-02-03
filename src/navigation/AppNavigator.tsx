@@ -6,6 +6,7 @@ import CountdownScreen from '../screens/workouts/CountdownScreen';
 import ActiveWorkoutScreen from '../screens/workouts/ActiveWorkoutScreen';
 import RestScreen from '../screens/workouts/RestScreen';
 import WorkoutCompleteScreen from '../screens/workouts/WorkoutCompleteScreen';
+import LegalScreen from '../screens/LegalScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -19,6 +20,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Rest" component={RestScreen} />
         <Stack.Screen name="WorkoutComplete" component={WorkoutCompleteScreen} />
       </Stack.Group>
+      <Stack.Screen name="Legal" component={LegalScreen} />
     </Stack.Navigator>
   );
 };

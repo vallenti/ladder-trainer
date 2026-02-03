@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Platform, Linking, KeyboardAvoidingView } from 'react-native';
-import { Text, Card, RadioButton, useTheme, Portal, Dialog, TextInput, Button } from 'react-native-paper';
+import { Text, Card, RadioButton, useTheme, Portal, Dialog, TextInput, Button, List } from 'react-native-paper';
 import { useThemeStore, ThemeMode } from '../store/themeStore';
 import { spacing } from '../constants/theme';
 import { SUPPORT_EMAIL, APP_VERSION } from '../constants/config';
 import Constants from 'expo-constants';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { RootStackParamList } from '../types/navigation';
 
 type FeedbackType = 'bug' | 'feature' | null;
 
+type NavigationProp = StackNavigationProp<RootStackParamList>;
+
 const SettingsScreen: React.FC = () => {
   const theme = useTheme();
+  const navigation = useNavigation<NavigationProp>();
   const { themeMode, setThemeMode } = useThemeStore();
   const [feedbackDialogVisible, setFeedbackDialogVisible] = useState(false);
   const [feedbackType, setFeedbackType] = useState<FeedbackType>(null);
@@ -149,6 +155,26 @@ Device Information:
           </Card.Content>
         </Card>
 
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text variant="titleLarge" style={styles.sectionTitle}>
+              Legal & About
+            </Text>
+            <Text variant="bodyMedium" style={[styles.sectionDescription, { color: theme.colors.onSurfaceVariant }]}>
+              Privacy Policy, Terms of Service, and app information
+            </Text>
+
+            <List.Item
+              title="Legal & About"
+              description="View Privacy Policy, Terms of Service, and app details"
+              left={props => <List.Icon {...props} icon="information" />}
+              right={props => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('Legal')}
+              style={styles.listItem}
+            />
+          </Card.Content>
+        </Card>
+
         <View style={styles.versionContainer}>
           <Text variant="bodySmall" style={[styles.versionText, { color: theme.colors.onSurfaceVariant }]}>
             Version {APP_VERSION}
@@ -213,6 +239,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: spacing.xs,
     fontWeight: 'bold',
+  },
+  listItem: {
+    paddingLeft: 0,
   },
   sectionDescription: {
     marginBottom: spacing.lg,

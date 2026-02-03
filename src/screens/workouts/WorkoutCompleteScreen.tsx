@@ -1,12 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, PanResponder, Platform } from 'react-native';
-import { Text, Button, Card, useTheme, Portal, Dialog, TextInput } from 'react-native-paper';
+import { Text, Button, Card, useTheme, Portal, Dialog, TextInput, Snackbar } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import ViewShot from 'react-native-view-shot';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { formatTime } from '../../utils/calculations';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { spacing } from '../../constants/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ShareableWorkoutCard } from '../../components/ShareableWorkoutCard';
+import { shareWorkoutImage } from '../../utils/shareUtils';
 
 type RouteParams = {
   WorkoutComplete: {
@@ -42,6 +45,10 @@ const WorkoutCompleteScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'exercises' | 'rounds'>('exercises');
   const [showPartialDialog, setShowPartialDialog] = useState(route.params?.showPartialRoundInput || false);
   const [partialReps, setPartialReps] = useState<Record<number, string>>({});
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const shareViewRef = useRef<any>(null);
 
   // Swipe gesture handler
   const panResponder = useRef(
@@ -85,6 +92,23 @@ const WorkoutCompleteScreen: React.FC = () => {
 
   const handlePartialRepsSkip = () => {
     setShowPartialDialog(false);
+  };
+
+  const handleShare = async () => {
+    if (!completedWorkout || !shareViewRef.current) return;
+
+    setIsGeneratingImage(true);
+    try {
+      await shareWorkoutImage(shareViewRef.current, completedWorkout.templateName);
+      setSnackbarMessage('Workout shared successfully!');
+      setSnackbarVisible(true);
+    } catch (error) {
+      console.error('Share failed:', error);
+      setSnackbarMessage('Failed to share workout. Please try again.');
+      setSnackbarVisible(true);
+    } finally {
+      setIsGeneratingImage(false);
+    }
   };
 
   if (!completedWorkout) {
@@ -196,15 +220,38 @@ const WorkoutCompleteScreen: React.FC = () => {
         </Card>
       </ScrollView>
 
-      <Button
-        mode="contained"
-        onPress={handleDone}
-        style={styles.doneButton}
-        contentStyle={styles.doneButtonContent}
-        textColor='#fff'
+      <View style={styles.buttonContainer}>
+        <Button
+          mode="outlined"
+          onPress={handleShare}
+          style={[styles.shareButton, { borderColor: theme.colors.primary }]}
+          contentStyle={styles.shareButtonContent}
+          icon="share-variant"
+          loading={isGeneratingImage}
+          disabled={isGeneratingImage}
+        >
+          Share Results
+        </Button>
+        
+        <Button
+          mode="contained"
+          onPress={handleDone}
+          style={styles.doneButton}
+          contentStyle={styles.doneButtonContent}
+          textColor='#fff'
+        >
+          Done
+        </Button>
+      </View>
+
+      {/* Hidden ViewShot for generating shareable image */}
+      <ViewShot 
+        ref={shareViewRef} 
+        style={styles.hiddenShareView}
+        options={{ format: 'png', quality: 1 }}
       >
-        Done
-      </Button>
+        {completedWorkout && <ShareableWorkoutCard workout={completedWorkout} />}
+      </ViewShot>
 
       {/* Partial Round Input Dialog for AMRAP */}
       <Portal>
@@ -233,6 +280,19 @@ const WorkoutCompleteScreen: React.FC = () => {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      {/* Snackbar for feedback */}
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+        action={{
+          label: 'OK',
+          onPress: () => setSnackbarVisible(false),
+        }}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 };
@@ -314,12 +374,26 @@ const styles = StyleSheet.create({
   roundTime: {
     fontWeight: 'bold',
   },
+  buttonContainer: {
+    padding: spacing.md,
+    paddingBottom: Platform.OS === 'android' ? 40 : spacing.xl,
+    gap: spacing.sm,
+  },
+  shareButton: {
+    borderWidth: 2,
+  },
+  shareButtonContent: {
+    paddingVertical: spacing.sm,
+  },
   doneButton: {
-    margin: spacing.md,
-    marginBottom: Platform.OS === 'android' ? 40 : spacing.xl,
   },
   doneButtonContent: {
     paddingVertical: spacing.sm,
+  },
+  hiddenShareView: {
+    position: 'absolute',
+    left: -10000,
+    top: -10000,
   },
 });
 

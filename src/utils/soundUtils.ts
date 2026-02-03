@@ -14,13 +14,9 @@ export const playBeep = async (frequency: number = 800, duration: number = 200):
     // Set audio mode for playback
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: true,
     });
 
     // Create a simple beep sound using Audio
-    // Note: Expo AV doesn't have built-in tone generation, so we'll use a workaround
-    // We'll create a data URI with a simple sine wave
     const { sound } = await Audio.Sound.createAsync(
       { uri: generateBeepDataUri(frequency, duration) },
       { shouldPlay: true, volume: 1.0 }

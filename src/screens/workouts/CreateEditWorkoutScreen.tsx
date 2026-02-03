@@ -483,35 +483,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   Select the workout style that best fits your training goals. This cannot be changed later.
                 </Text>
 
-                {/* Christmas Ladder Card */}
-                <Card 
-                  style={[
-                    styles.ladderTypeCard,
-                    { backgroundColor: theme.colors.surface },
-                    ladderType === 'christmas' && { 
-                      borderColor: theme.colors.primary, 
-                      borderWidth: 2, 
-                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
-                    }
-                  ]}
-                  onPress={() => setLadderType('christmas')}
-                >
-                  <Card.Content>
-                    <View style={styles.ladderTypeHeader}>
-                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'christmas' && { color: theme.colors.primary }]}>
-                          Christmas
-                      </Text>
-                      {ladderType === 'christmas' && (
-                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
-                      )}
-                    </View>
-                    {ladderType === 'christmas' && (
-                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
-                        {getLadderStrategy('christmas', 1, parseInt(maxRounds, 10) || 10).getDescription()}
-                      </Text>
-                    )}
-                  </Card.Content>
-                </Card>
+                
 
                 {/* Ascending Ladder Card */}
                 <Card 
@@ -602,6 +574,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                     )}
                   </Card.Content>
                 </Card>
+                
 
                 {/* Flexible Ladder Card */}
                 <Card 
@@ -619,7 +592,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
                       <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'flexible' && { color: theme.colors.primary }]}>
-                        Flexible Ladder
+                        Flexible
                       </Text>
                       {ladderType === 'flexible' && (
                         <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
@@ -718,6 +691,36 @@ const CreateEditWorkoutScreen: React.FC = () => {
                     {ladderType === 'forreps' && (
                       <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
                         {getLadderStrategy('forreps', 1, parseInt(maxRounds, 10) || 5).getDescription()}
+                      </Text>
+                    )}
+                  </Card.Content>
+                </Card>
+
+                {/* Christmas Ladder Card */}
+                <Card 
+                  style={[
+                    styles.ladderTypeCard,
+                    { backgroundColor: theme.colors.surface },
+                    ladderType === 'christmas' && { 
+                      borderColor: theme.colors.primary, 
+                      borderWidth: 2, 
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer 
+                    }
+                  ]}
+                  onPress={() => setLadderType('christmas')}
+                >
+                  <Card.Content>
+                    <View style={styles.ladderTypeHeader}>
+                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'christmas' && { color: theme.colors.primary }]}>
+                          Christmas
+                      </Text>
+                      {ladderType === 'christmas' && (
+                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                      )}
+                    </View>
+                    {ladderType === 'christmas' && (
+                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                        {getLadderStrategy('christmas', 1, parseInt(maxRounds, 10) || 10).getDescription()}
                       </Text>
                     )}
                   </Card.Content>
