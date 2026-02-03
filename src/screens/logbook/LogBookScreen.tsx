@@ -35,7 +35,7 @@ const formatDateTime = (date: Date) => {
     ? 'Yesterday' 
     : workoutDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: workoutDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
   
-  const timeStr = workoutDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+  const timeStr = workoutDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   
   return { dateStr, timeStr };
 };
@@ -82,11 +82,17 @@ const LogbookScreen: React.FC = () => {
     });
 
     // Format the share message
-    const ladderTypeName = 
-      workout.ladderType === 'christmas' ? 'Christmas Ladder' : 
-      workout.ladderType === 'ascending' ? 'Ascending Ladder' : 
-      workout.ladderType === 'descending' ? 'Descending Ladder' :
-      'Pyramid Ladder';
+    const ladderTypeNames: Record<string, string> = {
+      christmas: 'Christmas Ladder',
+      ascending: 'Ascending Ladder',
+      descending: 'Descending Ladder',
+      pyramid: 'Pyramid Ladder',
+      flexible: 'Flexible Ladder',
+      chipper: 'Chipper',
+      amrap: 'AMRAP',
+      forreps: 'For Reps'
+    };
+    const ladderTypeName = ladderTypeNames[workout.ladderType] || 'Custom Workout';
     let message = `🏋️ ${workout.templateName}\n`;
     message += `📊 ${ladderTypeName}\n\n`;
     message += `📅 ${dateStr} at ${timeStr}\n`;
