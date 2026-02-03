@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Template, Workout } from '../types';
+import { generateBenchmarkWorkouts, BENCHMARKS_INITIALIZED_KEY } from '../constants/benchmarkWorkouts';
 
 const WORKOUTS_KEY = '@workouts';
 const WORKOUT_HISTORY_KEY = '@workout_history';
@@ -88,5 +89,46 @@ export const saveWorkoutHistory = async (history: Workout[]): Promise<void> => {
     await AsyncStorage.setItem(WORKOUT_HISTORY_KEY, JSON.stringify(history));
   } catch (error) {
     console.error('Error saving workout history:', error);
+  }
+};
+
+/**
+ * Initialize benchmark workouts on first app launch
+ */
+export const initializeBenchmarkWorkouts = async (): Promise<void> => {
+  try {
+    const initialized = await AsyncStorage.getItem(BENCHMARKS_INITIALIZED_KEY);
+    
+    if (!initialized) {
+      const existingWorkouts = await loadWorkouts();
+      const benchmarkWorkouts = generateBenchmarkWorkouts();
+      
+      const allWorkouts = [...benchmarkWorkouts, ...existingWorkouts];
+      await saveWorkouts(allWorkouts);
+      await AsyncStorage.setItem(BENCHMARKS_INITIALIZED_KEY, 'true');
+    }
+  } catch (error) {
+    console.error('Error initializing benchmark workouts:', error);
+  }
+};
+
+/**
+ * Restore benchmark workouts to their original state
+ * Removes any modified versions and adds fresh copies
+ */
+export const restoreBenchmarkWorkouts = async (): Promise<void> => {
+  try {
+    const existingWorkouts = await loadWorkouts();
+    const benchmarkWorkouts = generateBenchmarkWorkouts();
+    
+    // Remove all existing benchmark workouts
+    const customWorkouts = existingWorkouts.filter(w => !w.id.startsWith('benchmark_'));
+    
+    // Add fresh benchmark workouts
+    const allWorkouts = [...benchmarkWorkouts, ...customWorkouts];
+    await saveWorkouts(allWorkouts);
+  } catch (error) {
+    console.error('Error restoring benchmark workouts:', error);
+    throw error;
   }
 };

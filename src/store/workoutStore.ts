@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Template } from '../types';
-import { loadWorkouts, saveWorkouts } from '../utils/storage';
+import { loadWorkouts, saveWorkouts, initializeBenchmarkWorkouts, restoreBenchmarkWorkouts } from '../utils/storage';
+import { isBenchmarkWorkout } from '../constants/benchmarkWorkouts';
 
 interface WorkoutStore {
   workouts: Template[];
@@ -10,6 +11,9 @@ interface WorkoutStore {
   updateWorkout: (id: string, workout: Partial<Template>) => Promise<void>;
   deleteWorkout: (id: string) => Promise<void>;
   getWorkout: (id: string) => Template | undefined;
+  restoreBenchmarks: () => Promise<void>;
+  getBenchmarkWorkouts: () => Template[];
+  getCustomWorkouts: () => Template[];
 }
 
 export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
@@ -18,6 +22,10 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
 
   loadWorkouts: async () => {
     set({ isLoading: true });
+    
+    // Initialize benchmark workouts on first launch
+    await initializeBenchmarkWorkouts();
+    
     const loadedWorkouts = await loadWorkouts();
     
     // Data migration: Add default ladderType and maxRounds to existing workouts
@@ -67,5 +75,18 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
 
   getWorkout: (id) => {
     return get().workouts.find(w => w.id === id);
+  },
+
+  restoreBenchmarks: async () => {
+    await restoreBenchmarkWorkouts();
+    await get().loadWorkouts();
+  },
+
+  getBenchmarkWorkouts: () => {
+    return get().workouts.filter(w => isBenchmarkWorkout(w.id));
+  },
+
+  getCustomWorkouts: () => {
+    return get().workouts.filter(w => !isBenchmarkWorkout(w.id));
   },
 }));
