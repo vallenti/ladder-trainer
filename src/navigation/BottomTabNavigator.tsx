@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from 'react-native-paper';
+import { useTheme, IconButton, Badge } from 'react-native-paper';
 import { HomeTabParamList } from '../types/navigation';
 import WorkoutNavigator from './WorkoutNavigator';
 import LogbookScreen from '../screens/logbook/LogBookScreen';
@@ -43,13 +43,13 @@ const BottomTabNavigator: React.FC = () => {
       <Tab.Screen
         name="Logbook"
         component={LogbookScreen}
-        options={{
+        options={({ navigation }) => ({
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="book" size={size} color={color} />
           ),
           headerShown: true,
           headerTitle: 'Workout History',
-        }}
+        })}
       />
       <Tab.Screen
         name="Settings"

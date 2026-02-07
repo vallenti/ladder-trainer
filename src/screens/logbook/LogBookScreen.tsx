@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Share } from 'react-native';
-import { Text, Card, IconButton, Portal, Dialog, Button, useTheme, Divider, Snackbar } from 'react-native-paper';
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Platform } from 'react-native';
+import { Text, Card, IconButton, Portal, Dialog, Button, useTheme, Divider, Snackbar, Searchbar, Chip, Badge } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
 import ViewShot from 'react-native-view-shot';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { spacing } from '../../constants/theme';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { formatTime } from '../../utils/calculations';
@@ -21,6 +23,25 @@ const formatTimeWithMs = (totalSeconds: number): string => {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
   }
   return `${minutes}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+};
+
+const splitTimeAndMs = (totalSeconds: number): { timeStr: string; msStr: string } => {
+  const seconds = Math.floor(totalSeconds);
+  const ms = Math.floor((totalSeconds - seconds) * 100);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  
+  if (hours > 0) {
+    return {
+      timeStr: `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
+      msStr: `.${ms.toString().padStart(2, '0')}`
+    };
+  }
+  return {
+    timeStr: `${minutes}:${secs.toString().padStart(2, '0')}`,
+    msStr: `.${ms.toString().padStart(2, '0')}`
+  };
 };
 
 const formatDateTime = (date: Date) => {
@@ -43,8 +64,42 @@ const formatDateTime = (date: Date) => {
   return { dateStr, timeStr };
 };
 
+// Utility functions for date filtering
+const isSameDay = (date1: Date, date2: Date): boolean => {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
+};
+
+const parseDateFromYYYYMMDD = (dateString: string): Date | null => {
+  if (!/^\d{8}$/.test(dateString)) return null;
+  
+  const year = parseInt(dateString.substring(0, 4));
+  const month = parseInt(dateString.substring(4, 6)) - 1; // Month is 0-indexed
+  const day = parseInt(dateString.substring(6, 8));
+  
+  const date = new Date(year, month, day);
+  
+  // Validate the date is real
+  if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
+    return null;
+  }
+  
+  return date;
+};
+
+const formatDateToYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+};
+
 const LogbookScreen: React.FC = () => {
   const theme = useTheme();
+  const navigation = useNavigation();
   const { workoutHistory, loadHistory, deleteWorkoutFromHistory } = useActiveWorkoutStore();
   const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
@@ -54,9 +109,90 @@ const LogbookScreen: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const shareViewRefs = useRef<{ [key: string]: any }>({});
 
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [filterExpanded, setFilterExpanded] = useState(false);
+
   useEffect(() => {
     loadHistory();
   }, []);
+
+  // Filter workouts based on search query and date filter
+  const filteredWorkouts = workoutHistory.filter(workout => {
+    // Date filter
+    if (dateFilter) {
+      const workoutDate = new Date(workout.startTime);
+      if (!isSameDay(workoutDate, dateFilter)) return false;
+    }
+    
+    // Search query (name or date format)
+    if (searchQuery.trim()) {
+      // Check if query is date format (8 digits)
+      if (/^\d{8}$/.test(searchQuery.trim())) {
+        const queryDate = parseDateFromYYYYMMDD(searchQuery.trim());
+        if (queryDate) {
+          const workoutDate = new Date(workout.startTime);
+          return isSameDay(workoutDate, queryDate);
+        }
+      }
+      // Otherwise search by name (fuzzy/partial match, case insensitive)
+      return workout.templateName.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    
+    return true;
+  });
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setDateFilter(null);
+  };
+
+  const hasActiveFilters = searchQuery.trim() !== '' || dateFilter !== null;
+  const activeFilterCount = (searchQuery.trim() !== '' ? 1 : 0) + (dateFilter !== null ? 1 : 0);
+
+  // Configure navigation header with filter button
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ marginRight: 8, position: 'relative' }}>
+          <IconButton
+            icon={filterExpanded ? "filter-minus" : "filter-plus"}
+            size={24}
+            iconColor={hasActiveFilters ? theme.colors.primary : theme.colors.onSurfaceVariant}
+            onPress={() => setFilterExpanded(!filterExpanded)}
+          />
+          {activeFilterCount > 0 && (
+            <View style={{
+              position: 'absolute',
+              top: 4,
+              right: 4,
+              minWidth: 18,
+              height: 18,
+              borderRadius: 9,
+              backgroundColor: theme.colors.primary,
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingHorizontal: 4,
+            }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700' }}>
+                {activeFilterCount}
+              </Text>
+            </View>
+          )}
+        </View>
+      ),
+    });
+  }, [navigation, filterExpanded, hasActiveFilters, activeFilterCount, theme]);
+
+  const handleDateSelect = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios'); // Keep open on iOS
+    if (selectedDate) {
+      setDateFilter(selectedDate);
+      setSearchQuery(''); // Clear search when date is selected
+    }
+  };
 
   const handleDelete = (workoutId: string) => {
     setWorkoutToDelete(workoutId);
@@ -162,10 +298,90 @@ const LogbookScreen: React.FC = () => {
     );
   }
 
+  const resultCount = filteredWorkouts.length;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Collapsible Filter Section */}
+      {filterExpanded && (
+        <View style={[styles.filterContainer, { backgroundColor: theme.colors.surface }]}>
+          <Searchbar
+            placeholder="Search by name or date"
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={[styles.searchBar, { backgroundColor: theme.colors.surfaceVariant }]}
+            iconColor={theme.colors.onSurfaceVariant}
+            inputStyle={styles.searchInput}
+            elevation={0}
+          />
+          <Text variant="bodySmall" style={[styles.helperText, { color: theme.colors.onSurfaceVariant }]}>
+            💡 Tip: Enter workout name or date (e.g., 20260207)
+          </Text>
+          
+          <View style={styles.filterRow}>
+            <Button
+              mode="outlined"
+              icon="calendar"
+              onPress={() => setShowDatePicker(true)}
+              style={styles.dateButton}
+              contentStyle={styles.dateButtonContent}
+              compact
+            >
+              {dateFilter ? formatDateToYYYYMMDD(dateFilter) : 'Pick Date'}
+            </Button>
+            
+            {hasActiveFilters && (
+              <Button
+                mode="text"
+                icon="close"
+                onPress={handleClearFilters}
+                compact
+                textColor={theme.colors.error}
+              >
+                Clear
+              </Button>
+            )}
+          </View>
+
+          {/* Active Filter Chips */}
+          {hasActiveFilters && (
+            <View style={styles.chipContainer}>
+              {searchQuery.trim() !== '' && !/^\d{8}$/.test(searchQuery.trim()) && (
+                <Chip
+                  icon="magnify"
+                  onClose={() => setSearchQuery('')}
+                  style={styles.filterChip}
+                >
+                  Name: {searchQuery}
+                </Chip>
+              )}
+              {dateFilter && (
+                <Chip
+                  icon="calendar"
+                  onClose={() => setDateFilter(null)}
+                  style={styles.filterChip}
+                >
+                  Date: {dateFilter.toLocaleDateString()}
+                </Chip>
+              )}
+            </View>
+          )}
+        </View>
+      )}
+
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {workoutHistory.map((workout) => {
+        {filteredWorkouts.length === 0 && hasActiveFilters ? (
+          <View style={styles.noResultsContainer}>
+            <MaterialCommunityIcons name="magnify-close" size={60} color={theme.colors.onSurfaceVariant} />
+            <Text variant="titleMedium" style={[styles.noResultsText, { color: theme.colors.onSurfaceVariant }]}>
+              No workouts found
+            </Text>
+            <Text variant="bodyMedium" style={[styles.noResultsSubtext, { color: theme.colors.onSurfaceVariant }]}>
+              Try adjusting your filters
+            </Text>
+          </View>
+        ) : (
+          filteredWorkouts.map((workout) => {
           const isExpanded = expandedWorkoutId === workout.id;
           const { dateStr, timeStr } = formatDateTime(workout.startTime);
           const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds, workout.startingReps);
@@ -206,9 +422,14 @@ const LogbookScreen: React.FC = () => {
                     </View>
                     
                     <View style={styles.rightContent}>
-                      <Text variant="headlineSmall" style={[styles.totalTime, { color: theme.colors.primary }]}>
-                        {formatTimeWithMs(workout.totalTime)}
-                      </Text>
+                      <View style={styles.timeContainer}>
+                        <Text variant="headlineSmall" style={[styles.totalTime, { color: theme.colors.primary }]}>
+                          {splitTimeAndMs(workout.totalTime).timeStr}
+                        </Text>
+                        <Text variant="bodySmall" style={[styles.milliseconds, { color: theme.colors.primary }]}>
+                          {splitTimeAndMs(workout.totalTime).msStr}
+                        </Text>
+                      </View>
                       <View style={[styles.roundsBadge, { backgroundColor: theme.colors.surfaceVariant }]}>
                         <Text variant="bodySmall" style={[styles.roundsText, { color: theme.colors.onSurfaceVariant }]}>
                           {workout.rounds.length} {workout.rounds.length === 1 ? 'round' : 'rounds'}
@@ -317,8 +538,20 @@ const LogbookScreen: React.FC = () => {
               </TouchableOpacity>
             </Card>
           );
-        })}
+        }))
+        }
       </ScrollView>
+
+      {/* Date Picker Modal */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={dateFilter || new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleDateSelect}
+          maximumDate={new Date()}
+        />
+      )}
 
       {/* Hidden ViewShots for generating shareable images */}
       {workoutHistory.map((workout) => (
@@ -380,6 +613,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  filterContainer: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  searchBar: {
+    marginBottom: spacing.xs,
+    borderRadius: 8,
+  },
+  searchInput: {
+    fontSize: 14,
+  },
+  helperText: {
+    marginBottom: spacing.sm,
+    paddingLeft: spacing.xs,
+    fontStyle: 'italic',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  dateButton: {
+    flex: 1,
+    borderRadius: 8,
+  },
+  dateButtonContent: {
+    paddingVertical: 4,
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  filterChip: {
+    marginRight: 0,
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xl * 2,
+  },
+  noResultsText: {
+    marginTop: spacing.md,
+    fontWeight: '600',
+  },
+  noResultsSubtext: {
+    marginTop: spacing.xs,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -439,9 +727,18 @@ const styles = StyleSheet.create({
   rightContent: {
     alignItems: 'flex-end',
   },
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: spacing.xs,
+  },
   totalTime: {
     fontWeight: '700',
-    marginBottom: spacing.xs,
+  },
+  milliseconds: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 1,
   },
   roundsBadge: {
     paddingHorizontal: spacing.sm,

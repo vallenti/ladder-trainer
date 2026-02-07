@@ -24,16 +24,21 @@
         "backgroundColor": "#FF6B35"
       },
       "package": "com.ladfit.app",
-      "permissions": [ "WAKE_LOCK" ]
+      "permissions": [
+        "WAKE_LOCK"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-},
+    },
     "extra": {
       "eas": {
         "projectId": "b4958392-adc4-4d52-a399-aaea9445ab9d"
-    }
-},
-    "owner": "vallentin-dev"
+      }
+    },
+    "owner": "vallentin-dev",
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }
