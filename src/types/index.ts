@@ -47,6 +47,10 @@ export interface Template {
   stepSize?: number; // For ascending/descending ladder: step increment (default 1)
   startingReps?: number; // For ascending/descending ladder: starting reps (default 1)
   timeCap?: number; // For AMRAP: time cap in seconds
+  // Buy In/Out exercise (same exercise before and after workout)
+  buyInOutExercise?: Exercise; // Optional buy-in/out exercise
+  hasBuyInOut?: boolean; // Whether buy-in/out is enabled
+  buyInOutRestSeconds?: number; // Optional rest after buy-in and before buy-out
   createdAt: Date;
 }
 
@@ -69,6 +73,12 @@ export interface Workout {
   stepSize?: number; // snapshot from template
   startingReps?: number; // snapshot from template
   timeCap?: number; // snapshot from template - for AMRAP
+  // Buy In/Out
+  buyInOutExercise?: Exercise; // snapshot from template
+  hasBuyInOut?: boolean; // snapshot from template
+  buyInOutRestSeconds?: number; // snapshot from template
+  buyInCompleted?: boolean; // Track if buy-in is completed
+  buyOutCompleted?: boolean; // Track if buy-out is completed
   startTime: Date;
   endTime?: Date;
   status: WorkoutStatus;

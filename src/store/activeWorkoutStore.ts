@@ -27,6 +27,8 @@ interface ActiveWorkoutStore {
   startWorkout: (template: Template) => void;
   toggleMute: () => void;
   setTimerFocusMode: (isTimerFocusMode: boolean) => void;
+  completeBuyIn: () => void;
+  completeBuyOut: () => void;
   completeRound: () => void;
   startNextRound: () => void;
   completeWorkout: () => Promise<void>;
@@ -64,6 +66,12 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       stepSize: template.stepSize,
       startingReps: template.startingReps,
       timeCap: template.timeCap,
+      // Buy In/Out
+      hasBuyInOut: template.hasBuyInOut,
+      buyInOutExercise: template.buyInOutExercise,
+      buyInOutRestSeconds: template.buyInOutRestSeconds,
+      buyInCompleted: false,
+      buyOutCompleted: false,
       startTime: new Date(),
       endTime: undefined,
       status: 'incomplete',
@@ -79,6 +87,30 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       elapsedTime: 0,
       totalPausedTime: 0,
       pauseStartTime: 0,
+    });
+  },
+
+  completeBuyIn: () => {
+    const { activeWorkout } = get();
+    if (!activeWorkout) return;
+
+    set({
+      activeWorkout: {
+        ...activeWorkout,
+        buyInCompleted: true,
+      },
+    });
+  },
+
+  completeBuyOut: () => {
+    const { activeWorkout } = get();
+    if (!activeWorkout) return;
+
+    set({
+      activeWorkout: {
+        ...activeWorkout,
+        buyOutCompleted: true,
+      },
     });
   },
 

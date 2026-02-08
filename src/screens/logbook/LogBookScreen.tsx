@@ -260,18 +260,34 @@ const LogbookScreen: React.FC = () => {
     message += `⏱️ Total Time: ${formatTimeWithMs(workout.totalTime)}\n`;
     message += `🔄 Rounds Completed: ${workout.rounds.length}/${workout.maxRounds}\n\n`;
     
-    if (exerciseTotals.length > 0) {
+    if (exerciseTotals.length > 0 || (workout.hasBuyInOut && workout.buyInOutExercise)) {
       message += `💪 Exercise Summary:\n`;
+      if (workout.hasBuyInOut && workout.buyInOutExercise) {
+        message += `  • BUY IN: ${workout.buyInOutExercise?.name || 'Exercise'}: ${workout.buyInOutExercise?.repsPerRound || 1} ${workout.buyInOutExercise?.unit || 'reps'}\n`;
+      }
       exerciseTotals.forEach(ex => {
         message += `  • ${ex.name}: ${ex.totalAmount} ${ex.unit || 'reps'}\n`;
       });
+      if (workout.hasBuyInOut && workout.buyInOutExercise) {
+        message += `  • BUY OUT: ${workout.buyInOutExercise?.name || 'Exercise'}: ${workout.buyInOutExercise?.repsPerRound || 1} ${workout.buyInOutExercise?.unit || 'reps'}\n`;
+      }
       message += '\n';
     }
     
     message += `🔥 Round Times:\n`;
-    workout.rounds.forEach(round => {
-      message += `  Round ${round.roundNumber}: ${formatTimeWithMs(round.duration)}\n`;
+    if (workout.hasBuyInOut && workout.buyInCompleted && workout.rounds?.length > 0) {
+      message += `  Buy In: ${formatTimeWithMs(workout.rounds[0]?.duration || 0)}\n`;
+    }
+    const mainRounds = (workout.rounds || []).slice(
+      workout.hasBuyInOut && workout.buyInCompleted ? 1 : 0,
+      workout.hasBuyInOut && workout.buyOutCompleted ? -1 : undefined
+    );
+    mainRounds.forEach((round, index) => {
+      message += `  Round ${index + 1}: ${formatTimeWithMs(round?.duration || 0)}\n`;
     });
+    if (workout.hasBuyInOut && workout.buyOutCompleted && workout.rounds?.length > 0) {
+      message += `  Buy Out: ${formatTimeWithMs(workout.rounds[workout.rounds.length - 1]?.duration || 0)}\n`;
+    }
     
     message += `\n💪 Powered by LadFit`;
 
@@ -450,6 +466,16 @@ const LogbookScreen: React.FC = () => {
                               Exercise Summary
                             </Text>
                           </View>
+                          {workout.hasBuyInOut && workout.buyInOutExercise && (
+                            <View style={[styles.exerciseItem, styles.buyInOutExercise, { backgroundColor: theme.colors.primaryContainer }]}>
+                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                                BUY IN: {workout.buyInOutExercise?.name || 'Exercise'}
+                              </Text>
+                              <Text variant="bodyMedium" style={[styles.exerciseTotal, { color: theme.colors.tertiary }]}>
+                                {workout.buyInOutExercise?.repsPerRound || 1} {(workout.buyInOutExercise?.unit || 'reps').toLowerCase()}
+                              </Text>
+                            </View>
+                          )}
                           {exerciseTotals.map((exercise, index) => (
                             <View 
                               key={exercise.position} 
@@ -466,6 +492,16 @@ const LogbookScreen: React.FC = () => {
                               </Text>
                             </View>
                           ))}
+                          {workout.hasBuyInOut && workout.buyInOutExercise && (
+                            <View style={[styles.exerciseItem, styles.buyInOutExercise, { backgroundColor: theme.colors.primaryContainer }]}>
+                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                                BUY OUT: {workout.buyInOutExercise?.name || 'Exercise'}
+                              </Text>
+                              <Text variant="bodyMedium" style={[styles.exerciseTotal, { color: theme.colors.tertiary }]}>
+                                {workout.buyInOutExercise?.repsPerRound || 1} {(workout.buyInOutExercise?.unit || 'reps').toLowerCase()}
+                              </Text>
+                            </View>
+                          )}
                         </View>
 
                         <View style={styles.section}>
@@ -475,22 +511,44 @@ const LogbookScreen: React.FC = () => {
                               Round Times
                             </Text>
                           </View>
-                          {workout.rounds.map((round, index) => (
-                            <View 
-                              key={round.roundNumber} 
-                              style={[
-                                styles.roundItem,
-                                index < workout.rounds.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.colors.surfaceVariant }
-                              ]}
-                            >
-                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                                Round {round.roundNumber}
+                          {workout.hasBuyInOut && workout.buyInCompleted && workout.rounds?.length > 0 && (
+                            <View style={[styles.roundItem, styles.buyInOutRound, { backgroundColor: theme.colors.primaryContainer }]}>
+                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                                Buy In
                               </Text>
                               <Text variant="bodyMedium" style={[styles.roundTime, { color: theme.colors.primary }]}>
-                                {formatTimeWithMs(round.duration)}
+                                {formatTimeWithMs(workout.rounds[0]?.duration || 0)}
                               </Text>
                             </View>
-                          ))}
+                          )}
+                          {(workout.rounds || [])
+                            .slice(workout.hasBuyInOut && workout.buyInCompleted ? 1 : 0, workout.hasBuyInOut && workout.buyOutCompleted ? -1 : undefined)
+                            .map((round, index) => (
+                              <View 
+                                key={round.roundNumber} 
+                                style={[
+                                  styles.roundItem,
+                                  index < ((workout.rounds || []).slice(workout.hasBuyInOut && workout.buyInCompleted ? 1 : 0, workout.hasBuyInOut && workout.buyOutCompleted ? -1 : undefined).length - 1) && { borderBottomWidth: 1, borderBottomColor: theme.colors.surfaceVariant }
+                                ]}
+                              >
+                                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                                  Round {index + 1}
+                                </Text>
+                                <Text variant="bodyMedium" style={[styles.roundTime, { color: theme.colors.primary }]}>
+                                  {formatTimeWithMs(round?.duration || 0)}
+                                </Text>
+                              </View>
+                            ))}
+                          {workout.hasBuyInOut && workout.buyOutCompleted && workout.rounds?.length > 0 && (
+                            <View style={[styles.roundItem, styles.buyInOutRound, { backgroundColor: theme.colors.primaryContainer }]}>
+                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                                Buy Out
+                              </Text>
+                              <Text variant="bodyMedium" style={[styles.roundTime, { color: theme.colors.primary }]}>
+                                {formatTimeWithMs(workout.rounds[workout.rounds.length - 1]?.duration || 0)}
+                              </Text>
+                            </View>
+                          )}
                         </View>
                         
                         <View style={styles.shareSection}>
@@ -772,6 +830,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
   },
+  buyInOutExercise: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: 8,
+    marginBottom: spacing.xs,
+  },
   exerciseTotal: {
     fontWeight: '600',
   },
@@ -779,6 +843,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
+  },
+  buyInOutRound: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: 8,
+    marginBottom: spacing.xs,
   },
   roundTime: {
     fontWeight: '600',

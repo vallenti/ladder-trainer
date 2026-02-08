@@ -38,6 +38,8 @@ const ActiveWorkoutScreen: React.FC = () => {
     completeRound, 
     startNextRound, 
     completeWorkout,
+    completeBuyIn,
+    completeBuyOut,
     isPaused: storePaused,
     elapsedTime: storeElapsedTime,
     totalPausedTime: storeTotalPausedTime,
@@ -114,22 +116,70 @@ const ActiveWorkoutScreen: React.FC = () => {
   const currentRound = activeWorkout.currentRoundIndex + 1;
   const totalRounds = activeWorkout.maxRounds;
   const ladderStrategy = getLadderStrategy(activeWorkout.ladderType, activeWorkout.stepSize || 1, activeWorkout.maxRounds, activeWorkout.startingReps);
-  const exercisesInRound = ladderStrategy.getExercisesForRound(currentRound, activeWorkout.exercises);
+  
+  // Determine current phase: buy-in, main workout, or buy-out
+  const hasBuyInOut = activeWorkout.hasBuyInOut && activeWorkout.buyInOutExercise;
+  const isInBuyIn = hasBuyInOut && !activeWorkout.buyInCompleted;
+  const isInBuyOut = hasBuyInOut && activeWorkout.buyInCompleted && currentRound > totalRounds && !activeWorkout.buyOutCompleted;
+  const isInMainWorkout = !isInBuyIn && !isInBuyOut;
+  
+  const exercisesInRound = isInBuyIn || isInBuyOut 
+    ? (activeWorkout.buyInOutExercise ? [activeWorkout.buyInOutExercise] : [])
+    : ladderStrategy.getExercisesForRound(currentRound, activeWorkout.exercises);
   const progress = activeWorkout.currentRoundIndex / totalRounds;
 
   const handleRoundComplete = () => {
-    completeRound();
-
-    if (currentRound >= totalRounds) {
-      // Workout complete
+    if (isInBuyIn) {
+      // Complete buy-in
+      completeBuyIn();
+      
+      // Check if there's a rest period after buy-in
+      if (activeWorkout.buyInOutRestSeconds && activeWorkout.buyInOutRestSeconds > 0) {
+        // @ts-ignore
+        navigation.navigate('Rest', { 
+          workoutId: activeWorkout.id, 
+          restDuration: activeWorkout.buyInOutRestSeconds,
+          nextPhase: 'main'
+        });
+      }
+      // Don't call startNextRound here - the UI will update to show round 1 of main workout
+    } else if (isInMainWorkout && currentRound < totalRounds) {
+      // Complete current round of main workout
+      completeRound();
+      
+      if (activeWorkout.restPeriodSeconds > 0) {
+        // Go to rest screen
+        // @ts-ignore
+        navigation.navigate('Rest', { workoutId: activeWorkout.id });
+      } else {
+        // Start next round immediately
+        startNextRound();
+      }
+    } else if (isInMainWorkout && currentRound >= totalRounds) {
+      // Main workout complete
+      completeRound();
+      
+      if (hasBuyInOut) {
+        // Proceed to buy-out - increment round to trigger buy-out phase
+        startNextRound();
+        
+        if (activeWorkout.buyInOutRestSeconds && activeWorkout.buyInOutRestSeconds > 0) {
+          // @ts-ignore
+          navigation.navigate('Rest', { 
+            workoutId: activeWorkout.id, 
+            restDuration: activeWorkout.buyInOutRestSeconds,
+            nextPhase: 'buyout'
+          });
+        }
+        // If no rest, the UI will update to show buy-out (currentRound > totalRounds)
+      } else {
+        // No buy-out, workout complete
+        handleWorkoutComplete();
+      }
+    } else if (isInBuyOut) {
+      // Complete buy-out and finish workout
+      completeBuyOut();
       handleWorkoutComplete();
-    } else if (activeWorkout.restPeriodSeconds > 0) {
-      // Go to rest screen
-      // @ts-ignore
-      navigation.navigate('Rest', { workoutId: activeWorkout.id });
-    } else {
-      // Start next round immediately
-      startNextRound();
     }
   };
 
@@ -258,10 +308,18 @@ const ActiveWorkoutScreen: React.FC = () => {
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
+            {/* Phase Indicator */}
+            {(isInBuyIn || isInBuyOut) && (
+              <View style={[styles.phaseIndicator, { backgroundColor: theme.colors.primaryContainer }]}>
+                <Text variant="labelLarge" style={[styles.phaseText, { color: theme.colors.primary }]}>
+                  {isInBuyIn ? 'BUY IN PHASE' : 'BUY OUT PHASE'}
+                </Text>
+              </View>
+            )}
             {activeWorkout.ladderType === 'chipper' ? (
               <>
                 <Text variant="titleMedium" style={styles.cardTitle}>
-                  {currentRound} of {totalRounds} Complete
+                  {isInBuyIn ? 'Complete Buy In Exercise' : isInBuyOut ? 'Complete Buy Out Exercise' : `${currentRound} of ${totalRounds} Complete`}
                 </Text>
                 {activeWorkout.exercises.map((exercise, index) => {
                   const roundNumber = index + 1;
@@ -316,13 +374,23 @@ const ActiveWorkoutScreen: React.FC = () => {
             ) : (
               <>
                 <Text variant="titleMedium" style={styles.cardTitle}>
-                  {activeWorkout.ladderType === 'amrap' ? `Round ${currentRound}` : `Round ${currentRound} of ${totalRounds}`}
+                  {isInBuyIn 
+                    ? 'Complete Buy In Exercise' 
+                    : isInBuyOut 
+                    ? 'Complete Buy Out Exercise' 
+                    : activeWorkout.ladderType === 'amrap' 
+                    ? `Round ${currentRound}` 
+                    : `Round ${currentRound} of ${totalRounds}`}
                 </Text>
                 {exercisesInRound.map((item) => {
-                  const isNewExercise = activeWorkout.ladderType === 'christmas' && item.exercise.position === currentRound;
+                  // Handle buy-in/out exercises (plain Exercise) vs regular exercises ({exercise, reps})
+                  const exercise = 'exercise' in item ? item.exercise : item;
+                  const reps = 'reps' in item ? item.reps : (isInBuyIn || isInBuyOut ? (exercise.repsPerRound || '') : 0);
+                  
+                  const isNewExercise = activeWorkout.ladderType === 'christmas' && exercise.position === currentRound;
                   return (
                     <View 
-                      key={item.exercise.position} 
+                      key={exercise.position} 
                       style={[
                         styles.exerciseRow,
                         { borderBottomColor: theme.colors.outline },
@@ -343,7 +411,7 @@ const ActiveWorkoutScreen: React.FC = () => {
                           { color: theme.colors.primary },
                           isNewExercise && { fontWeight: 'bold' }
                         ]}>
-                          {item.reps}
+                          {reps}
                         </Text>
                       </View>
                       <Text variant="bodyLarge" style={[
@@ -351,7 +419,7 @@ const ActiveWorkoutScreen: React.FC = () => {
                         { color: theme.colors.onSurface },
                         isNewExercise && { fontWeight: 'bold' }
                       ]}>
-                        {(item.exercise.unit || '').toLowerCase()} {item.exercise.name}
+                        {(exercise.unit || '').toLowerCase()} {exercise.name}
                       </Text>
                     </View>
                   );
@@ -431,7 +499,13 @@ const ActiveWorkoutScreen: React.FC = () => {
           textColor="#FFFFFF"
           labelStyle={isTimerFocusMode && styles.completeButtonLabelFocus}
         >
-          {currentRound >= totalRounds ? 'Finish Workout' : 'Complete Round'}
+          {isInBuyIn 
+            ? 'Complete Buy In' 
+            : isInBuyOut 
+            ? 'Complete Buy Out & Finish' 
+            : currentRound >= totalRounds 
+            ? (hasBuyInOut ? 'Complete Final Round' : 'Finish Workout') 
+            : 'Complete Round'}
         </Button>
       </View>
 
@@ -577,7 +651,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   repsContainer: {
-    width: 50,
+    width: 70,
     alignItems: 'center',
     marginRight: spacing.sm,
   },
@@ -665,6 +739,17 @@ const styles = StyleSheet.create({
   completeButtonLabelFocus: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  phaseIndicator: {
+    padding: spacing.sm,
+    borderRadius: 8,
+    marginBottom: spacing.md,
+    alignItems: 'center',
+  },
+  phaseText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    letterSpacing: 1,
   },
 });
 

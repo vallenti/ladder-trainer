@@ -94,24 +94,19 @@ const WorkoutDetailsScreen: React.FC = () => {
     let repsInfo = '';
     
     if (workout.ladderType === 'flexible') {
-      const start = exercise.startingReps || 1;
-      const step = exercise.stepSize || 1;
+      // For flexible, don't show start/step in name - it's in the progression container
       if (exercise.direction === 'constant') {
-        repsInfo = `${start} `;
-      } else {
-        repsInfo = `Start: ${start}, Step: ${step} `;
+        repsInfo = `${exercise.startingReps || 1} `;
       }
     } else if (workout.ladderType === 'chipper') {
       repsInfo = `${exercise.fixedReps || 0} `;
     } else if (workout.ladderType === 'forreps') {
       repsInfo = `${exercise.repsPerRound || 0} `;
     } else if (workout.ladderType === 'amrap') {
-      const start = exercise.startingReps || 1;
+      // For AMRAP, don't show start/step in name - it's in the progression container
       const step = exercise.stepSize || 0;
       if (step === 0) {
-        repsInfo = `${start} `;
-      } else {
-        repsInfo = `Start: ${start}, Step: ${step} `;
+        repsInfo = `${exercise.startingReps || 1} `;
       }
     }
     
@@ -318,6 +313,40 @@ const WorkoutDetailsScreen: React.FC = () => {
               <Text variant="titleMedium" style={styles.sectionTitle}>
                 Exercises
               </Text>
+
+              {/* Buy In Exercise */}
+              {workout.hasBuyInOut && workout.buyInOutExercise && (
+                <>
+                  <View style={[styles.buyInOutBadge, { backgroundColor: theme.colors.primaryContainer }]}>
+                    <Text variant="labelSmall" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
+                      BUY IN
+                    </Text>
+                  </View>
+                  <View style={styles.exerciseRow}>
+                    <View style={[styles.exerciseNumberBadge, { backgroundColor: theme.colors.primary }]}>
+                      <Text style={[styles.exerciseNumber, { color: '#FFFFFF' }]}>B</Text>
+                    </View>
+                    <View style={styles.exerciseInfo}>
+                      <Text variant="bodyLarge" style={styles.exerciseName}>
+                        {workout.buyInOutExercise.repsPerRound ? workout.buyInOutExercise.repsPerRound + ' ' : ''}
+                        {workout.buyInOutExercise.unit ? workout.buyInOutExercise.unit + ' ' : ''}{workout.buyInOutExercise.name}
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Complete before starting main workout
+                      </Text>
+                    </View>
+                  </View>
+                  {workout.buyInOutRestSeconds && workout.buyInOutRestSeconds > 0 && (
+                    <View style={[styles.restIndicator, { backgroundColor: theme.colors.surfaceVariant }]}>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        ⏱️ Rest {workout.buyInOutRestSeconds}s
+                      </Text>
+                    </View>
+                  )}
+                  <Divider style={styles.buyInOutDivider} />
+                </>
+              )}
+
               {workout.exercises.map((exercise, index) => {
                 const progression = getExerciseProgression(exercise);
                 return (
@@ -344,6 +373,16 @@ const WorkoutDetailsScreen: React.FC = () => {
                                 workout.ladderType === 'descending' ? 'Descending' :
                                 workout.ladderType === 'pyramid' ? 'Pyramid' :
                                 'Fixed'}
+                            {workout.ladderType === 'flexible' && exercise.direction !== 'constant' && (
+                              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                                {' • Start: '}{exercise.startingReps || 1}{', Step: '}{exercise.stepSize || 1}
+                              </Text>
+                            )}
+                            {workout.ladderType === 'amrap' && (exercise.stepSize || 0) > 0 && (
+                              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                                {' • Start: '}{exercise.startingReps || 1}{', Step: '}{exercise.stepSize}
+                              </Text>
+                            )}
                           </Text>
                         </View>
                       )}
@@ -351,6 +390,39 @@ const WorkoutDetailsScreen: React.FC = () => {
                   </View>
                 );
               })}
+
+              {/* Buy Out Exercise */}
+              {workout.hasBuyInOut && workout.buyInOutExercise && (
+                <>
+                  <Divider style={styles.buyInOutDivider} />
+                  {workout.buyInOutRestSeconds && workout.buyInOutRestSeconds > 0 && (
+                    <View style={[styles.restIndicator, { backgroundColor: theme.colors.surfaceVariant }]}>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        ⏱️ Rest {workout.buyInOutRestSeconds}s
+                      </Text>
+                    </View>
+                  )}
+                  <View style={[styles.buyInOutBadge, { backgroundColor: theme.colors.primaryContainer }]}>
+                    <Text variant="labelSmall" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
+                      BUY OUT
+                    </Text>
+                  </View>
+                  <View style={styles.exerciseRow}>
+                    <View style={[styles.exerciseNumberBadge, { backgroundColor: theme.colors.primary }]}>
+                      <Text style={[styles.exerciseNumber, { color: '#FFFFFF' }]}>B</Text>
+                    </View>
+                    <View style={styles.exerciseInfo}>
+                      <Text variant="bodyLarge" style={styles.exerciseName}>
+                        {workout.buyInOutExercise.repsPerRound ? workout.buyInOutExercise.repsPerRound + ' ' : ''}
+                        {workout.buyInOutExercise.unit ? workout.buyInOutExercise.unit + ' ' : ''}{workout.buyInOutExercise.name}
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Complete after finishing main workout
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </Card.Content>
           </Card>
 
@@ -566,6 +638,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  buyInOutBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  buyInOutDivider: {
+    marginVertical: spacing.md,
+  },
+  restIndicator: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 4,
+    alignSelf: 'center',
+    marginVertical: spacing.sm,
   },
 });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card, Chip } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card, Chip, IconButton } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import ExerciseInput from '../../components/ExerciseInput';
@@ -68,6 +68,22 @@ const CreateEditWorkoutScreen: React.FC = () => {
     }]
   );
   const [errors, setErrors] = useState<string[]>([]);
+
+  // Buy In/Out state
+  const [hasBuyInOut, setHasBuyInOut] = useState(existingWorkout?.hasBuyInOut || false);
+  const [buyInOutExercise, setBuyInOutExercise] = useState<Exercise>(
+    existingWorkout?.buyInOutExercise || {
+      position: 0,
+      unit: '',
+      name: '',
+      repsPerRound: undefined,
+    }
+  );
+  const [hasBuyInOutRest, setHasBuyInOutRest] = useState((existingWorkout?.buyInOutRestSeconds || 0) > 0);
+  const [buyInOutRestPeriod, setBuyInOutRestPeriod] = useState(
+    existingWorkout?.buyInOutRestSeconds?.toString() || '60'
+  );
+  const [showBuyInOutUnitInput, setShowBuyInOutUnitInput] = useState(false);
 
   // Update defaults when ladder type changes (only for new workouts)
   useEffect(() => {
@@ -278,6 +294,19 @@ const CreateEditWorkoutScreen: React.FC = () => {
       });
     }
 
+    // Buy In/Out validation
+    if (hasBuyInOut && (ladderType === 'amrap' || ladderType === 'chipper' || ladderType === 'forreps')) {
+      if (!buyInOutExercise.name.trim()) {
+        newErrors.push('Buy In/Out: Exercise name is required');
+      }
+      if (hasBuyInOutRest) {
+        const rest = parseInt(buyInOutRestPeriod, 10);
+        if (isNaN(rest) || rest <= 0) {
+          newErrors.push('Buy In/Out: Rest period must be a positive number');
+        }
+      }
+    }
+
     setErrors(newErrors);
     return newErrors.length === 0;
   };
@@ -291,6 +320,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
     // Calculate total time cap in seconds from minutes and seconds
     const totalTimeCap = timeCapMinutes * 60 + timeCapSeconds;
 
+    // Determine if buy-in/out should be included (only for amrap, chipper, forreps)
+    const shouldIncludeBuyInOut = hasBuyInOut && (ladderType === 'amrap' || ladderType === 'chipper' || ladderType === 'forreps');
+
     const workoutData = {
       name: name.trim(),
       exercises,
@@ -300,6 +332,10 @@ const CreateEditWorkoutScreen: React.FC = () => {
       stepSize: (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') ? parseInt(stepSize, 10) : undefined,
       startingReps: (ladderType === 'ascending' || ladderType === 'descending') ? parseInt(startingReps, 10) : undefined,
       timeCap: ladderType === 'amrap' ? totalTimeCap : undefined,
+      // Buy In/Out
+      hasBuyInOut: shouldIncludeBuyInOut,
+      buyInOutExercise: shouldIncludeBuyInOut ? buyInOutExercise : undefined,
+      buyInOutRestSeconds: shouldIncludeBuyInOut && hasBuyInOutRest ? parseInt(buyInOutRestPeriod, 10) : undefined,
     };
 
     if (isEditing && workoutId) {
@@ -1003,6 +1039,200 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 </Button>
               );
             })()}
+
+            {/* Buy In/Out Section - Only for AMRAP, Chipper, ForReps */}
+            {(ladderType === 'amrap' || ladderType === 'chipper' || ladderType === 'forreps') && (
+              <>
+                <Divider style={styles.divider} />
+                
+                <View style={styles.buyInOutSection}>
+                  <View style={styles.checkboxRow}>
+                    <Checkbox.Android
+                      status={hasBuyInOut ? 'checked' : 'unchecked'}
+                      onPress={() => setHasBuyInOut(!hasBuyInOut)}
+                    />
+                    <View>
+                      <Text variant="bodyLarge" style={styles.checkboxLabel}>
+                        Add Buy In/Out exercise
+                      </Text>
+                      <Text variant="bodySmall" style={[{ color: theme.colors.onSurfaceVariant }, styles.buyInOutDescription]}>
+                        Same exercise performed before and after the main workout
+                      </Text>
+                    </View>
+                  </View>
+
+                  {hasBuyInOut && (
+                    <Card style={[styles.buyInOutCard, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
+                      <Card.Content>
+                        {/* Header */}
+                        <View style={styles.buyInOutCardHeader}>
+                          <View style={[styles.buyInOutBadge, { backgroundColor: theme.colors.primary }]}>
+                            <Text variant="titleMedium" style={[styles.buyInOutBadgeText, { color: '#FFFFFF' }]}>
+                              B
+                            </Text>
+                          </View>
+                          <Text variant="bodySmall" style={[styles.buyInOutLabel, { color: theme.colors.onSurfaceVariant }]}>
+                            Buy In/Out Exercise
+                          </Text>
+                        </View>
+
+                        {/* Amount + Unit Row (similar to ForRepsExerciseInput) */}
+                        <View style={styles.buyInOutInputRow}>
+                          <TextInput
+                            mode="outlined"
+                            label="Amount / Distance / Reps"
+                            value={buyInOutExercise.repsPerRound?.toString() || ''}
+                            onChangeText={(value) => {
+                              const numValue = parseInt(value, 10);
+                              setBuyInOutExercise({ 
+                                ...buyInOutExercise, 
+                                repsPerRound: isNaN(numValue) ? undefined : numValue 
+                              });
+                            }}
+                            keyboardType="numeric"
+                            style={styles.buyInOutAmountInput}
+                            placeholder="e.g., 1, 400"
+                          />
+
+                          {!showBuyInOutUnitInput ? (
+                            <TouchableOpacity 
+                              onPress={() => setShowBuyInOutUnitInput(true)}
+                              
+                              style={[
+                                styles.buyInOutUnitButton,
+                                { borderColor: theme.colors.outline },
+                                (!buyInOutExercise.unit || buyInOutExercise.unit === '') && styles.buyInOutUnitButtonIcon
+                              ]}
+                            >
+                              {(!buyInOutExercise.unit || buyInOutExercise.unit === '') ? (
+                                <IconButton
+                                  icon="pencil"
+                                  size={20}
+                                  style={styles.buyInOutUnitIcon}
+                                />
+                              ) : (
+                                <View style={styles.buyInOutUnitButtonContent}>
+                                  <Text variant="bodyMedium" style={[styles.buyInOutUnitText, { color: theme.colors.onSurface }]}>
+                                    {buyInOutExercise.unit}
+                                  </Text>
+                                  <IconButton
+                                    icon="pencil"
+                                    size={16}
+                                    style={styles.buyInOutEditIcon}
+                                  />
+                                </View>
+                              )}
+                            </TouchableOpacity>
+                          ) : (
+                            <View style={styles.buyInOutUnitEditContainer}>
+                              <TextInput
+                                mode="outlined"
+                                label="Unit"
+                                value={buyInOutExercise.unit}
+                                onChangeText={(text) => setBuyInOutExercise({ ...buyInOutExercise, unit: text })}
+                                style={styles.buyInOutUnitTextInput}
+                              />
+                              <IconButton
+                                icon="check"
+                                size={20}
+                                onPress={() => setShowBuyInOutUnitInput(false)}
+                                style={styles.buyInOutCheckButton}
+                              />
+                            </View>
+                          )}
+                        </View>
+
+                        {/* Exercise Name Input */}
+                        <TextInput
+                          mode="outlined"
+                          label="Exercise Name"
+                          value={buyInOutExercise.name}
+                          onChangeText={(text) => setBuyInOutExercise({ ...buyInOutExercise, name: text })}
+                          style={styles.buyInOutNameInput}
+                          placeholder="e.g., Run, Row, Bike"
+                        />
+
+                        {/* Buy In/Out Rest Period */}
+                        <View style={styles.buyInOutRestSection}>
+                          <View style={styles.checkboxRow}>
+                            <Checkbox.Android
+                              status={hasBuyInOutRest ? 'checked' : 'unchecked'}
+                              onPress={() => setHasBuyInOutRest(!hasBuyInOutRest)}
+                            />
+                            <Text variant="bodyMedium" style={styles.checkboxLabel}>
+                              Rest after Buy In / before Buy Out
+                            </Text>
+                          </View>
+
+                          {hasBuyInOutRest && (
+                            <TextInput
+                              mode="outlined"
+                              label="Rest Period (seconds)"
+                              value={buyInOutRestPeriod}
+                              onChangeText={setBuyInOutRestPeriod}
+                              keyboardType="numeric"
+                              placeholder="60"
+                              style={styles.restInput}
+                            />
+                          )}
+                        </View>
+
+                        {/* Improved Example Flow */}
+                        <View style={[styles.buyInOutExample, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.outline }]}>
+                          <Text variant="labelSmall" style={[{ color: theme.colors.primary }, styles.exampleLabel]}>
+                            WORKOUT FLOW
+                          </Text>
+                          <View style={styles.flowStep}>
+                            <View style={[styles.flowNumber, { backgroundColor: theme.colors.primary }]}>
+                              <Text style={[styles.flowNumberText, { color: '#FFFFFF' }]}>1</Text>
+                            </View>
+                            <Text variant="bodyMedium" style={[styles.flowText, { color: theme.colors.onSurface }]}>
+                              {buyInOutExercise.repsPerRound || ''}{buyInOutExercise.unit ? ' ' + buyInOutExercise.unit : ''} {buyInOutExercise.name || 'Buy In Exercise'}
+                            </Text>
+                          </View>
+                          {hasBuyInOutRest && (
+                            <View style={styles.flowStep}>
+                              <View style={[styles.flowNumber, { backgroundColor: theme.colors.surfaceVariant, borderWidth: 1, borderColor: theme.colors.outline }]}>
+                                <Text style={[styles.flowNumberText, { color: theme.colors.onSurfaceVariant }]}>⏱</Text>
+                              </View>
+                              <Text variant="bodyMedium" style={[styles.flowText, { color: theme.colors.onSurfaceVariant }]}>
+                                Rest {buyInOutRestPeriod}s
+                              </Text>
+                            </View>
+                          )}
+                          <View style={styles.flowStep}>
+                            <View style={[styles.flowNumber, { backgroundColor: theme.colors.primary }]}>
+                              <Text style={[styles.flowNumberText, { color: '#FFFFFF' }]}>2</Text>
+                            </View>
+                            <Text variant="bodyMedium" style={[styles.flowText, { color: theme.colors.onSurface, fontWeight: 'bold' }]}>
+                              Main Workout ({ladderType === 'amrap' ? 'AMRAP' : ladderType === 'chipper' ? 'Chipper' : 'For Reps'})
+                            </Text>
+                          </View>
+                          {hasBuyInOutRest && (
+                            <View style={styles.flowStep}>
+                              <View style={[styles.flowNumber, { backgroundColor: theme.colors.surfaceVariant, borderWidth: 1, borderColor: theme.colors.outline }]}>
+                                <Text style={[styles.flowNumberText, { color: theme.colors.onSurfaceVariant }]}>⏱</Text>
+                              </View>
+                              <Text variant="bodyMedium" style={[styles.flowText, { color: theme.colors.onSurfaceVariant }]}>
+                                Rest {buyInOutRestPeriod}s
+                              </Text>
+                            </View>
+                          )}
+                          <View style={styles.flowStep}>
+                            <View style={[styles.flowNumber, { backgroundColor: theme.colors.primary }]}>
+                              <Text style={[styles.flowNumberText, { color: '#FFFFFF' }]}>3</Text>
+                            </View>
+                            <Text variant="bodyMedium" style={[styles.flowText, { color: theme.colors.onSurface }]}>
+                              {buyInOutExercise.repsPerRound || ''}{buyInOutExercise.unit ? ' ' + buyInOutExercise.unit : ''} {buyInOutExercise.name || 'Buy Out Exercise'}
+                            </Text>
+                          </View>
+                        </View>
+                      </Card.Content>
+                    </Card>
+                  )}
+                </View>
+              </>
+            )}
               </>
             )}
           </View>
@@ -1208,6 +1438,132 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
     fontSize: 14,
+  },
+  // Buy In/Out Styles
+  buyInOutSection: {
+    marginTop: spacing.md,
+  },
+  buyInOutDescription: {
+    marginTop: 2,
+    marginLeft: spacing.sm,
+  },
+  buyInOutCard: {
+    borderRadius: 12,
+    marginTop: spacing.md,
+    elevation: 1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  buyInOutCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  buyInOutBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  buyInOutBadgeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buyInOutLabel: {
+    flex: 1,
+    fontWeight: '500',
+  },
+  buyInOutInputRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  buyInOutAmountInput: {
+    flex: 1,
+    minWidth: 80,
+  },
+  buyInOutUnitButton: {
+    borderWidth: 1,
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    top:6,
+    height: 49,
+    minWidth: 56,
+  },
+  buyInOutUnitButtonIcon: {
+    paddingVertical: 0,
+    width: 56,
+  },
+  buyInOutUnitButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+    minWidth: 100,
+  },
+  buyInOutUnitText: {
+    fontWeight: '600',
+  },
+  buyInOutUnitIcon: {
+    margin: 0,
+  },
+  buyInOutEditIcon: {
+    margin: 0,
+    marginLeft: spacing.xs,
+  },
+  buyInOutUnitEditContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    alignItems: 'center',
+  },
+  buyInOutUnitTextInput: {
+    flex: 1,
+  },
+  buyInOutCheckButton: {
+    margin: 0,
+  },
+  buyInOutUnitInput: {
+    flex: 1,
+  },
+  buyInOutNameInput: {
+    marginBottom: spacing.md,
+  },
+  buyInOutRestSection: {
+    marginBottom: spacing.md,
+  },
+  buyInOutExample: {
+    padding: spacing.md,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  exampleLabel: {
+    fontWeight: 'bold',
+    marginBottom: spacing.sm,
+  },
+  flowStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.xs,
+  },
+  flowNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  flowNumberText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  flowText: {
+    flex: 1,
   },
 });
 

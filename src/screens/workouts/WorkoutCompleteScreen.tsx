@@ -194,6 +194,16 @@ const WorkoutCompleteScreen: React.FC = () => {
             <View {...panResponder.panHandlers} style={styles.swipeContainer}>
               {activeTab === 'exercises' ? (
                 <View style={styles.tabContent}>
+                  {/* Buy In Exercise */}
+                  {completedWorkout.hasBuyInOut && completedWorkout.buyInOutExercise && (
+                    <View style={[styles.exerciseSummaryItem, styles.buyInOutExercise, { borderBottomColor: theme.colors.outline, backgroundColor: theme.colors.primaryContainer }]}>
+                      <Text variant="bodyMedium" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>BUY IN</Text>
+                      <Text variant="bodyLarge">{completedWorkout.buyInOutExercise?.name || 'Exercise'}</Text>
+                      <Text variant="bodyLarge" style={[styles.exerciseTotalText, { color: theme.colors.primary }]}>
+                        {completedWorkout.buyInOutExercise?.repsPerRound || 1} {(completedWorkout.buyInOutExercise?.unit || 'reps').toLowerCase()}
+                      </Text>
+                    </View>
+                  )}
                   {exerciseTotals.map((exercise) => (
                     <View key={exercise.position} style={[styles.exerciseSummaryItem, { borderBottomColor: theme.colors.outline }]}>
                       <Text variant="bodyLarge">{exercise.name}</Text>
@@ -202,17 +212,45 @@ const WorkoutCompleteScreen: React.FC = () => {
                       </Text>
                     </View>
                   ))}
+                  {/* Buy Out Exercise */}
+                  {completedWorkout.hasBuyInOut && completedWorkout.buyInOutExercise && (
+                    <View style={[styles.exerciseSummaryItem, styles.buyInOutExercise, { borderBottomColor: theme.colors.outline, backgroundColor: theme.colors.primaryContainer }]}>
+                      <Text variant="bodyMedium" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>BUY OUT</Text>
+                      <Text variant="bodyLarge">{completedWorkout.buyInOutExercise?.name || 'Exercise'}</Text>
+                      <Text variant="bodyLarge" style={[styles.exerciseTotalText, { color: theme.colors.primary }]}>
+                        {completedWorkout.buyInOutExercise?.repsPerRound || 1} {(completedWorkout.buyInOutExercise?.unit || 'reps').toLowerCase()}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               ) : (
                 <View style={styles.tabContent}>
-                  {completedWorkout.rounds.map((round) => (
-                    <View key={round.roundNumber} style={[styles.roundItem, { borderBottomColor: theme.colors.outline }]}>
-                      <Text variant="bodyLarge">Round {round.roundNumber}</Text>
+                  {/* Buy In Round */}
+                  {completedWorkout.hasBuyInOut && completedWorkout.buyInCompleted && completedWorkout.rounds?.length > 0 && (
+                    <View style={[styles.roundItem, styles.buyInOutRound, { borderBottomColor: theme.colors.outline, backgroundColor: theme.colors.primaryContainer }]}>
+                      <Text variant="bodyLarge" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>Buy In</Text>
                       <Text variant="bodyLarge" style={[styles.roundTime, { color: theme.colors.primary }]}>
-                        {formatTimeWithMs(round.duration).main}{formatTimeWithMs(round.duration).ms}
+                        {completedWorkout.rounds[0] ? formatTimeWithMs(completedWorkout.rounds[0].duration).main + formatTimeWithMs(completedWorkout.rounds[0].duration).ms : '-'}
+                      </Text>
+                    </View>
+                  )}
+                  {(completedWorkout.rounds || []).slice(completedWorkout.hasBuyInOut && completedWorkout.buyInCompleted ? 1 : 0, completedWorkout.hasBuyInOut && completedWorkout.buyOutCompleted ? -1 : undefined).map((round, index) => (
+                    <View key={round.roundNumber} style={[styles.roundItem, { borderBottomColor: theme.colors.outline }]}>
+                      <Text variant="bodyLarge">Round {index + 1}</Text>
+                      <Text variant="bodyLarge" style={[styles.roundTime, { color: theme.colors.primary }]}>
+                        {formatTimeWithMs(round?.duration || 0).main}{formatTimeWithMs(round?.duration || 0).ms}
                       </Text>
                     </View>
                   ))}
+                  {/* Buy Out Round */}
+                  {completedWorkout.hasBuyInOut && completedWorkout.buyOutCompleted && completedWorkout.rounds?.length > 0 && (
+                    <View style={[styles.roundItem, styles.buyInOutRound, { borderBottomColor: theme.colors.outline, backgroundColor: theme.colors.primaryContainer }]}>
+                      <Text variant="bodyLarge" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>Buy Out</Text>
+                      <Text variant="bodyLarge" style={[styles.roundTime, { color: theme.colors.primary }]}>
+                        {completedWorkout.rounds[completedWorkout.rounds.length - 1] ? formatTimeWithMs(completedWorkout.rounds[completedWorkout.rounds.length - 1].duration).main + formatTimeWithMs(completedWorkout.rounds[completedWorkout.rounds.length - 1].duration).ms : '-'}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
             </View>
@@ -362,6 +400,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
   },
+  buyInOutExercise: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: 8,
+    marginBottom: spacing.xs,
+  },
   exerciseTotalText: {
     fontWeight: 'bold',
   },
@@ -370,6 +414,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
+  },
+  buyInOutRound: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: 8,
+    marginBottom: spacing.xs,
   },
   roundTime: {
     fontWeight: 'bold',
