@@ -153,9 +153,9 @@ const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
         style={styles.segmentedButtons}
       />
 
-      {/* Starting Reps / Value */}
+      {/* Starting Reps / Fixed Value */}
       <NumberStepper
-        label={exercise.direction === 'constant' ? 'Value' : 'Starting Reps'}
+        label={exercise.direction === 'constant' ? 'Fixed Value' : 'Starting Reps'}
         value={exercise.startingReps || 1}
         onChange={handleStartingRepsChange}
         min={1}
@@ -163,7 +163,7 @@ const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
         step={1}
       />
 
-      {/* Step Size - hidden for constant */}
+      {/* Step Size - hidden for fixed */}
       {exercise.direction !== 'constant' && (
         <NumberStepper
           label="Step Size"

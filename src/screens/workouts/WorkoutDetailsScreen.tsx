@@ -86,6 +86,10 @@ const WorkoutDetailsScreen: React.FC = () => {
     if (workout.ladderType === 'descending') return '↓';
     if (workout.ladderType === 'pyramid') return '↕';
     if (workout.ladderType === 'chipper' || workout.ladderType === 'forreps') return '→';
+    if (workout.ladderType === 'amrap') {
+      const step = exercise.stepSize || 0;
+      return step > 0 ? '↑' : '→';
+    }
     return '';
   };
 
@@ -353,7 +357,7 @@ const WorkoutDetailsScreen: React.FC = () => {
                   <View key={exercise.position} style={styles.exerciseRow}>
                     <View style={[styles.exerciseNumberBadge, { backgroundColor: theme.colors.primary }]}>
                       <Text style={[styles.exerciseNumber, { color: '#FFFFFF' }]}>
-                        {workout.ladderType === 'christmas' ? exercise.position : index + 1}
+                        {workout.ladderType === 'christmas' ? exercise.position : '⬤'}
                       </Text>
                     </View>
                     <View style={styles.exerciseInfo}>
@@ -367,11 +371,12 @@ const WorkoutDetailsScreen: React.FC = () => {
                           </Text>
                           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                             {workout.ladderType === 'flexible' 
-                              ? exercise.direction === 'constant' ? 'Constant' : 
+                              ? exercise.direction === 'constant' ? 'Fixed' : 
                                 exercise.direction === 'ascending' ? 'Ascending' : 'Descending'
                               : workout.ladderType === 'ascending' ? 'Ascending' :
                                 workout.ladderType === 'descending' ? 'Descending' :
                                 workout.ladderType === 'pyramid' ? 'Pyramid' :
+                                workout.ladderType === 'amrap' ? ((exercise.stepSize || 0) > 0 ? 'Increasing' : 'Fixed') :
                                 'Fixed'}
                             {workout.ladderType === 'flexible' && exercise.direction !== 'constant' && (
                               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -381,6 +386,11 @@ const WorkoutDetailsScreen: React.FC = () => {
                             {workout.ladderType === 'amrap' && (exercise.stepSize || 0) > 0 && (
                               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                                 {' • Start: '}{exercise.startingReps || 1}{', Step: '}{exercise.stepSize}
+                              </Text>
+                            )}
+                            {(workout.ladderType === 'ascending' || workout.ladderType === 'descending' || workout.ladderType === 'pyramid') && (
+                              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                                {' • Start: '}{workout.startingReps || 1}{', Step: '}{workout.stepSize || 1}
                               </Text>
                             )}
                           </Text>
@@ -440,9 +450,10 @@ const WorkoutDetailsScreen: React.FC = () => {
             </Card.Content>
           </Card>
 
-          {/* Workout Configuration Card */}
+          {/* Workout Configuration Card - hidden for ascending/descending/pyramid as info is shown per exercise */}
           {(workout.stepSize || workout.startingReps) && workout.ladderType !== 'flexible' && 
-           workout.ladderType !== 'chipper' && workout.ladderType !== 'forreps' && (
+           workout.ladderType !== 'chipper' && workout.ladderType !== 'forreps' &&
+           workout.ladderType !== 'ascending' && workout.ladderType !== 'descending' && workout.ladderType !== 'pyramid' && (
             <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
               <Card.Content>
                 <Text variant="titleMedium" style={styles.sectionTitle}>
@@ -574,7 +585,7 @@ const styles = StyleSheet.create({
   },
   exerciseNumber: {
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 14
   },
   exerciseInfo: {
     flex: 1,

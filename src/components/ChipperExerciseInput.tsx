@@ -180,7 +180,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 56,
+    minHeight: 50,
+    height: 48,
+    top:5,
+    width: 10,
+    minWidth: 10
   },
   unitButtonIcon: {
     paddingVertical: spacing.sm,

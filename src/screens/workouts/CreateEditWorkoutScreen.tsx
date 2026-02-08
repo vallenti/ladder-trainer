@@ -246,13 +246,13 @@ const CreateEditWorkoutScreen: React.FC = () => {
     }
 
     if (ladderType === 'flexible') {
-      // Validate that each exercise has direction, startingReps, and stepSize (except constant)
+      // Validate that each exercise has direction, startingReps, and stepSize (except fixed)
       exercises.forEach((ex, index) => {
         if (!ex.direction) {
           newErrors.push(`Exercise ${index + 1}: Direction is required`);
         }
         if (!ex.startingReps || ex.startingReps <= 0) {
-          newErrors.push(`Exercise ${index + 1}: ${ex.direction === 'constant' ? 'Value' : 'Starting reps'} must be a positive number`);
+          newErrors.push(`Exercise ${index + 1}: ${ex.direction === 'constant' ? 'Fixed value' : 'Starting reps'} must be a positive number`);
         }
         
         // Step size only required for ascending/descending
@@ -261,7 +261,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
         }
         
         // Validate that exercise configuration results in exactly maxRounds rounds
-        // Constant exercises are always valid for any number of rounds
+        // Fixed exercises are always valid for any number of rounds
         if (ex.direction !== 'constant') {
           const startReps = ex.startingReps || 1;
           const step = ex.stepSize || 1;

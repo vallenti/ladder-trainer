@@ -24,8 +24,8 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
   const [showUnitInput, setShowUnitInput] = useState(false);
 
   const isDefaultUnit = !exercise.unit || exercise.unit === '';
-  const isConstant = (exercise.stepSize === undefined || exercise.stepSize === 0);
-  const progressionType = isConstant ? 'constant' : 'increasing';
+  const isFixed = (exercise.stepSize === undefined || exercise.stepSize === 0);
+  const progressionType = isFixed ? 'fixed' : 'increasing';
 
   const handleStartingRepsChange = (value: number) => {
     onChange({ ...exercise, startingReps: value });
@@ -36,7 +36,7 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
   };
 
   const handleProgressionTypeChange = (value: string) => {
-    if (value === 'constant') {
+    if (value === 'fixed') {
       onChange({ ...exercise, stepSize: 0 });
     } else {
       onChange({ ...exercise, stepSize: exercise.stepSize || 1 });
@@ -140,8 +140,8 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
         onValueChange={handleProgressionTypeChange}
         buttons={[
           {
-            value: 'constant',
-            label: 'Constant',
+            value: 'fixed',
+            label: 'Fixed',
             icon: 'minus',
           },
           {
@@ -155,7 +155,7 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
 
       {/* Starting Reps */}
       <NumberStepper
-        label={isConstant ? 'Reps (each round)' : 'Starting Reps'}
+        label={isFixed ? 'Reps (each round)' : 'Starting Reps'}
         value={exercise.startingReps || 1}
         onChange={handleStartingRepsChange}
         min={1}
@@ -164,7 +164,7 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
       />
 
       {/* Step Size - only shown when increasing */}
-      {!isConstant && (
+      {!isFixed && (
         <NumberStepper
           label="Step Size (reps per round)"
           value={exercise.stepSize || 1}
@@ -232,6 +232,8 @@ const styles = StyleSheet.create({
   },
   unitButtonIcon: {
     width: 56,
+    height: 50,
+    top: 3
   },
   unitIcon: {
     margin: 0,

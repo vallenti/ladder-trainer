@@ -83,10 +83,14 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   },
 
   getBenchmarkWorkouts: () => {
-    return get().workouts.filter(w => isBenchmarkWorkout(w.id));
+    return get().workouts
+      .filter(w => isBenchmarkWorkout(w.id))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
   getCustomWorkouts: () => {
-    return get().workouts.filter(w => !isBenchmarkWorkout(w.id));
+    return get().workouts
+      .filter(w => !isBenchmarkWorkout(w.id))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 }));
