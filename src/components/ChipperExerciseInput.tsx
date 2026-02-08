@@ -124,6 +124,7 @@ const ChipperExerciseInput: React.FC<ChipperExerciseInputProps> = ({
         value={exercise.name}
         onChangeText={(name) => onChange({ ...exercise, name })}
         style={styles.nameInput}
+        maxLength={100}
       />
     </View>
   );
@@ -183,8 +184,6 @@ const styles = StyleSheet.create({
     minHeight: 50,
     height: 48,
     top:5,
-    width: 10,
-    minWidth: 10
   },
   unitButtonIcon: {
     paddingVertical: spacing.sm,

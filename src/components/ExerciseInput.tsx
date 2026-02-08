@@ -61,6 +61,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
           value={exercise.name}
           onChangeText={(name) => onChange({ ...exercise, name })}
           style={styles.nameInput}
+          maxLength={100}
         />
 
         {!showUnitInput ? (

@@ -6,16 +6,21 @@ import AppNavigator from './navigation/AppNavigator';
 import { lightTheme, darkTheme } from './constants/theme';
 import { useThemeStore } from './store/themeStore';
 import { useActiveWorkoutStore } from './store/activeWorkoutStore';
+import { useWorkoutHistoryStore } from './store/workoutHistoryStore';
 
 const App = () => {
   const { themeMode, loadThemePreference } = useThemeStore();
   const { activeWorkout, isPaused, pauseWorkout, elapsedTime, totalPausedTime, loadPausedWorkout } = useActiveWorkoutStore();
+  const { loadHistory } = useWorkoutHistoryStore();
   const appState = useRef(AppState.currentState);
   const navigationRef = useRef<any>(null);
 
   useEffect(() => {
     // Load saved theme preference on app start
     loadThemePreference();
+    
+    // Load workout history
+    loadHistory();
     
     // Load paused workout if exists and navigate to it
     const initializePausedWorkout = async () => {

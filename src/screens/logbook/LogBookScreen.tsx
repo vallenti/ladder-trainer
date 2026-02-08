@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import ViewShot from 'react-native-view-shot';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { spacing } from '../../constants/theme';
-import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
+import { useWorkoutHistoryStore } from '../../store/workoutHistoryStore';
 import { formatTime } from '../../utils/calculations';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -100,7 +100,7 @@ const formatDateToYYYYMMDD = (date: Date): string => {
 const LogbookScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { workoutHistory, loadHistory, deleteWorkoutFromHistory } = useActiveWorkoutStore();
+  const { workoutHistory, deleteWorkoutFromHistory, savePartialRoundReps } = useWorkoutHistoryStore();
   const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [workoutToDelete, setWorkoutToDelete] = useState<string | null>(null);
@@ -114,10 +114,6 @@ const LogbookScreen: React.FC = () => {
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [filterExpanded, setFilterExpanded] = useState(false);
-
-  useEffect(() => {
-    loadHistory();
-  }, []);
 
   // Filter workouts based on search query and date filter
   const filteredWorkouts = workoutHistory.filter(workout => {

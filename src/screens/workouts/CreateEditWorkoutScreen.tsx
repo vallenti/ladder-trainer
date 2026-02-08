@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card, Chip, IconButton } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import ExerciseInput from '../../components/ExerciseInput';
@@ -299,6 +300,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
       if (!buyInOutExercise.name.trim()) {
         newErrors.push('Buy In/Out: Exercise name is required');
       }
+      if (buyInOutExercise.name.length > 100) {
+        newErrors.push('Buy In/Out: Exercise name must be 100 characters or less');
+      }
       if (hasBuyInOutRest) {
         const rest = parseInt(buyInOutRestPeriod, 10);
         if (isNaN(rest) || rest <= 0) {
@@ -313,6 +317,12 @@ const CreateEditWorkoutScreen: React.FC = () => {
 
   const handleSave = async () => {
     if (!validate()) return;
+
+    // Validate workout name length
+    if (name.trim().length > 100) {
+      setErrors(['Workout name must be 100 characters or less']);
+      return;
+    }
 
     // For chipper, maxRounds equals number of exercises; for AMRAP, set high number
     const finalMaxRounds = ladderType === 'chipper' ? exercises.length : ladderType === 'amrap' ? 999 : parseInt(maxRounds, 10);
@@ -536,18 +546,26 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 >
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
-                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'ascending' && { color: theme.colors.primary }]}>
-                        Ascending
-                      </Text>
+                      <MaterialCommunityIcons 
+                        name="trending-up" 
+                        size={48} 
+                        color={ladderType === 'ascending' ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                        style={styles.ladderTypeIcon}
+                      />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'ascending' && { color: theme.colors.primary }]}>
+                          Ascending
+                        </Text>
+                        {ladderType === 'ascending' && (
+                          <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                            {getLadderStrategy('ascending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10, parseInt(startingReps, 10) || 1).getDescription()}
+                          </Text>
+                        )}
+                      </View>
                       {ladderType === 'ascending' && (
-                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                        <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
                       )}
                     </View>
-                    {ladderType === 'ascending' && (
-                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
-                        {getLadderStrategy('ascending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10, parseInt(startingReps, 10) || 1).getDescription()}
-                      </Text>
-                    )}
                   </Card.Content>
                 </Card>
 
@@ -566,18 +584,26 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 >
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
-                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'descending' && { color: theme.colors.primary }]}>
-                        Descending
-                      </Text>
+                      <MaterialCommunityIcons 
+                        name="trending-down" 
+                        size={48} 
+                        color={ladderType === 'descending' ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                        style={styles.ladderTypeIcon}
+                      />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'descending' && { color: theme.colors.primary }]}>
+                          Descending
+                        </Text>
+                        {ladderType === 'descending' && (
+                          <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                            {getLadderStrategy('descending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10, parseInt(startingReps, 10) || 1).getDescription()}
+                          </Text>
+                        )}
+                      </View>
                       {ladderType === 'descending' && (
-                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                        <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
                       )}
                     </View>
-                    {ladderType === 'descending' && (
-                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
-                        {getLadderStrategy('descending', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10, parseInt(startingReps, 10) || 1).getDescription()}
-                      </Text>
-                    )}
                   </Card.Content>
                 </Card>
 
@@ -596,18 +622,26 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 >
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
-                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'pyramid' && { color: theme.colors.primary }]}>
-                        Pyramid
-                      </Text>
+                      <MaterialCommunityIcons 
+                        name="triangle" 
+                        size={48} 
+                        color={ladderType === 'pyramid' ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                        style={styles.ladderTypeIcon}
+                      />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'pyramid' && { color: theme.colors.primary }]}>
+                          Pyramid
+                        </Text>
+                        {ladderType === 'pyramid' && (
+                          <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                            {getLadderStrategy('pyramid', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                          </Text>
+                        )}
+                      </View>
                       {ladderType === 'pyramid' && (
-                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                        <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
                       )}
                     </View>
-                    {ladderType === 'pyramid' && (
-                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
-                        {getLadderStrategy('pyramid', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
-                      </Text>
-                    )}
                   </Card.Content>
                 </Card>
                 
@@ -627,18 +661,26 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 >
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
-                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'flexible' && { color: theme.colors.primary }]}>
-                        Flexible
-                      </Text>
+                      <MaterialCommunityIcons 
+                        name="tune-variant" 
+                        size={48} 
+                        color={ladderType === 'flexible' ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                        style={styles.ladderTypeIcon}
+                      />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'flexible' && { color: theme.colors.primary }]}>
+                          Flexible
+                        </Text>
+                        {ladderType === 'flexible' && (
+                          <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                            {getLadderStrategy('flexible', 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                          </Text>
+                        )}
+                      </View>
                       {ladderType === 'flexible' && (
-                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                        <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
                       )}
                     </View>
-                    {ladderType === 'flexible' && (
-                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
-                        {getLadderStrategy('flexible', 1, parseInt(maxRounds, 10) || 10).getDescription()}
-                      </Text>
-                    )}
                   </Card.Content>
                 </Card>
 
@@ -657,18 +699,26 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 >
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
-                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'chipper' && { color: theme.colors.primary }]}>
-                        Chipper
-                      </Text>
+                      <MaterialCommunityIcons 
+                        name="fire" 
+                        size={48} 
+                        color={ladderType === 'chipper' ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                        style={styles.ladderTypeIcon}
+                      />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'chipper' && { color: theme.colors.primary }]}>
+                          Chipper
+                        </Text>
+                        {ladderType === 'chipper' && (
+                          <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                            {getLadderStrategy('chipper', 1, parseInt(maxRounds, 10) || 5).getDescription()}
+                          </Text>
+                        )}
+                      </View>
                       {ladderType === 'chipper' && (
-                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                        <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
                       )}
                     </View>
-                    {ladderType === 'chipper' && (
-                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
-                        {getLadderStrategy('chipper', 1, parseInt(maxRounds, 10) || 5).getDescription()}
-                      </Text>
-                    )}
                   </Card.Content>
                 </Card>
 
@@ -687,18 +737,26 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 >
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
-                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'amrap' && { color: theme.colors.primary }]}>
-                        AMRAP
-                      </Text>
+                      <MaterialCommunityIcons 
+                        name="timer" 
+                        size={48} 
+                        color={ladderType === 'amrap' ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                        style={styles.ladderTypeIcon}
+                      />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'amrap' && { color: theme.colors.primary }]}>
+                          AMRAP
+                        </Text>
+                        {ladderType === 'amrap' && (
+                          <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                            {getLadderStrategy('amrap', 1, parseInt(maxRounds, 10) || 999).getDescription()}
+                          </Text>
+                        )}
+                      </View>
                       {ladderType === 'amrap' && (
-                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                        <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
                       )}
                     </View>
-                    {ladderType === 'amrap' && (
-                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
-                        {getLadderStrategy('amrap', 1, parseInt(maxRounds, 10) || 999).getDescription()}
-                      </Text>
-                    )}
                   </Card.Content>
                 </Card>
 
@@ -717,18 +775,26 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 >
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
-                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'forreps' && { color: theme.colors.primary }]}>
-                        For Reps
-                      </Text>
+                      <MaterialCommunityIcons 
+                        name="counter" 
+                        size={48} 
+                        color={ladderType === 'forreps' ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                        style={styles.ladderTypeIcon}
+                      />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'forreps' && { color: theme.colors.primary }]}>
+                          For Reps
+                        </Text>
+                        {ladderType === 'forreps' && (
+                          <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                            {getLadderStrategy('forreps', 1, parseInt(maxRounds, 10) || 5).getDescription()}
+                          </Text>
+                        )}
+                      </View>
                       {ladderType === 'forreps' && (
-                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                        <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
                       )}
                     </View>
-                    {ladderType === 'forreps' && (
-                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
-                        {getLadderStrategy('forreps', 1, parseInt(maxRounds, 10) || 5).getDescription()}
-                      </Text>
-                    )}
                   </Card.Content>
                 </Card>
 
@@ -747,18 +813,26 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 >
                   <Card.Content>
                     <View style={styles.ladderTypeHeader}>
-                      <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'christmas' && { color: theme.colors.primary }]}>
+                      <MaterialCommunityIcons 
+                        name="pine-tree" 
+                        size={48} 
+                        color={ladderType === 'christmas' ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                        style={styles.ladderTypeIcon}
+                      />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'christmas' && { color: theme.colors.primary }]}>
                           Christmas
-                      </Text>
+                        </Text>
+                        {ladderType === 'christmas' && (
+                          <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                            {getLadderStrategy('christmas', 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                          </Text>
+                        )}
+                      </View>
                       {ladderType === 'christmas' && (
-                        <Text style={{ color: theme.colors.primary, fontSize: 20 }}>✓</Text>
+                        <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
                       )}
                     </View>
-                    {ladderType === 'christmas' && (
-                      <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
-                        {getLadderStrategy('christmas', 1, parseInt(maxRounds, 10) || 10).getDescription()}
-                      </Text>
-                    )}
                   </Card.Content>
                 </Card>
               </>
@@ -798,6 +872,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onChangeText={setName}
                   style={styles.input}
                   placeholder={generateDefaultWorkoutName()}
+                  maxLength={100}
                 />
 
             {/* Time Cap - Only for AMRAP */}
@@ -1150,6 +1225,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           onChangeText={(text) => setBuyInOutExercise({ ...buyInOutExercise, name: text })}
                           style={styles.buyInOutNameInput}
                           placeholder="e.g., Run, Row, Bike"
+                          maxLength={100}
                         />
 
                         {/* Buy In/Out Rest Period */}
@@ -1325,15 +1401,22 @@ const styles = StyleSheet.create({
   },
   ladderTypeHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
+  },
+  ladderTypeIcon: {
+    marginRight: spacing.xs,
+  },
+  ladderTypeContent: {
+    flex: 1,
   },
   ladderTypeName: {
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 20,
   },
   ladderTypeDescription: {
-    marginTop: spacing.sm,
-    lineHeight: 20,
+    marginTop: spacing.xs,
+    lineHeight: 18,
   },
   buttonContainer: {
     padding: spacing.md,

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { Workout, Round, Template, Exercise } from '../types';
-import { saveWorkoutHistory, loadWorkoutHistory } from '../utils/storage';
+import { Workout, Round, Template } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useWorkoutHistoryStore } from './workoutHistoryStore';
 
 const PAUSED_WORKOUT_KEY = '@ladder_trainer_paused_workout';
 
@@ -36,12 +36,6 @@ interface ActiveWorkoutStore {
   resumeWorkout: () => void;
   discardPausedWorkout: () => Promise<void>;
   loadPausedWorkout: () => Promise<boolean>;
-  savePartialRoundReps: (workoutId: string, exercises: Exercise[]) => Promise<void>;
-  
-  // History
-  workoutHistory: Workout[];
-  loadHistory: () => Promise<void>;
-  deleteWorkoutFromHistory: (workoutId: string) => Promise<void>;
 }
 
 export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
@@ -53,7 +47,6 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
   pauseStartTime: 0,
   isMuted: false,
   isTimerFocusMode: false,
-  workoutHistory: [],
 
   startWorkout: (template: Template) => {
     const workout: Workout = {
@@ -151,7 +144,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
   },
 
   completeWorkout: async () => {
-    const { activeWorkout, workoutHistory } = get();
+    const { activeWorkout } = get();
     if (!activeWorkout) return;
 
     const endTime = new Date();
@@ -164,8 +157,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       status: 'completed',
     };
 
-    const updatedHistory = [completedWorkout, ...workoutHistory];
-    await saveWorkoutHistory(updatedHistory);
+    // Add to workout history store
+    await useWorkoutHistoryStore.getState().addWorkout(completedWorkout);
 
     // Clear paused workout from storage
     await AsyncStorage.removeItem(PAUSED_WORKOUT_KEY);
@@ -173,7 +166,6 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
     set({
       activeWorkout: null,
       currentRoundStartTime: null,
-      workoutHistory: updatedHistory,
       isPaused: false,
       elapsedTime: 0,
       totalPausedTime: 0,
@@ -277,51 +269,6 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       console.error('Failed to load paused workout:', error);
       return false;
     }
-  },
-
-  loadHistory: async () => {
-    const loadedHistory = await loadWorkoutHistory();
-    
-    // Data migration: Add default ladderType and maxRounds to existing workout history
-    const history = loadedHistory.map(workout => {
-      if (!workout.ladderType) {
-        return {
-          ...workout,
-          ladderType: 'christmas' as const,
-          maxRounds: workout.maxRounds || workout.exercises.length,
-        };
-      }
-      return workout;
-    });
-    
-    // Save migrated data if any changes were made
-    if (history.some((w, i) => !loadedHistory[i].ladderType)) {
-      await saveWorkoutHistory(history);
-    }
-    
-    set({ workoutHistory: history });
-  },
-
-  deleteWorkoutFromHistory: async (workoutId: string) => {
-    const { workoutHistory } = get();
-    const updatedHistory = workoutHistory.filter(w => w.id !== workoutId);
-    await saveWorkoutHistory(updatedHistory);
-    set({ workoutHistory: updatedHistory });
-  },
-
-  savePartialRoundReps: async (workoutId: string, exercises: Exercise[]) => {
-    const { workoutHistory } = get();
-    const updatedHistory = workoutHistory.map(w => {
-      if (w.id === workoutId) {
-        return {
-          ...w,
-          exercises: exercises,
-        };
-      }
-      return w;
-    });
-    await saveWorkoutHistory(updatedHistory);
-    set({ workoutHistory: updatedHistory });
   },
 
   toggleMute: () => {

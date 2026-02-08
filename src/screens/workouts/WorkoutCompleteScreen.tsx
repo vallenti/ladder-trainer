@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet, TouchableOpacity, PanResponder, Platform 
 import { Text, Button, Card, useTheme, Portal, Dialog, TextInput, Snackbar } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import ViewShot from 'react-native-view-shot';
-import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
+import { useWorkoutHistoryStore } from '../../store/workoutHistoryStore';
 import { formatTime } from '../../utils/calculations';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { spacing } from '../../constants/theme';
@@ -41,7 +41,7 @@ const WorkoutCompleteScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RouteParams, 'WorkoutComplete'>>();
-  const { workoutHistory, savePartialRoundReps } = useActiveWorkoutStore();
+  const { workoutHistory, savePartialRoundReps } = useWorkoutHistoryStore();
   const [activeTab, setActiveTab] = useState<'exercises' | 'rounds'>('exercises');
   const [showPartialDialog, setShowPartialDialog] = useState(route.params?.showPartialRoundInput || false);
   const [partialReps, setPartialReps] = useState<Record<number, string>>({});
