@@ -465,37 +465,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
         {currentStep === 2 && <Appbar.Action icon="check" onPress={handleSave} />}
       </Appbar.Header>
 
-      {/* Step Indicator - Only show when creating new workout */}
-      {!isEditing && (
-        <View style={[styles.stepIndicator, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.stepItem}>
-            <View style={[
-              styles.stepCircle, 
-              currentStep === 1 ? { backgroundColor: theme.colors.primary } : { backgroundColor: theme.colors.surfaceVariant }
-            ]}>
-              <Text style={[styles.stepNumber, { color: currentStep === 1 ? theme.colors.onPrimary : theme.colors.onSurfaceVariant }]}>1</Text>
-            </View>
-            <Text variant="bodySmall" style={[styles.stepLabel, currentStep === 1 && { color: theme.colors.primary }]}>
-              Select Type
-            </Text>
-          </View>
-          
-          <View style={[styles.stepLine, { backgroundColor: currentStep === 2 ? theme.colors.primary : theme.colors.surfaceVariant }]} />
-          
-          <View style={styles.stepItem}>
-            <View style={[
-              styles.stepCircle, 
-              currentStep === 2 ? { backgroundColor: theme.colors.primary } : { backgroundColor: theme.colors.surfaceVariant }
-            ]}>
-              <Text style={[styles.stepNumber, { color: currentStep === 2 ? theme.colors.onPrimary : theme.colors.onSurfaceVariant }]}>2</Text>
-            </View>
-            <Text variant="bodySmall" style={[styles.stepLabel, currentStep === 2 && { color: theme.colors.primary }]}>
-              Configure
-            </Text>
-          </View>
-        </View>
-      )}
-
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -1329,6 +1298,22 @@ const CreateEditWorkoutScreen: React.FC = () => {
             </Button>
           </View>
         )}
+
+        {/* Fixed Save Button for Step 2 */}
+        {currentStep === 2 && (
+          <View style={[styles.buttonContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outline }]}>
+            <Button
+              mode="contained"
+              onPress={handleSave}
+              
+              contentStyle={styles.nextButtonContent}
+              style={styles.fixedNextButton}
+              textColor='#fff'
+            >
+              {isEditing ? 'Update Workout' : 'Save Workout'}
+            </Button>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </View>
   );
@@ -1350,41 +1335,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.md,
-  },
-  // Step Indicator Styles
-  stepIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  stepItem: {
-    alignItems: 'center',
-  },
-  stepCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  stepNumber: {
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  stepLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  stepLine: {
-    width: 40,
-    height: 2,
-    marginHorizontal: spacing.xs,
-    marginBottom: 14,
   },
   // Step 1 Styles
   stepMainTitle: {
