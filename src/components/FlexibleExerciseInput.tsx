@@ -4,6 +4,7 @@ import { TextInput, IconButton, Text, SegmentedButtons, useTheme } from 'react-n
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
 import NumberStepper from './NumberStepper';
+import AutocompleteExerciseInput from './AutocompleteExerciseInput';
 
 interface FlexibleExerciseInputProps {
   exercise: Exercise;
@@ -74,11 +75,17 @@ const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
 
       {/* Exercise Name + Unit Button Row */}
       <View style={styles.inputRow}>
-        <TextInput
-          mode="outlined"
+        <AutocompleteExerciseInput
           label="Exercise Name"
           value={exercise.name}
           onChangeText={(name) => onChange({ ...exercise, name })}
+          onSelectExercise={(selectedExercise) => {
+            onChange({ 
+              ...exercise, 
+              name: selectedExercise.name,
+              unit: selectedExercise.suggestedUnit || exercise.unit,
+            });
+          }}
           style={styles.nameInput}
           maxLength={100}
         />

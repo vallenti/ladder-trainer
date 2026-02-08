@@ -23,6 +23,11 @@ export type WorkoutStackParamList = {
   WorkoutDetails: { workoutId: string };
 };
 
+export type SettingsStackParamList = {
+  SettingsMain: undefined;
+  ManageExercises: undefined;
+};
+
 // Helper types for screen props
 export type HomeTabScreenProps<T extends keyof HomeTabParamList> = BottomTabScreenProps<HomeTabParamList, T>;
 export type RootStackScreenProps<T extends keyof RootStackParamList> = StackScreenProps<RootStackParamList, T>;

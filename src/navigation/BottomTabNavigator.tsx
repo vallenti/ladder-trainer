@@ -6,7 +6,7 @@ import { useTheme, IconButton, Badge } from 'react-native-paper';
 import { HomeTabParamList } from '../types/navigation';
 import WorkoutNavigator from './WorkoutNavigator';
 import LogbookScreen from '../screens/logbook/LogBookScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import SettingsNavigator from './SettingsNavigator';
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
@@ -53,13 +53,11 @@ const BottomTabNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
+        component={SettingsNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="cog" size={size} color={color} />
           ),
-          headerShown: true,
-          headerTitle: 'Settings',
         }}
       />
     </Tab.Navigator>

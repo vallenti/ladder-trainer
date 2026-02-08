@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Platform, Linking, KeyboardAvoidingView } from 'react-native';
-import { Text, Card, RadioButton, useTheme, Portal, Dialog, TextInput, Button, List } from 'react-native-paper';
+import { Text, Card, RadioButton, useTheme, Portal, Dialog, TextInput, Button, List, Appbar } from 'react-native-paper';
 import { useThemeStore, ThemeMode } from '../store/themeStore';
 import { spacing } from '../constants/theme';
 import { SUPPORT_EMAIL, APP_VERSION } from '../constants/config';
@@ -8,11 +8,11 @@ import Constants from 'expo-constants';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import type { RootStackParamList } from '../types/navigation';
+import type { SettingsStackParamList } from '../types/navigation';
 
 type FeedbackType = 'bug' | 'feature' | null;
 
-type NavigationProp = StackNavigationProp<RootStackParamList>;
+type NavigationProp = StackNavigationProp<SettingsStackParamList>;
 
 const SettingsScreen: React.FC = () => {
   const theme = useTheme();
@@ -92,7 +92,11 @@ Device Information:
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <Appbar.Header>
+        <Appbar.Content title="Settings" />
+      </Appbar.Header>
+      <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
@@ -117,6 +121,26 @@ Device Information:
                 </View>
               ))}
             </RadioButton.Group>
+          </Card.Content>
+        </Card>
+
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text variant="titleLarge" style={styles.sectionTitle}>
+              Exercises
+            </Text>
+            <Text variant="bodyMedium" style={[styles.sectionDescription, { color: theme.colors.onSurfaceVariant }]}>
+              Manage your exercise catalog
+            </Text>
+
+            <List.Item
+              title="Manage Exercises"
+              description="Add, edit, or delete custom exercises"
+              left={props => <List.Icon {...props} icon="dumbbell" />}
+              right={props => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('ManageExercises')}
+              style={styles.listItem}
+            />
           </Card.Content>
         </Card>
 
@@ -223,13 +247,12 @@ Device Information:
         </Dialog>
       </Portal>
     </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: {},
   content: {
     padding: spacing.md,
   },

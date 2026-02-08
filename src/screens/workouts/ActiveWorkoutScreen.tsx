@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Platform, BackHandler, useWindowDimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, ScrollView, StyleSheet, Platform, BackHandler, useWindowDimensions, Animated } from 'react-native';
 import { Text, Button, Card, ProgressBar, Appbar, Portal, Dialog, IconButton, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
@@ -7,6 +7,8 @@ import { formatTime } from '../../utils/calculations';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { spacing } from '../../constants/theme';
 import { Exercise } from '../../types';
+import * as Haptics from 'expo-haptics';
+import { playSuccessSound } from '../../utils/soundUtils';
 
 const formatTimeWithMs = (totalSeconds: number): { main: string; ms: string } => {
   const seconds = Math.floor(totalSeconds);
@@ -57,6 +59,15 @@ const ActiveWorkoutScreen: React.FC = () => {
   const [quitDialogVisible, setQuitDialogVisible] = useState(false);
   const [totalPausedTime, setTotalPausedTime] = useState(storeTotalPausedTime);
   const [frozenElapsedTime, setFrozenElapsedTime] = useState(storeElapsedTime);
+  const [showSuccessCheckmark, setShowSuccessCheckmark] = useState(false);
+
+  // Animation refs
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const flashOpacity = useRef(new Animated.Value(0)).current;
+  const checkmarkScale = useRef(new Animated.Value(0)).current;
+  const checkmarkOpacity = useRef(new Animated.Value(0)).current;
+  const roundNumberScale = useRef(new Animated.Value(1)).current;
+  const progressBarWidth = useRef(new Animated.Value(0)).current;
 
   // Sync with store state when it changes (e.g., after loading paused workout)
   useEffect(() => {
@@ -128,7 +139,101 @@ const ActiveWorkoutScreen: React.FC = () => {
     : ladderStrategy.getExercisesForRound(currentRound, activeWorkout.exercises);
   const progress = activeWorkout.currentRoundIndex / totalRounds;
 
-  const handleRoundComplete = () => {
+  // Animation functions
+  const triggerSuccessFeedback = async () => {
+    // Haptic feedback
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.warn('Haptic feedback not available:', error);
+    }
+
+    // Success sound (only if not muted)
+    if (!isMuted) {
+      playSuccessSound();
+    }
+
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Flash screen animation
+    Animated.sequence([
+      Animated.timing(flashOpacity, {
+        toValue: 0.3,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(flashOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Success checkmark animation
+    setShowSuccessCheckmark(true);
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(checkmarkScale, {
+          toValue: 1.2,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(checkmarkScale, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(checkmarkOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.delay(400),
+        Animated.timing(checkmarkOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      setShowSuccessCheckmark(false);
+      checkmarkScale.setValue(0);
+    });
+
+    // Round number animation
+    Animated.sequence([
+      Animated.timing(roundNumberScale, {
+        toValue: 1.3,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(roundNumberScale, {
+        toValue: 1,
+        friction: 3,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handleRoundComplete = async () => {
+    // Trigger all feedback animations
+    await triggerSuccessFeedback();
+
     if (isInBuyIn) {
       // Complete buy-in
       completeBuyIn();
@@ -318,9 +423,11 @@ const ActiveWorkoutScreen: React.FC = () => {
             )}
             {activeWorkout.ladderType === 'chipper' ? (
               <>
-                <Text variant="titleMedium" style={styles.cardTitle}>
-                  {isInBuyIn ? 'Complete Buy In Exercise' : isInBuyOut ? 'Complete Buy Out Exercise' : `${currentRound} of ${totalRounds} Complete`}
-                </Text>
+                <Animated.View style={{ transform: [{ scale: roundNumberScale }] }}>
+                  <Text variant="titleMedium" style={styles.cardTitle}>
+                    {isInBuyIn ? 'Complete Buy In Exercise' : isInBuyOut ? 'Complete Buy Out Exercise' : `${currentRound} of ${totalRounds} Complete`}
+                  </Text>
+                </Animated.View>
                 {activeWorkout.exercises.map((exercise, index) => {
                   const roundNumber = index + 1;
                   const isCompleted = roundNumber <= currentRound - 1;
@@ -373,15 +480,17 @@ const ActiveWorkoutScreen: React.FC = () => {
               </>
             ) : (
               <>
-                <Text variant="titleMedium" style={styles.cardTitle}>
-                  {isInBuyIn 
-                    ? 'Complete Buy In Exercise' 
-                    : isInBuyOut 
-                    ? 'Complete Buy Out Exercise' 
-                    : activeWorkout.ladderType === 'amrap' 
-                    ? `Round ${currentRound}` 
-                    : `Round ${currentRound} of ${totalRounds}`}
-                </Text>
+                <Animated.View style={{ transform: [{ scale: roundNumberScale }] }}>
+                  <Text variant="titleMedium" style={styles.cardTitle}>
+                    {isInBuyIn 
+                      ? 'Complete Buy In Exercise' 
+                      : isInBuyOut 
+                      ? 'Complete Buy Out Exercise' 
+                      : activeWorkout.ladderType === 'amrap' 
+                      ? `Round ${currentRound}` 
+                      : `Round ${currentRound} of ${totalRounds}`}
+                  </Text>
+                </Animated.View>
                 {exercisesInRound.map((item) => {
                   // Handle buy-in/out exercises (plain Exercise) vs regular exercises ({exercise, reps})
                   const exercise = 'exercise' in item ? item.exercise : item;
@@ -490,23 +599,25 @@ const ActiveWorkoutScreen: React.FC = () => {
           shadowColor: theme.colors.shadow 
         }
       ]}>
-        <Button
-          mode="contained"
-          onPress={handleRoundComplete}
-          style={styles.completeButton}
-          contentStyle={isTimerFocusMode ? styles.completeButtonContentFocus : styles.completeButtonContent}
-          buttonColor={theme.colors.primary}
-          textColor="#FFFFFF"
-          labelStyle={isTimerFocusMode && styles.completeButtonLabelFocus}
-        >
-          {isInBuyIn 
-            ? 'Complete Buy In' 
-            : isInBuyOut 
-            ? 'Complete Buy Out & Finish' 
-            : currentRound >= totalRounds 
-            ? (hasBuyInOut ? 'Complete Final Round' : 'Finish Workout') 
-            : 'Complete Round'}
-        </Button>
+        <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+          <Button
+            mode="contained"
+            onPress={handleRoundComplete}
+            style={styles.completeButton}
+            contentStyle={isTimerFocusMode ? styles.completeButtonContentFocus : styles.completeButtonContent}
+            buttonColor={theme.colors.primary}
+            textColor="#FFFFFF"
+            labelStyle={isTimerFocusMode && styles.completeButtonLabelFocus}
+          >
+            {isInBuyIn 
+              ? 'Complete Buy In' 
+              : isInBuyOut 
+              ? 'Complete Buy Out & Finish' 
+              : currentRound >= totalRounds 
+              ? (hasBuyInOut ? 'Complete Final Round' : 'Finish Workout') 
+              : 'Complete Round'}
+          </Button>
+        </Animated.View>
       </View>
 
       <Portal>
@@ -540,6 +651,36 @@ const ActiveWorkoutScreen: React.FC = () => {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      {/* Flash overlay for visual feedback */}
+      <Animated.View
+        style={[
+          styles.flashOverlay,
+          {
+            opacity: flashOpacity,
+            backgroundColor: theme.colors.primary,
+          },
+        ]}
+        pointerEvents="none"
+      />
+
+      {/* Success checkmark overlay */}
+      {showSuccessCheckmark && (
+        <Animated.View
+          style={[
+            styles.checkmarkOverlay,
+            {
+              opacity: checkmarkOpacity,
+              transform: [{ scale: checkmarkScale }],
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <View style={[styles.checkmarkCircle, { backgroundColor: theme.colors.primary }]}>
+            <Text style={styles.checkmarkText}>✓</Text>
+          </View>
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -750,6 +891,42 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     letterSpacing: 1,
+  },
+  // Success feedback animations
+  flashOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  checkmarkOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1001,
+  },
+  checkmarkCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  checkmarkText: {
+    fontSize: 64,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
 });
 

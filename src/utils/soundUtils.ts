@@ -48,6 +48,23 @@ export const playLongBeep = async (): Promise<void> => {
 };
 
 /**
+ * Play a success sound (two-tone positive feedback)
+ */
+export const playSuccessSound = async (): Promise<void> => {
+  if (!audioEnabled) return;
+  
+  try {
+    // Play first tone (higher pitch)
+    await playBeep(1200, 150);
+    // Small delay then second tone
+    await new Promise(resolve => setTimeout(resolve, 100));
+    await playBeep(1600, 200);
+  } catch (error) {
+    console.warn('Error playing success sound:', error);
+  }
+};
+
+/**
  * Generate a data URI for a beep sound
  * This creates a simple WAV file with a sine wave
  */

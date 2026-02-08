@@ -4,12 +4,14 @@ import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card, Chi
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
+import { useExerciseStore } from '../../store/exerciseStore';
 import ExerciseInput from '../../components/ExerciseInput';
 import FlexibleExerciseInput from '../../components/FlexibleExerciseInput';
 import ChipperExerciseInput from '../../components/ChipperExerciseInput';
 import AMRAPExerciseInput from '../../components/AMRAPExerciseInput';
 import ForRepsExerciseInput from '../../components/ForRepsExerciseInput';
 import NumberStepper from '../../components/NumberStepper';
+import AutocompleteExerciseInput from '../../components/AutocompleteExerciseInput';
 import { Exercise, LadderType } from '../../types';
 import { spacing } from '../../constants/theme';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
@@ -26,6 +28,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RouteParams, 'CreateEditWorkout'>>();
   const { addWorkout, updateWorkout, getWorkout } = useWorkoutStore();
+  const { addExerciseIfNotExists } = useExerciseStore();
   
   const workoutId = route.params?.workoutId;
   const isEditing = !!workoutId;
@@ -34,8 +37,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
   // Step tracking for creation flow (1 = Select Type, 2 = Configure Details)
   const [currentStep, setCurrentStep] = useState(isEditing ? 2 : 1);
 
-  const initialLadderType = existingWorkout?.ladderType || 'christmas';
-  const initialDefaults = getLadderDefaults(initialLadderType);
+  const initialLadderType = existingWorkout?.ladderType || ('' as LadderType);
+  const initialDefaults = initialLadderType ? getLadderDefaults(initialLadderType) : getLadderDefaults('christmas');
   
   const [ladderType, setLadderType] = useState<LadderType>(initialLadderType);
   const [maxRounds, setMaxRounds] = useState(existingWorkout?.maxRounds?.toString() || initialDefaults.maxRounds.toString());
@@ -88,7 +91,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
 
   // Update defaults when ladder type changes (only for new workouts)
   useEffect(() => {
-    if (!isEditing) {
+    if (!isEditing && ladderType) {
       const defaults = getLadderDefaults(ladderType);
       setMaxRounds(defaults.maxRounds.toString());
       setStepSize(defaults.stepSize.toString());
@@ -101,6 +104,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
 
   // When switching ladder types, update exercises to have correct fields
   useEffect(() => {
+    if (!ladderType) return; // Skip if no ladder type selected yet
+    
     setExercises(prevExercises => 
       prevExercises.map(ex => {
         if (ladderType === 'flexible') {
@@ -324,6 +329,18 @@ const CreateEditWorkoutScreen: React.FC = () => {
       return;
     }
 
+    // Auto-catalog custom exercises
+    for (const exercise of exercises) {
+      if (exercise.name.trim()) {
+        await addExerciseIfNotExists(exercise.name, exercise.unit);
+      }
+    }
+
+    // Auto-catalog buy-in/out exercise if applicable
+    if (hasBuyInOut && buyInOutExercise.name.trim()) {
+      await addExerciseIfNotExists(buyInOutExercise.name, buyInOutExercise.unit);
+    }
+
     // For chipper, maxRounds equals number of exercises; for AMRAP, set high number
     const finalMaxRounds = ladderType === 'chipper' ? exercises.length : ladderType === 'amrap' ? 999 : parseInt(maxRounds, 10);
     
@@ -363,6 +380,10 @@ const CreateEditWorkoutScreen: React.FC = () => {
   };
 
   const generateDefaultWorkoutName = (): string => {
+    if (!ladderType) {
+      return 'My Workout';
+    }
+    
     const typeNames = {
       christmas: 'Christmas',
       ascending: 'Ascending',
@@ -378,6 +399,12 @@ const CreateEditWorkoutScreen: React.FC = () => {
   };
 
   const handleNextStep = () => {
+    // Validate that a ladder type has been selected
+    if (!ladderType) {
+      setErrors(['Please select a workout type to continue']);
+      return;
+    }
+    
     setCurrentStep(2);
     setErrors([]); // Clear any errors when moving to next step
     
@@ -402,6 +429,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
   };
 
   const generateRepsPreview = (): string | string[] => {
+    if (!ladderType) return '';
+    
     const rounds = parseInt(maxRounds, 10) || 0;
     const step = parseInt(stepSize, 10) || 1;
     const starting = parseInt(startingReps, 10) || 1;
@@ -1187,13 +1216,18 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         </View>
 
                         {/* Exercise Name Input */}
-                        <TextInput
-                          mode="outlined"
+                        <AutocompleteExerciseInput
                           label="Exercise Name"
                           value={buyInOutExercise.name}
                           onChangeText={(text) => setBuyInOutExercise({ ...buyInOutExercise, name: text })}
+                          onSelectExercise={(selectedExercise) => {
+                            setBuyInOutExercise({ 
+                              ...buyInOutExercise, 
+                              name: selectedExercise.name,
+                              unit: selectedExercise.suggestedUnit || buyInOutExercise.unit,
+                            });
+                          }}
                           style={styles.buyInOutNameInput}
-                          placeholder="e.g., Run, Row, Bike"
                           maxLength={100}
                         />
 
@@ -1293,6 +1327,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
               contentStyle={styles.nextButtonContent}
               style={styles.fixedNextButton}
               textColor='#fff'
+              disabled={!ladderType}
             >
               Next: Configure Workout
             </Button>

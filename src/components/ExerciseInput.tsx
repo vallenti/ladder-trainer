@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { TextInput, IconButton, Text, Chip, useTheme } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
+import AutocompleteExerciseInput from './AutocompleteExerciseInput';
 
 interface ExerciseInputProps {
   exercise: Exercise;
@@ -55,11 +56,17 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
 
       {/* Exercise Name + Unit Button Row */}
       <View style={styles.inputRow}>
-        <TextInput
-          mode="outlined"
+        <AutocompleteExerciseInput
           label="Exercise Name"
           value={exercise.name}
           onChangeText={(name) => onChange({ ...exercise, name })}
+          onSelectExercise={(selectedExercise) => {
+            onChange({ 
+              ...exercise, 
+              name: selectedExercise.name,
+              unit: selectedExercise.suggestedUnit || exercise.unit,
+            });
+          }}
           style={styles.nameInput}
           maxLength={100}
         />
