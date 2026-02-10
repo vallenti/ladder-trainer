@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { TextInput, IconButton, Text, Chip, useTheme } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
@@ -10,6 +10,7 @@ interface ExerciseInputProps {
   onChange: (exercise: Exercise) => void;
   onDelete: () => void;
   canDelete: boolean;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const ExerciseInput: React.FC<ExerciseInputProps> = ({
@@ -17,6 +18,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
   onChange,
   onDelete,
   canDelete,
+  scrollViewRef,
 }) => {
   const theme = useTheme();
   const [showUnitInput, setShowUnitInput] = useState(false);
@@ -69,6 +71,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
           }}
           style={styles.nameInput}
           maxLength={100}
+          scrollViewRef={scrollViewRef}
         />
 
         {!showUnitInput ? (

@@ -14,6 +14,7 @@ interface AutocompleteExerciseInputProps {
   style?: any;
   maxLength?: number;
   disabled?: boolean;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
@@ -24,6 +25,7 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
   style,
   maxLength = 100,
   disabled = false,
+  scrollViewRef,
 }) => {
   const theme = useTheme();
   const { searchExercises } = useExerciseStore();
@@ -31,11 +33,12 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
   const [suggestions, setSuggestions] = useState<ExerciseCatalogItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<any>(null);
+  const containerRef = useRef<View>(null);
 
   useEffect(() => {
     if (isFocused && value.length >= 1) {
       // Show suggestions after typing at least 1 character
-      const results = searchExercises(value).slice(0, 6); // Limit to 6 suggestions
+      const results = searchExercises(value).slice(0, 4); // Limit to 4 suggestions
       setSuggestions(results);
       setShowSuggestions(results.length > 0);
     } else {
@@ -65,6 +68,31 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
     }
   };
 
+  // Helper function to highlight matched text
+  const highlightMatch = (text: string, query: string) => {
+    if (!query) return <Text>{text}</Text>;
+    
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const matchIndex = lowerText.indexOf(lowerQuery);
+    
+    if (matchIndex === -1) {
+      return <Text>{text}</Text>;
+    }
+    
+    const beforeMatch = text.substring(0, matchIndex);
+    const match = text.substring(matchIndex, matchIndex + query.length);
+    const afterMatch = text.substring(matchIndex + query.length);
+    
+    return (
+      <Text>
+        {beforeMatch}
+        <Text style={{ fontWeight: 'bold' }}>{match}</Text>
+        {afterMatch}
+      </Text>
+    );
+  };
+
   const renderSuggestion = ({ item }: { item: ExerciseCatalogItem }) => {
     const isExactMatch = item.name.toLowerCase() === value.toLowerCase();
     const hasUnit = !!item.suggestedUnit;
@@ -90,10 +118,10 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
               variant="bodyMedium" 
               style={[
                 styles.suggestionText,
-                isExactMatch && { fontWeight: 'bold', color: theme.colors.primary }
+                isExactMatch && { color: theme.colors.primary }
               ]}
             >
-              {item.name}
+              {highlightMatch(item.name, value)}
             </Text>
           </View>
           {hasUnit && (
@@ -110,7 +138,7 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
   };
 
   return (
-    <View style={[styles.container, style]}>
+    <View ref={containerRef} style={[styles.container, style]}>
       <TextInput
         ref={inputRef}
         mode="outlined"
@@ -150,7 +178,7 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
               styles.suggestionsSurface,
               { backgroundColor: theme.colors.surface }
             ]}
-            elevation={8}
+            elevation={5}
           >
             <ScrollView
               keyboardShouldPersistTaps="handled"
@@ -177,10 +205,10 @@ const styles = StyleSheet.create({
   },
   suggestionsContainer: {
     position: 'absolute',
-    bottom: '100%',
+    top: '100%',
     left: 0,
     right: 0,
-    marginBottom: 4,
+    marginTop: 4,
     borderRadius: 8,
     maxHeight: 200,
     zIndex: 1000,

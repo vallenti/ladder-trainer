@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { TextInput, IconButton, Text, useTheme } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
@@ -10,6 +10,7 @@ interface ChipperExerciseInputProps {
   onChange: (exercise: Exercise) => void;
   onDelete: () => void;
   canDelete: boolean;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const ChipperExerciseInput: React.FC<ChipperExerciseInputProps> = ({
@@ -17,6 +18,7 @@ const ChipperExerciseInput: React.FC<ChipperExerciseInputProps> = ({
   onChange,
   onDelete,
   canDelete,
+  scrollViewRef,
 }) => {
   const theme = useTheme();
   const [showUnitInput, setShowUnitInput] = useState(false);
@@ -132,6 +134,7 @@ const ChipperExerciseInput: React.FC<ChipperExerciseInputProps> = ({
         }}
         style={styles.nameInput}
         maxLength={100}
+        scrollViewRef={scrollViewRef}
       />
     </View>
   );

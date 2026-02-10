@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { TextInput, IconButton, Text, SegmentedButtons, useTheme } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
@@ -12,6 +12,7 @@ interface AMRAPExerciseInputProps {
   onDelete: () => void;
   canDelete: boolean;
   exerciseNumber: number;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
@@ -20,6 +21,7 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
   onDelete,
   canDelete,
   exerciseNumber,
+  scrollViewRef,
 }) => {
   const theme = useTheme();
   const [showUnitInput, setShowUnitInput] = useState(false);
@@ -90,6 +92,7 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
           }}
           style={styles.nameInput}
           maxLength={100}
+          scrollViewRef={scrollViewRef}
         />
 
         {!showUnitInput ? (

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard } from 'react-native';
 import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card, Chip, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -29,6 +29,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const route = useRoute<RouteProp<RouteParams, 'CreateEditWorkout'>>();
   const { addWorkout, updateWorkout, getWorkout } = useWorkoutStore();
   const { addExerciseIfNotExists } = useExerciseStore();
+  const scrollViewRef = useRef<ScrollView>(null);
   
   const workoutId = route.params?.workoutId;
   const isEditing = !!workoutId;
@@ -88,6 +89,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
     existingWorkout?.buyInOutRestSeconds?.toString() || '60'
   );
   const [showBuyInOutUnitInput, setShowBuyInOutUnitInput] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // Update defaults when ladder type changes (only for new workouts)
   useEffect(() => {
@@ -101,6 +104,23 @@ const CreateEditWorkoutScreen: React.FC = () => {
       setTimeCapSeconds(defaultTimeCap % 60);
     }
   }, [ladderType, isEditing]);
+
+  // Track keyboard visibility
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => setKeyboardVisible(true)
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // When switching ladder types, update exercises to have correct fields
   useEffect(() => {
@@ -148,6 +168,13 @@ const CreateEditWorkoutScreen: React.FC = () => {
     );
   }, [ladderType]);
 
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 50;
+    const isBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    setIsNearBottom(isBottom);
+  };
+
   const handleAddExercise = () => {
     if (exercises.length < 12) {
       const newExercise: Exercise = {
@@ -171,6 +198,11 @@ const CreateEditWorkoutScreen: React.FC = () => {
         }),
       };
       setExercises([...exercises, newExercise]);
+      
+      // Scroll to bottom to show the new exercise
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   };
 
@@ -500,10 +532,13 @@ const CreateEditWorkoutScreen: React.FC = () => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView 
+          ref={scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContentContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={true}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
         >
           <View style={styles.content}>
             {/* Error Display */}
@@ -1050,6 +1085,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
                   exerciseNumber={index + 1}
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : ladderType === 'amrap' ? (
@@ -1061,6 +1097,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
                   exerciseNumber={index + 1}
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : ladderType === 'chipper' ? (
@@ -1071,6 +1108,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onChange={(ex) => handleExerciseChange(index, ex)}
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : ladderType === 'forreps' ? (
@@ -1081,6 +1119,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onChange={(ex) => handleExerciseChange(index, ex)}
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : (
@@ -1091,6 +1130,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onChange={(ex) => handleExerciseChange(index, ex)}
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             )}
@@ -1229,6 +1269,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           }}
                           style={styles.buyInOutNameInput}
                           maxLength={100}
+                          scrollViewRef={scrollViewRef}
                         />
 
                         {/* Buy In/Out Rest Period */}
@@ -1335,13 +1376,13 @@ const CreateEditWorkoutScreen: React.FC = () => {
         )}
 
         {/* Fixed Save Button for Step 2 */}
-        {currentStep === 2 && (
+        {currentStep === 2 && !keyboardVisible && (
           <View style={[styles.buttonContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outline }]}>
             <Button
               mode="contained"
               onPress={handleSave}
               
-              contentStyle={styles.nextButtonContent}
+              contentStyle={isNearBottom ? styles.nextButtonContent : styles.nextButtonContentSmall}
               style={styles.fixedNextButton}
               textColor='#fff'
             >
@@ -1416,6 +1457,11 @@ const styles = StyleSheet.create({
   nextButtonContent: {
     flexDirection: 'row-reverse',
     paddingVertical: spacing.sm,
+    color: '#FFFFFF',
+  },
+  nextButtonContentSmall: {
+    flexDirection: 'row-reverse',
+    paddingVertical: spacing.xs,
     color: '#FFFFFF',
   },
   previewCard: {
