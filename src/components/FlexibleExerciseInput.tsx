@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Platform, StatusBar } from 'react-native';
 import { TextInput, IconButton, Text, useTheme, Icon } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
@@ -12,6 +12,7 @@ interface FlexibleExerciseInputProps {
   onDelete: () => void;
   canDelete: boolean;
   exerciseNumber: number;
+  scrollViewRef?: React.RefObject<ScrollView>;
 }
 
 const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
@@ -20,9 +21,11 @@ const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
   onDelete,
   canDelete,
   exerciseNumber,
+  scrollViewRef,
 }) => {
   const theme = useTheme();
   const [showUnitInput, setShowUnitInput] = useState(false);
+  const containerRef = useRef<View>(null);
 
   const isDefaultUnit = !exercise.unit || exercise.unit === '';
 
@@ -50,8 +53,22 @@ const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
     setShowUnitInput(false);
   };
 
+  const handleExerciseNameFocus = () => {
+    if (scrollViewRef?.current && containerRef.current) {
+      setTimeout(() => {
+        containerRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({ y: Math.max(0, y - 64), animated: true });
+          },
+          () => {}
+        );
+      }, 150);
+    }
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
+    <View ref={containerRef} style={[styles.container, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
       {/* Header Row: Position + Delete */}
       <View style={styles.headerRow}>
         <View style={[styles.positionContainer, { backgroundColor: theme.colors.primary }]}>
@@ -88,6 +105,7 @@ const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
           }}
           style={styles.nameInput}
           maxLength={100}
+          onFocus={handleExerciseNameFocus}
         />
 
         {!showUnitInput ? (

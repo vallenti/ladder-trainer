@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Animated } from 'react-native';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Animated, StatusBar } from 'react-native';
 import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card, Chip, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -93,6 +93,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
 
   // Track previous ladder type to detect changes
   const previousLadderTypeRef = useRef<LadderType | null>(null);
+  
+  // Buy In/Out card ref for scrolling
+  const buyInOutCardRef = useRef<View>(null);
   
   // Animation value for step transition
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -290,6 +293,20 @@ const CreateEditWorkoutScreen: React.FC = () => {
     const newExercises = [...exercises];
     newExercises[index] = exercise;
     setExercises(newExercises);
+  };
+
+  const handleBuyInOutExerciseNameFocus = () => {
+    if (scrollViewRef?.current && buyInOutCardRef.current) {
+      setTimeout(() => {
+        buyInOutCardRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({ y: Math.max(0, y - 64), animated: true });
+          },
+          () => {}
+        );
+      }, 150);
+    }
   };
 
   const validate = (): boolean => {
@@ -1185,6 +1202,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
                   exerciseNumber={index + 1}
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : ladderType === 'amrap' ? (
@@ -1196,6 +1214,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
                   exerciseNumber={index + 1}
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : ladderType === 'chipper' ? (
@@ -1207,6 +1226,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
                   repsProperty="fixedReps"
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : ladderType === 'forreps' ? (
@@ -1218,6 +1238,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
                   repsProperty="repsPerRound"
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : (
@@ -1228,6 +1249,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onChange={(ex) => handleExerciseChange(index, ex)}
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
+                  scrollViewRef={scrollViewRef}
                 />
               ))
             )}
@@ -1272,8 +1294,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   </View>
 
                   {hasBuyInOut && (
-                    <Card style={[styles.buyInOutCard, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
-                      <Card.Content>
+                    <View ref={buyInOutCardRef}>
+                      <Card style={[styles.buyInOutCard, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
+                        <Card.Content>
                         {/* Header */}
                         <View style={styles.buyInOutCardHeader}>
                           <View style={[styles.buyInOutBadge, { backgroundColor: theme.colors.primary }]}>
@@ -1366,6 +1389,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           }}
                           style={styles.buyInOutNameInput}
                           maxLength={100}
+                          onFocus={handleBuyInOutExerciseNameFocus}
                         />
 
                         {/* Buy In/Out Rest Period */}
@@ -1445,6 +1469,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         </View>
                       </Card.Content>
                     </Card>
+                    </View>
                   )}
                 </View>
               </>

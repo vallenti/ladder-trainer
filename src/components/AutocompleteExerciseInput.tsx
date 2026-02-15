@@ -14,6 +14,7 @@ interface AutocompleteExerciseInputProps {
   style?: any;
   maxLength?: number;
   disabled?: boolean;
+  onFocus?: () => void;
 }
 
 const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
@@ -24,6 +25,7 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
   style,
   maxLength = 100,
   disabled = false,
+  onFocus,
 }) => {
   const theme = useTheme();
   const { searchExercises } = useExerciseStore();
@@ -45,6 +47,9 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
 
   const handleFocus = () => {
     setIsFocused(true);
+    if (onFocus) {
+      onFocus();
+    }
   };
 
   const handleBlur = () => {

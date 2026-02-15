@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Platform, StatusBar } from 'react-native';
 import { TextInput, IconButton, Text, useTheme } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
@@ -12,6 +12,7 @@ interface FixedRepsExerciseInputProps {
   onDelete: () => void;
   canDelete: boolean;
   repsProperty?: 'fixedReps' | 'repsPerRound';
+  scrollViewRef?: React.RefObject<ScrollView>;
 }
 
 const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
@@ -20,9 +21,11 @@ const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
   onDelete,
   canDelete,
   repsProperty = 'fixedReps',
+  scrollViewRef,
 }) => {
   const theme = useTheme();
   const [showUnitInput, setShowUnitInput] = useState(false);
+  const containerRef = useRef<View>(null);
 
   const isDefaultUnit = !exercise.unit || exercise.unit === '';
 
@@ -34,6 +37,20 @@ const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
     setShowUnitInput(false);
   };
 
+  const handleExerciseNameFocus = () => {
+    if (scrollViewRef?.current && containerRef.current) {
+      setTimeout(() => {
+        containerRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({ y: Math.max(0, y - 64), animated: true });
+          },
+          () => {}
+        );
+      }, 150);
+    }
+  };
+
   const handleCountChange = (value: number) => {
     onChange({ ...exercise, [repsProperty]: value });
   };
@@ -41,7 +58,7 @@ const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
   const repsValue = (exercise[repsProperty] as number) || 1;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
+    <View ref={containerRef} style={[styles.container, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
       {/* Header Row: Position + Delete */}
       <View style={styles.headerRow}>
         <View style={[styles.positionContainer, { backgroundColor: theme.colors.primary }]}>
@@ -78,6 +95,7 @@ const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
           }}
           style={styles.nameInput}
           maxLength={100}
+          onFocus={handleExerciseNameFocus}
         />
 
         {!showUnitInput ? (
