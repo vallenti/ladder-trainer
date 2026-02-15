@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { TextInput, IconButton, Text, SegmentedButtons, useTheme } from 'react-native-paper';
+import { TextInput, IconButton, Text, useTheme, Icon } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
 import NumberStepper from './NumberStepper';
@@ -143,23 +143,42 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
       <Text variant="bodySmall" style={[styles.label, { color: theme.colors.onSurface }]}>
         Direction
       </Text>
-      <SegmentedButtons
-        value={progressionType}
-        onValueChange={handleProgressionTypeChange}
-        buttons={[
-          {
-            value: 'fixed',
-            label: 'Fixed',
-            icon: 'minus',
-          },
-          {
-            value: 'increasing',
-            label: 'Increasing',
-            icon: 'trending-up',
-          },
-        ]}
-        style={styles.segmentedButtons}
-      />
+      <View style={styles.customSegmentedButtons}>
+        <TouchableOpacity
+          onPress={() => handleProgressionTypeChange('fixed')}
+          style={[
+            styles.segmentButton,
+            styles.segmentButtonLeft,
+            { borderColor: theme.colors.outline },
+            progressionType === 'fixed' && [
+              styles.segmentButtonSelected,
+              { backgroundColor: theme.colors.secondaryContainer, flex: 1 }
+            ],
+          ]}
+        >
+          <Icon source="minus" size={20} color={progressionType === 'fixed' ? theme.colors.onSecondaryContainer : theme.colors.onSurfaceVariant} />
+          {progressionType === 'fixed' && (
+            <Text style={[styles.segmentButtonText, { color: theme.colors.onSecondaryContainer }]}>Fixed</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleProgressionTypeChange('increasing')}
+          style={[
+            styles.segmentButton,
+            styles.segmentButtonRight,
+            { borderColor: theme.colors.outline },
+            progressionType === 'increasing' && [
+              styles.segmentButtonSelected,
+              { backgroundColor: theme.colors.secondaryContainer, flex: 1 }
+            ],
+          ]}
+        >
+          <Icon source="trending-up" size={20} color={progressionType === 'increasing' ? theme.colors.onSecondaryContainer : theme.colors.onSurfaceVariant} />
+          {progressionType === 'increasing' && (
+            <Text style={[styles.segmentButtonText, { color: theme.colors.onSecondaryContainer }]}>Increasing</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Starting Reps and Step Size Row */}
       <View style={styles.steppersRow}>
@@ -282,8 +301,35 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
     fontWeight: '500',
   },
-  segmentedButtons: {
+  customSegmentedButtons: {
+    flexDirection: 'row',
     marginBottom: spacing.md,
+  },
+  segmentButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  segmentButtonLeft: {
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderRightWidth: 0.5,
+  },
+  segmentButtonRight: {
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
+    borderLeftWidth: 0.5,
+  },
+  segmentButtonSelected: {
+    borderWidth: 1,
+  },
+  segmentButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   steppersRow: {
     flexDirection: 'row',

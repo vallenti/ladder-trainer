@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { TextInput, IconButton, Text, SegmentedButtons, useTheme } from 'react-native-paper';
+import { TextInput, IconButton, Text, useTheme, Icon } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
 import NumberStepper from './NumberStepper';
@@ -141,25 +141,59 @@ const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
       <Text variant="bodySmall" style={[styles.label, { color: theme.colors.onSurface }]}>
         Direction
       </Text>
-      <SegmentedButtons
-        value={exercise.direction || 'ascending'}
-        onValueChange={handleDirectionChange}
-        buttons={[
-          {
-            value: 'ascending',
-            icon: 'arrow-up',
-          },
-          {
-            value: 'descending',
-            icon: 'arrow-down',
-          },
-          {
-            value: 'constant',
-            icon: 'minus',
-          },
-        ]}
-        style={styles.segmentedButtons}
-      />
+      <View style={styles.customSegmentedButtons}>
+        <TouchableOpacity
+          onPress={() => handleDirectionChange('constant')}
+          style={[
+            styles.segmentButton,
+            styles.segmentButtonLeft,
+            { borderColor: theme.colors.outline },
+            (exercise.direction || 'ascending') === 'constant' && [
+              styles.segmentButtonSelected,
+              { backgroundColor: theme.colors.secondaryContainer, flex: 1 }
+            ],
+          ]}
+        >
+          <Icon source="minus" size={20} color={(exercise.direction || 'ascending') === 'constant' ? theme.colors.onSecondaryContainer : theme.colors.onSurfaceVariant} />
+          {(exercise.direction || 'ascending') === 'constant' && (
+            <Text style={[styles.segmentButtonText, { color: theme.colors.onSecondaryContainer }]}>Fixed</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleDirectionChange('ascending')}
+          style={[
+            styles.segmentButton,
+            styles.segmentButtonMiddle,
+            { borderColor: theme.colors.outline },
+            (exercise.direction || 'ascending') === 'ascending' && [
+              styles.segmentButtonSelected,
+              { backgroundColor: theme.colors.secondaryContainer, flex: 1 }
+            ],
+          ]}
+        >
+          <Icon source="trending-up" size={20} color={(exercise.direction || 'ascending') === 'ascending' ? theme.colors.onSecondaryContainer : theme.colors.onSurfaceVariant} />
+          {(exercise.direction || 'ascending') === 'ascending' && (
+            <Text style={[styles.segmentButtonText, { color: theme.colors.onSecondaryContainer }]}>Increasing</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleDirectionChange('descending')}
+          style={[
+            styles.segmentButton,
+            styles.segmentButtonRight,
+            { borderColor: theme.colors.outline },
+            (exercise.direction || 'ascending') === 'descending' && [
+              styles.segmentButtonSelected,
+              { backgroundColor: theme.colors.secondaryContainer, flex: 1 }
+            ],
+          ]}
+        >
+          <Icon source="trending-down" size={20} color={(exercise.direction || 'ascending') === 'descending' ? theme.colors.onSecondaryContainer : theme.colors.onSurfaceVariant} />
+          {(exercise.direction || 'ascending') === 'descending' && (
+            <Text style={[styles.segmentButtonText, { color: theme.colors.onSecondaryContainer }]}>Decreasing</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Starting Reps / Fixed Value and Step Size Row */}
       <View style={styles.steppersRow}>
@@ -281,8 +315,39 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     fontWeight: '500',
   },
-  segmentedButtons: {
+  customSegmentedButtons: {
+    flexDirection: 'row',
     marginBottom: spacing.md,
+  },
+  segmentButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  segmentButtonLeft: {
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderRightWidth: 0.5,
+  },
+  segmentButtonMiddle: {
+    borderLeftWidth: 0.5,
+    borderRightWidth: 0.5,
+  },
+  segmentButtonRight: {
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
+    borderLeftWidth: 0.5,
+  },
+  segmentButtonSelected: {
+    borderWidth: 1,
+  },
+  segmentButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   steppersRow: {
     flexDirection: 'row',
