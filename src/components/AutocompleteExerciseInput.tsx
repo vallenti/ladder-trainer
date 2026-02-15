@@ -164,36 +164,25 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
       />
       
       {showSuggestions && suggestions.length > 0 && (
-        <View
+        <Surface
           style={[
             styles.suggestionsContainer,
             { 
               backgroundColor: theme.colors.surface,
               borderColor: theme.colors.outline,
-              opacity: 1,
             }
           ]}
+          elevation={5}
         >
-          <Surface
-            style={[
-              styles.suggestionsSurface,
-              { 
-                backgroundColor: theme.colors.surface,
-                opacity: 1,
-              }
-            ]}
-            elevation={5}
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+            style={[styles.suggestionsList, { backgroundColor: theme.colors.surface }]}
+            showsVerticalScrollIndicator={true}
           >
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              nestedScrollEnabled
-              style={[styles.suggestionsList, { backgroundColor: theme.colors.surface, opacity: 1 }]}
-              showsVerticalScrollIndicator={true}
-            >
-              {suggestions.map((item) => renderSuggestion({ item }))}
-            </ScrollView>
-          </Surface>
-        </View>
+            {suggestions.map((item) => renderSuggestion({ item }))}
+          </ScrollView>
+        </Surface>
       )}
     </View>
   );
@@ -217,18 +206,11 @@ const styles = StyleSheet.create({
     maxHeight: 200,
     zIndex: 999999,
     borderWidth: 2,
-    elevation: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-  },
-  suggestionsSurface: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    maxHeight: 200,
-    zIndex: 999999,
-    elevation: 16,
   },
   suggestionsList: {
     maxHeight: 200,
