@@ -10,7 +10,6 @@ interface ExerciseInputProps {
   onChange: (exercise: Exercise) => void;
   onDelete: () => void;
   canDelete: boolean;
-  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const ExerciseInput: React.FC<ExerciseInputProps> = ({
@@ -18,7 +17,6 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
   onChange,
   onDelete,
   canDelete,
-  scrollViewRef,
 }) => {
   const theme = useTheme();
   const [showUnitInput, setShowUnitInput] = useState(false);
@@ -71,7 +69,6 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
           }}
           style={styles.nameInput}
           maxLength={100}
-          scrollViewRef={scrollViewRef}
         />
 
         {!showUnitInput ? (

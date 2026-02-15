@@ -1,46 +1,30 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { TextInput, IconButton, Text, SegmentedButtons, useTheme } from 'react-native-paper';
+import { TextInput, IconButton, Text, useTheme } from 'react-native-paper';
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
 import NumberStepper from './NumberStepper';
 import AutocompleteExerciseInput from './AutocompleteExerciseInput';
 
-interface FlexibleExerciseInputProps {
+interface FixedRepsExerciseInputProps {
   exercise: Exercise;
   onChange: (exercise: Exercise) => void;
   onDelete: () => void;
   canDelete: boolean;
-  exerciseNumber: number;
+  repsProperty?: 'fixedReps' | 'repsPerRound';
 }
 
-const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
+const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
   exercise,
   onChange,
   onDelete,
   canDelete,
-  exerciseNumber,
+  repsProperty = 'fixedReps',
 }) => {
   const theme = useTheme();
   const [showUnitInput, setShowUnitInput] = useState(false);
 
   const isDefaultUnit = !exercise.unit || exercise.unit === '';
-
-  const handleFieldChange = (field: keyof Exercise, value: string) => {
-    onChange({ ...exercise, [field]: value });
-  };
-
-  const handleDirectionChange = (value: string) => {
-    onChange({ ...exercise, direction: value as 'ascending' | 'descending' | 'constant' });
-  };
-
-  const handleStartingRepsChange = (value: number) => {
-    onChange({ ...exercise, startingReps: value });
-  };
-
-  const handleStepSizeChange = (value: number) => {
-    onChange({ ...exercise, stepSize: value });
-  };
 
   const handleOpenUnitEdit = () => {
     setShowUnitInput(true);
@@ -50,17 +34,23 @@ const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
     setShowUnitInput(false);
   };
 
+  const handleCountChange = (value: number) => {
+    onChange({ ...exercise, [repsProperty]: value });
+  };
+
+  const repsValue = (exercise[repsProperty] as number) || 1;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
       {/* Header Row: Position + Delete */}
       <View style={styles.headerRow}>
         <View style={[styles.positionContainer, { backgroundColor: theme.colors.primary }]}>
           <Text variant="titleMedium" style={[styles.position, { color: '#FFFFFF' }]}>
-            {exerciseNumber}
+            {exercise.position}
           </Text>
         </View>
         <Text variant="bodySmall" style={[styles.positionLabel, { color: theme.colors.onSurfaceVariant }]}>
-          Exercise {exerciseNumber}
+          Exercise {exercise.position}
         </Text>
         <View style={styles.spacer} />
         {canDelete && (
@@ -137,57 +127,15 @@ const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
         )}
       </View>
 
-      {/* Direction */}
-      <Text variant="bodySmall" style={[styles.label, { color: theme.colors.onSurface }]}>
-        Direction
-      </Text>
-      <SegmentedButtons
-        value={exercise.direction || 'ascending'}
-        onValueChange={handleDirectionChange}
-        buttons={[
-          {
-            value: 'ascending',
-            icon: 'arrow-up',
-          },
-          {
-            value: 'descending',
-            icon: 'arrow-down',
-          },
-          {
-            value: 'constant',
-            icon: 'minus',
-          },
-        ]}
-        style={styles.segmentedButtons}
+      {/* Count Field */}
+      <NumberStepper
+        label="Reps"
+        value={repsValue}
+        onChange={handleCountChange}
+        min={1}
+        max={1000}
+        step={1}
       />
-
-      {/* Starting Reps / Fixed Value and Step Size Row */}
-      <View style={styles.steppersRow}>
-        <View style={styles.stepperContainer}>
-          <NumberStepper
-            label={exercise.direction === 'constant' ? 'Reps (each round)' : 'Starting Reps'}
-            value={exercise.startingReps || 1}
-            onChange={handleStartingRepsChange}
-            min={1}
-            max={1000}
-            step={1}
-          />
-        </View>
-
-        {/* Step Size - hidden for fixed */}
-        {exercise.direction !== 'constant' && (
-          <View style={styles.stepperContainer}>
-            <NumberStepper
-              label="Step Size"
-              value={exercise.stepSize || 1}
-              onChange={handleStepSizeChange}
-              min={1}
-              max={50}
-              step={1}
-            />
-          </View>
-        )}
-      </View>
     </View>
   );
 };
@@ -232,6 +180,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   nameInput: {
     flex: 1,
@@ -239,36 +188,38 @@ const styles = StyleSheet.create({
   unitButton: {
     borderWidth: 1,
     borderRadius: 4,
-    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 50,
+    height: 50,
     paddingHorizontal: spacing.sm,
-    marginBottom: 0,
   },
   unitButtonIcon: {
     width: 50,
     paddingHorizontal: 0,
-  },
-  unitIcon: {
-    margin: 0,
+    paddingVertical: spacing.sm,
   },
   unitButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
     gap: spacing.xs,
   },
   unitText: {
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  unitIcon: {
+    margin: 0,
   },
   editIcon: {
     margin: 0,
+    marginLeft: spacing.xs,
   },
   unitEditContainer: {
     flexDirection: 'row',
+    gap: spacing.xs,
     alignItems: 'center',
-    gap: spacing.sm,
-    flex: 1,
   },
   unitTextInput: {
     flex: 1,
@@ -276,21 +227,6 @@ const styles = StyleSheet.create({
   checkButton: {
     margin: 0,
   },
-  label: {
-    marginBottom: spacing.xs,
-    marginTop: spacing.sm,
-    fontWeight: '500',
-  },
-  segmentedButtons: {
-    marginBottom: spacing.md,
-  },
-  steppersRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  stepperContainer: {
-    flex: 1,
-  },
 });
 
-export default FlexibleExerciseInput;
+export default FixedRepsExerciseInput;

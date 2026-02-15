@@ -14,7 +14,6 @@ interface AutocompleteExerciseInputProps {
   style?: any;
   maxLength?: number;
   disabled?: boolean;
-  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
@@ -25,7 +24,6 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
   style,
   maxLength = 100,
   disabled = false,
-  scrollViewRef,
 }) => {
   const theme = useTheme();
   const { searchExercises } = useExerciseStore();
@@ -33,7 +31,6 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
   const [suggestions, setSuggestions] = useState<ExerciseCatalogItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<any>(null);
-  const containerRef = useRef<View>(null);
 
   useEffect(() => {
     if (isFocused && value.length >= 1) {
@@ -102,7 +99,10 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
         key={item.id}
         style={[
           styles.suggestionItem,
-          { borderBottomColor: theme.colors.surfaceVariant }
+          { 
+            borderBottomColor: theme.colors.surfaceVariant,
+            backgroundColor: theme.colors.surface
+          }
         ]}
         onPress={() => handleSelectSuggestion(item)}
       >
@@ -138,7 +138,7 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
   };
 
   return (
-    <View ref={containerRef} style={[styles.container, style]}>
+    <View style={[styles.container, style]}>
       <TextInput
         ref={inputRef}
         mode="outlined"
@@ -170,20 +170,24 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
             { 
               backgroundColor: theme.colors.surface,
               borderColor: theme.colors.outline,
+              opacity: 1,
             }
           ]}
         >
           <Surface
             style={[
               styles.suggestionsSurface,
-              { backgroundColor: theme.colors.surface }
+              { 
+                backgroundColor: theme.colors.surface,
+                opacity: 1,
+              }
             ]}
             elevation={5}
           >
             <ScrollView
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled
-              style={styles.suggestionsList}
+              style={[styles.suggestionsList, { backgroundColor: theme.colors.surface, opacity: 1 }]}
               showsVerticalScrollIndicator={true}
             >
               {suggestions.map((item) => renderSuggestion({ item }))}
@@ -198,7 +202,7 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    zIndex: 1,
+    zIndex: 9999,
   },
   input: {
     backgroundColor: 'transparent',
@@ -211,13 +215,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
     borderRadius: 8,
     maxHeight: 200,
-    zIndex: 1000,
+    zIndex: 999999,
     borderWidth: 2,
+    elevation: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   suggestionsSurface: {
     borderRadius: 8,
     overflow: 'hidden',
     maxHeight: 200,
+    zIndex: 999999,
+    elevation: 16,
   },
   suggestionsList: {
     maxHeight: 200,

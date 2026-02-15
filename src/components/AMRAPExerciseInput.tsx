@@ -12,7 +12,6 @@ interface AMRAPExerciseInputProps {
   onDelete: () => void;
   canDelete: boolean;
   exerciseNumber: number;
-  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
@@ -21,7 +20,6 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
   onDelete,
   canDelete,
   exerciseNumber,
-  scrollViewRef,
 }) => {
   const theme = useTheme();
   const [showUnitInput, setShowUnitInput] = useState(false);
@@ -92,7 +90,6 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
           }}
           style={styles.nameInput}
           maxLength={100}
-          scrollViewRef={scrollViewRef}
         />
 
         {!showUnitInput ? (
@@ -144,7 +141,7 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
 
       {/* Progression Type */}
       <Text variant="bodySmall" style={[styles.label, { color: theme.colors.onSurface }]}>
-        Progression Type
+        Direction
       </Text>
       <SegmentedButtons
         value={progressionType}
@@ -164,27 +161,33 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
         style={styles.segmentedButtons}
       />
 
-      {/* Starting Reps */}
-      <NumberStepper
-        label={isFixed ? 'Reps (each round)' : 'Starting Reps'}
-        value={exercise.startingReps || 1}
-        onChange={handleStartingRepsChange}
-        min={1}
-        max={1000}
-        step={1}
-      />
+      {/* Starting Reps and Step Size Row */}
+      <View style={styles.steppersRow}>
+        <View style={styles.stepperContainer}>
+          <NumberStepper
+            label={isFixed ? 'Reps (each round)' : 'Starting Reps'}
+            value={exercise.startingReps || 1}
+            onChange={handleStartingRepsChange}
+            min={1}
+            max={1000}
+            step={1}
+          />
+        </View>
 
-      {/* Step Size - only shown when increasing */}
-      {!isFixed && (
-        <NumberStepper
-          label="Step Size (reps per round)"
-          value={exercise.stepSize || 1}
-          onChange={handleStepSizeChange}
-          min={1}
-          max={50}
-          step={1}
-        />
-      )}
+        {/* Step Size - only shown when increasing */}
+        {!isFixed && (
+          <View style={styles.stepperContainer}>
+            <NumberStepper
+              label="Step Size"
+              value={exercise.stepSize || 1}
+              onChange={handleStepSizeChange}
+              min={1}
+              max={50}
+              step={1}
+            />
+          </View>
+        )}
+      </View>
     </View>
   );
 };
@@ -281,6 +284,13 @@ const styles = StyleSheet.create({
   },
   segmentedButtons: {
     marginBottom: spacing.md,
+  },
+  steppersRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  stepperContainer: {
+    flex: 1,
   },
 });
 

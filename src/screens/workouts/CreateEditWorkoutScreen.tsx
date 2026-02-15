@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard } from 'react-native';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Animated } from 'react-native';
 import { TextInput, Button, Text, Appbar, Divider, Checkbox, useTheme, Card, Chip, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -7,9 +7,8 @@ import { useWorkoutStore } from '../../store/workoutStore';
 import { useExerciseStore } from '../../store/exerciseStore';
 import ExerciseInput from '../../components/ExerciseInput';
 import FlexibleExerciseInput from '../../components/FlexibleExerciseInput';
-import ChipperExerciseInput from '../../components/ChipperExerciseInput';
+import FixedRepsExerciseInput from '../../components/FixedRepsExerciseInput';
 import AMRAPExerciseInput from '../../components/AMRAPExerciseInput';
-import ForRepsExerciseInput from '../../components/ForRepsExerciseInput';
 import NumberStepper from '../../components/NumberStepper';
 import AutocompleteExerciseInput from '../../components/AutocompleteExerciseInput';
 import { Exercise, LadderType } from '../../types';
@@ -92,6 +91,12 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const [isNearBottom, setIsNearBottom] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
+  // Track previous ladder type to detect changes
+  const previousLadderTypeRef = useRef<LadderType | null>(null);
+  
+  // Animation value for step transition
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
   // Update defaults when ladder type changes (only for new workouts)
   useEffect(() => {
     if (!isEditing && ladderType) {
@@ -104,6 +109,53 @@ const CreateEditWorkoutScreen: React.FC = () => {
       setTimeCapSeconds(defaultTimeCap % 60);
     }
   }, [ladderType, isEditing]);
+
+  // Reset exercises when ladder type changes on step 1 (when user goes back and changes type)
+  useEffect(() => {
+    if (!isEditing && ladderType && previousLadderTypeRef.current && previousLadderTypeRef.current !== ladderType && currentStep === 1) {
+      // Reset exercises to a fresh single exercise with correct fields for the new ladder type
+      const newExercise: Exercise = {
+        position: 1,
+        unit: '',
+        name: '',
+        ...(ladderType === 'flexible' && {
+          direction: 'ascending' as const,
+          startingReps: 1,
+          stepSize: 1,
+        }),
+        ...(ladderType === 'chipper' && {
+          fixedReps: 0,
+        }),
+        ...(ladderType === 'amrap' && {
+          startingReps: 1,
+          stepSize: 0,
+        }),
+        ...(ladderType === 'forreps' && {
+          repsPerRound: 0,
+        }),
+      };
+      setExercises([newExercise]);
+      
+      // Reset workout name
+      setName('');
+      
+      // Reset buy in/out as well
+      setHasBuyInOut(false);
+      setBuyInOutExercise({
+        position: 0,
+        unit: '',
+        name: '',
+        repsPerRound: undefined,
+      });
+      setHasBuyInOutRest(false);
+      setBuyInOutRestPeriod('60');
+      
+      // Reset rest period
+      setHasRest(false);
+      setRestPeriod('60');
+    }
+    previousLadderTypeRef.current = ladderType;
+  }, [ladderType, currentStep, isEditing]);
 
   // Track keyboard visibility
   useEffect(() => {
@@ -121,6 +173,24 @@ const CreateEditWorkoutScreen: React.FC = () => {
       keyboardDidHideListener.remove();
     };
   }, []);
+
+  // Animate step transition
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: currentStep === 1 ? 0 : 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [currentStep, slideAnim]);
+
+  // Scroll to top when entering step 2
+  useEffect(() => {
+    if (currentStep === 2) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      }, 0);
+    }
+  }, [currentStep]);
 
   // When switching ladder types, update exercises to have correct fields
   useEffect(() => {
@@ -554,7 +624,22 @@ const CreateEditWorkoutScreen: React.FC = () => {
 
             {/* STEP 1: Ladder Type Selection */}
             {currentStep === 1 && !isEditing && (
-              <>
+              <Animated.View
+                style={{
+                  opacity: slideAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 0],
+                  }),
+                  transform: [
+                    {
+                      translateX: slideAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -50],
+                      }),
+                    },
+                  ],
+                }}
+              >
                 <Text variant="titleLarge" style={styles.stepMainTitle}>
                   Choose Your Ladder Type
                 </Text>
@@ -586,7 +671,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         style={styles.ladderTypeIcon}
                       />
                       <View style={styles.ladderTypeContent}>
-                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'ascending' && { color: theme.colors.primary }]}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'ascending' && { color: theme.colors.primary }]}>
                           Ascending
                         </Text>
                         {ladderType === 'ascending' && (
@@ -624,7 +709,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         style={styles.ladderTypeIcon}
                       />
                       <View style={styles.ladderTypeContent}>
-                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'descending' && { color: theme.colors.primary }]}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'descending' && { color: theme.colors.primary }]}>
                           Descending
                         </Text>
                         {ladderType === 'descending' && (
@@ -662,7 +747,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         style={styles.ladderTypeIcon}
                       />
                       <View style={styles.ladderTypeContent}>
-                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'pyramid' && { color: theme.colors.primary }]}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'pyramid' && { color: theme.colors.primary }]}>
                           Pyramid
                         </Text>
                         {ladderType === 'pyramid' && (
@@ -701,7 +786,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         style={styles.ladderTypeIcon}
                       />
                       <View style={styles.ladderTypeContent}>
-                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'flexible' && { color: theme.colors.primary }]}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'flexible' && { color: theme.colors.primary }]}>
                           Flexible
                         </Text>
                         {ladderType === 'flexible' && (
@@ -739,7 +824,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         style={styles.ladderTypeIcon}
                       />
                       <View style={styles.ladderTypeContent}>
-                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'chipper' && { color: theme.colors.primary }]}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'chipper' && { color: theme.colors.primary }]}>
                           Chipper
                         </Text>
                         {ladderType === 'chipper' && (
@@ -777,7 +862,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         style={styles.ladderTypeIcon}
                       />
                       <View style={styles.ladderTypeContent}>
-                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'amrap' && { color: theme.colors.primary }]}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'amrap' && { color: theme.colors.primary }]}>
                           AMRAP
                         </Text>
                         {ladderType === 'amrap' && (
@@ -815,7 +900,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         style={styles.ladderTypeIcon}
                       />
                       <View style={styles.ladderTypeContent}>
-                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'forreps' && { color: theme.colors.primary }]}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'forreps' && { color: theme.colors.primary }]}>
                           For Reps
                         </Text>
                         {ladderType === 'forreps' && (
@@ -853,7 +938,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         style={styles.ladderTypeIcon}
                       />
                       <View style={styles.ladderTypeContent}>
-                        <Text variant="titleLarge" style={[styles.ladderTypeName, ladderType === 'christmas' && { color: theme.colors.primary }]}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'christmas' && { color: theme.colors.primary }]}>
                           Christmas
                         </Text>
                         {ladderType === 'christmas' && (
@@ -868,12 +953,27 @@ const CreateEditWorkoutScreen: React.FC = () => {
                     </View>
                   </Card.Content>
                 </Card>
-              </>
+              </Animated.View>
             )}
 
             {/* STEP 2: Workout Configuration */}
             {currentStep === 2 && (
-              <>
+              <Animated.View
+                style={{
+                  opacity: slideAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 1],
+                  }),
+                  transform: [
+                    {
+                      translateX: slideAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [100, 0],
+                      }),
+                    },
+                  ],
+                }}
+              >
                 {/* Show selected ladder type for reference when creating new workout */}
                 {!isEditing && (
                   <Card style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]}>
@@ -1085,7 +1185,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
                   exerciseNumber={index + 1}
-                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : ladderType === 'amrap' ? (
@@ -1097,29 +1196,28 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
                   exerciseNumber={index + 1}
-                  scrollViewRef={scrollViewRef}
                 />
               ))
             ) : ladderType === 'chipper' ? (
               exercises.map((exercise, index) => (
-                <ChipperExerciseInput
+                <FixedRepsExerciseInput
                   key={index}
                   exercise={exercise}
                   onChange={(ex) => handleExerciseChange(index, ex)}
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
-                  scrollViewRef={scrollViewRef}
+                  repsProperty="fixedReps"
                 />
               ))
             ) : ladderType === 'forreps' ? (
               exercises.map((exercise, index) => (
-                <ForRepsExerciseInput
+                <FixedRepsExerciseInput
                   key={index}
                   exercise={exercise}
                   onChange={(ex) => handleExerciseChange(index, ex)}
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
-                  scrollViewRef={scrollViewRef}
+                  repsProperty="repsPerRound"
                 />
               ))
             ) : (
@@ -1130,7 +1228,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   onChange={(ex) => handleExerciseChange(index, ex)}
                   onDelete={() => handleDeleteExercise(index)}
                   canDelete={exercises.length > 1}
-                  scrollViewRef={scrollViewRef}
                 />
               ))
             )}
@@ -1269,7 +1366,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           }}
                           style={styles.buyInOutNameInput}
                           maxLength={100}
-                          scrollViewRef={scrollViewRef}
                         />
 
                         {/* Buy In/Out Rest Period */}
@@ -1353,13 +1449,13 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 </View>
               </>
             )}
-              </>
+              </Animated.View>
             )}
           </View>
         </ScrollView>
 
         {/* Fixed Next Button for Step 1 */}
-        {currentStep === 1 && !isEditing && (
+        {currentStep === 1 && !isEditing && ladderType && (
           <View style={[styles.buttonContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outline }]}>
             <Button
               mode="contained"
@@ -1368,7 +1464,6 @@ const CreateEditWorkoutScreen: React.FC = () => {
               contentStyle={styles.nextButtonContent}
               style={styles.fixedNextButton}
               textColor='#fff'
-              disabled={!ladderType}
             >
               Next: Configure Workout
             </Button>
@@ -1438,7 +1533,7 @@ const styles = StyleSheet.create({
   },
   ladderTypeName: {
     fontWeight: '700',
-    fontSize: 20,
+    fontSize: 18,
   },
   ladderTypeDescription: {
     marginTop: spacing.xs,
