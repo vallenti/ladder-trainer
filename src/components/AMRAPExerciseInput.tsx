@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   segmentButton: {
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 20,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
