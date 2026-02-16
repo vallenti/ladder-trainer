@@ -57,7 +57,7 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
     setTimeout(() => {
       setIsFocused(false);
       setShowSuggestions(false);
-    }, 200);
+    }, 300);
   };
 
   const handleSelectSuggestion = (exercise: ExerciseCatalogItem) => {
@@ -169,7 +169,7 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
       />
       
       {showSuggestions && suggestions.length > 0 && (
-        <Surface
+        <View
           style={[
             styles.suggestionsContainer,
             { 
@@ -177,17 +177,24 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
               borderColor: theme.colors.outline,
             }
           ]}
-          elevation={5}
+          onStartShouldSetResponder={() => true}
+          onTouchEnd={(e) => e.stopPropagation()}
         >
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            nestedScrollEnabled
-            style={[styles.suggestionsList, { backgroundColor: theme.colors.surface }]}
-            showsVerticalScrollIndicator={true}
+          <Surface
+            style={styles.suggestionsSurface}
+            elevation={5}
           >
-            {suggestions.map((item) => renderSuggestion({ item }))}
-          </ScrollView>
-        </Surface>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              style={[styles.suggestionsList, { backgroundColor: theme.colors.surface }]}
+              contentContainerStyle={{ backgroundColor: theme.colors.surface }}
+              showsVerticalScrollIndicator={true}
+            >
+              {suggestions.map((item) => renderSuggestion({ item }))}
+            </ScrollView>
+          </Surface>
+        </View>
       )}
     </View>
   );
@@ -196,7 +203,8 @@ const AutocompleteExerciseInput: React.FC<AutocompleteExerciseInputProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    zIndex: 9999,
+    zIndex: 10000,
+    overflow: 'visible',
   },
   input: {
     backgroundColor: 'transparent',
@@ -209,13 +217,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
     borderRadius: 8,
     maxHeight: 200,
-    zIndex: 999999,
+    zIndex: 10001,
+    elevation: 10,
     borderWidth: 2,
-    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+  },
+  suggestionsSurface: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    maxHeight: 200,
+    elevation: 10,
   },
   suggestionsList: {
     maxHeight: 200,

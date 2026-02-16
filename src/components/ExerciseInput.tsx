@@ -141,13 +141,14 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 12,
     padding: spacing.md,
-    marginVertical: spacing.sm,
-    elevation: 1,
-    shadowOffset: { width: 0, height: 1 },
+    marginBottom: spacing.md,
+    borderRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 4,
+    elevation: 2,
+    overflow: 'visible',
   },
   headerRow: {
     flexDirection: 'row',
@@ -177,24 +178,25 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   nameInput: {
     flex: 1,
   },
   unitButton: {
+    width: 80,
+    height: 56,
     borderWidth: 1,
     borderRadius: 4,
-    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    marginBottom: 0,
   },
   unitButtonIcon: {
-    width: 50,
-    paddingHorizontal: 0,
+    width: 56,
+    height: 50,
+    top: 3
   },
   unitIcon: {
     margin: 0,
@@ -202,14 +204,15 @@ const styles = StyleSheet.create({
   unitButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
   unitText: {
-    fontWeight: '500',
+    flex: 1,
+    textAlign: 'center',
   },
   editIcon: {
     margin: 0,
+    marginLeft: -8,
   },
   unitEditContainer: {
     flexDirection: 'row',
