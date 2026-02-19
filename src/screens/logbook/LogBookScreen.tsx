@@ -253,8 +253,14 @@ const LogbookScreen: React.FC = () => {
     let message = `🏋️ ${workout.templateName}\n`;
     message += `📊 ${ladderTypeName}\n\n`;
     message += `📅 ${dateStr} at ${timeStr}\n`;
-    message += `⏱️ Total Time: ${formatTimeWithMs(workout.totalTime)}\n`;
-    message += `🔄 Rounds Completed: ${workout.rounds.length}/${workout.maxRounds}\n\n`;
+    if (workout.ladderType === 'amrap') {
+      message += `⏱️ Total Time: ${formatTime(workout.totalTime)}\n`;
+      message += `🔄 Rounds Completed: ${workout.rounds.length - 1}+\n\n`;
+    }
+    else {
+      message += `⏱️ Total Time: ${formatTimeWithMs(workout.totalTime)}\n`;
+      message += `🔄 Rounds Completed: ${workout.rounds.length}/${workout.maxRounds}\n\n`;
+    }
     
     if (exerciseTotals.length > 0 || (workout.hasBuyInOut && workout.buyInOutExercise)) {
       message += `💪 Exercise Summary:\n`;
@@ -439,7 +445,7 @@ const LogbookScreen: React.FC = () => {
                           {splitTimeAndMs(workout.totalTime).timeStr}
                         </Text>
                         <Text variant="bodySmall" style={[styles.milliseconds, { color: theme.colors.primary }]}>
-                          {splitTimeAndMs(workout.totalTime).msStr}
+                          {workout.ladderType === 'amrap' ? '.00' : splitTimeAndMs(workout.totalTime).msStr}
                         </Text>
                       </View>
                       <View style={[styles.roundsBadge, { backgroundColor: theme.colors.surfaceVariant }]}>

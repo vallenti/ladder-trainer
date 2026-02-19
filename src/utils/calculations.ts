@@ -30,6 +30,7 @@ export const getExercisesForRound = (roundNumber: number, allExercises: Exercise
  * Format time in MM:SS or HH:MM:SS
  */
 export const formatTime = (seconds: number): string => {
+  seconds = Math.floor(seconds); // Ensure integer seconds
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;

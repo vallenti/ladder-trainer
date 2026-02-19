@@ -92,7 +92,7 @@ export const ShareableWorkoutCard: React.FC<ShareableWorkoutCardProps> = ({
               Rounds
             </Text>
             <Text style={[styles.statValue, { color: theme.colors.onPrimaryContainer }]}>
-              {workout.rounds.length}
+              {workout.ladderType === 'amrap' ? `${workout.rounds.length - 1}+` : workout.rounds.length}
             </Text>
           </View>
           <View style={styles.stat}>
