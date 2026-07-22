@@ -87,12 +87,11 @@ A new ladder type requires at least:
 
 ## Validation baseline
 
-There is no `test` or `typecheck` npm script and no test files. The intended check is `npx tsc --noEmit`, but it currently fails before checking source with TS5095 because local `module: commonjs` conflicts with Expo's `moduleResolution: bundler`. Fix that configuration as scoped quality work; until then, report the blocker rather than claiming type safety. Expo smoke testing should cover creation, start, background/pause/restore, completion, history, and sharing as applicable.
+Run `npm run typecheck` and `npm test -- --ci`. The repository now has executable strategy, calculation, and persistence hydration tests. Expo smoke testing should additionally cover creation, start, background/pause/restore, completion, history, and sharing as applicable.
 
 ## Known implementation hazards
 
-- `WorkoutCompleteScreen` uses `workoutHistory[0]` instead of its `workoutId` route param.
-- `App.tsx` restores by navigating to `ActiveWorkout` without the required `workoutId` param and types its navigation ref as `any`.
+- `App.tsx` navigation ref remains typed as `any` even though paused restore now supplies the required `workoutId`.
 - Buy-in/out timing is represented by ordinary `Round` entries, so consumers slice the first/last round heuristically.
 - Strategy defaults use `||`; a persisted zero is treated as missing in several calculations.
 - Flexible descending total calculation can disagree with per-round clamping after values reach zero.

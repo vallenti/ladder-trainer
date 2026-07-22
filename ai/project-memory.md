@@ -34,10 +34,9 @@
 
 ## Debt relevant to feature work
 
-- No committed tests, `test` script, lint configuration, or format configuration.
+- Jest tests now cover strategies, calculations, and persistence hydration; lint and format configuration remain absent.
 - `App.tsx` navigation ref and several event/ref/error values use `any`.
-- Restore navigation omits the required `workoutId` param.
-- Completion route param is ignored in favor of history index zero.
+- Completion now resolves by route workout ID, with newest-history fallback for legacy callers.
 - `HomeScreen.tsx`, `ExampleComponent.tsx`, `User`, `ApiResponse`, and `StravaTokens` are unused scaffolding.
 - `axios`, legacy `react-navigation`, and legacy type packages appear unused or mismatched.
 - Accessibility and reduced-motion handling are incomplete.

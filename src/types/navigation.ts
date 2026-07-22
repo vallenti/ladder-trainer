@@ -28,6 +28,11 @@ export type SettingsStackParamList = {
   ManageExercises: undefined;
 };
 
+export type SettingsNavigation = import('@react-navigation/native').CompositeNavigationProp<
+  import('@react-navigation/stack').StackNavigationProp<SettingsStackParamList>,
+  import('@react-navigation/stack').StackNavigationProp<RootStackParamList>
+>;
+
 // Helper types for screen props
 export type HomeTabScreenProps<T extends keyof HomeTabParamList> = BottomTabScreenProps<HomeTabParamList, T>;
 export type RootStackScreenProps<T extends keyof RootStackParamList> = StackScreenProps<RootStackParamList, T>;

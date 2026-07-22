@@ -64,7 +64,7 @@ Always run:
 npx tsc --noEmit
 ```
 
-At audit time this command is blocked by TS5095: `tsconfig.json` sets CommonJS while Expo's base uses bundler module resolution. Do not misreport it as passing; fix the config in a separately scoped change or record the blocker. There is no test npm script or committed suite. If tests are added, also add a reproducible script and report the exact command. For UI/lifecycle work, manually smoke-test the affected path on Expo, including background/foreground when timing or persistence changes.
+The repository provides `npm run typecheck` and `npm test -- --ci`. The current suite covers strategy formulas, calculation utilities, and date hydration. Extend it for every changed rule. For UI/lifecycle work, manually smoke-test the affected path on Expo, including background/foreground when timing or persistence changes.
 
 ## Review gates
 

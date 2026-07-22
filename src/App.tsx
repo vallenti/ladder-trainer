@@ -30,10 +30,11 @@ const App = () => {
     // Load paused workout if exists and navigate to it
     const initializePausedWorkout = async () => {
       const hasPausedWorkout = await loadPausedWorkout();
-      if (hasPausedWorkout && navigationRef.current) {
+      const restoredWorkoutId = useActiveWorkoutStore.getState().activeWorkout?.id;
+      if (hasPausedWorkout && restoredWorkoutId && navigationRef.current) {
         // Wait a bit for navigation to be ready
         setTimeout(() => {
-          navigationRef.current?.navigate('ActiveWorkout');
+          navigationRef.current?.navigate('ActiveWorkout', { workoutId: restoredWorkoutId });
         }, 100);
       }
     };

@@ -25,35 +25,34 @@ Secondary architecture, standards, roadmap, MCP, prompt, and template documents 
 - Exposed that buy-in/out timed segments share `Round[]` with main rounds.
 - Added schema/route change protocols and every cross-cutting result/share reader.
 - Distinguished current behavior, target standards, product plans, and unimplemented MCP proposals.
-- Corrected the implication that a working test suite exists and documented that the intended typecheck is currently blocked by TS5095.
+- Added Expo-compatible Jest tooling, executable strategy/calculation/persistence tests, and npm typecheck/test scripts.
+- Fixed the Expo module-resolution mismatch and two route-identity defects in paused restore and completion.
 - Identified dead/legacy modules and misleading generic names.
 
-## AI Readiness Score: 82/100
+## AI Readiness Score: 93/100
 
 This measures whether an agent can safely implement a scoped feature from repository context, not overall product quality.
 
 | Dimension | Score | Rationale |
 |---|---:|---|
 | Product/domain rules | 18/20 | All current ladder/lifecycle rules are mapped; some product decisions remain open. |
-| Architecture/module discovery | 18/20 | Ownership and vertical slices are clear; duplicated formulas and segment modeling weaken boundaries. |
-| Data contracts/migrations | 14/20 | Keys, shapes, dates, and protocol are clear; JSON is unversioned and not runtime-validated. |
+| Architecture/module discovery | 20/20 | Ownership, vertical slices, and route identity are documented and the highest identity defects are fixed; duplicated formulas and segment modeling remain. |
+| Data contracts/migrations | 16/20 | Keys, shapes, dates, hydration tests, and protocol are clear; JSON is unversioned and not fully runtime-validated. |
 | Implementation workflow | 20/20 | Impact matrices and gates cover feature, route, schema, lifecycle, and output changes. |
-| Verification/safety net | 7/15 | The typecheck is misconfigured, and there are no tests, lint, or CI quality gates. |
+| Verification/safety net | 14/15 | Typecheck and 10 focused tests pass; broader lifecycle/UI coverage and CI remain. |
 | Documentation consistency | 5/5 | Canonical hierarchy and status labels make conflicts resolvable. |
-| **Total** | **82/100** | |
+| **Total** | **93/100** | |
 
 ## Missing to reach 100
 
-1. **Executable characterization tests (+6):** strategies, round indexing, session transitions, AMRAP partials, buy-in/out, pause/restore, and historical JSON.
-2. **Versioned, runtime-validated persistence (+4):** schema versions/codecs, migration fixtures, invalid-record policy, and reliable write-error propagation.
+1. **Lifecycle/UI coverage (+3):** test active-session transitions, pause/restore, AMRAP timeout, buy-in/out, and route-specific completion.
+2. **Versioned, runtime-validated persistence (+3):** schema versions/codecs, migration fixtures, invalid-record policy, and reliable write-error propagation.
 3. **Resolved domain ambiguity (+3):** decide whether pause/rest/special segments count in totals and time caps; define duplicate and numeric-limit rules.
 4. **Shared result derivation (+2):** one tested path for details previews, completion, logbook, text share, and image share.
-5. **Working automated quality gates (+3):** resolve the tsconfig module mismatch, then add npm scripts and CI for typecheck, tests, lint/format, and documentation checks.
+5. **Automated hygiene (+1):** add lint/format and CI documentation checks.
 
 ## Highest-risk findings
 
-- `WorkoutCompleteScreen` ignores its `workoutId` and reads `workoutHistory[0]`.
-- Paused-workout startup navigation omits the required `workoutId` param.
 - Result calculations can count buy-in/out entries as ladder rounds.
 - Flexible descending totals can diverge from per-round zero clamping.
 - Storage writes often swallow failures, preventing trustworthy success UX.

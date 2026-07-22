@@ -12,7 +12,8 @@ interface FixedRepsExerciseInputProps {
   onDelete: () => void;
   canDelete: boolean;
   repsProperty?: 'fixedReps' | 'repsPerRound';
-  scrollViewRef?: React.RefObject<ScrollView>;
+  repsLabel?: string;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
@@ -21,6 +22,7 @@ const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
   onDelete,
   canDelete,
   repsProperty = 'fixedReps',
+  repsLabel = 'Reps',
   scrollViewRef,
 }) => {
   const theme = useTheme();
@@ -147,7 +149,7 @@ const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
 
       {/* Count Field */}
       <NumberStepper
-        label="Reps"
+        label={repsLabel}
         value={repsValue}
         onChange={handleCountChange}
         min={1}

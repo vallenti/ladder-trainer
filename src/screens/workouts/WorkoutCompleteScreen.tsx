@@ -70,8 +70,8 @@ const WorkoutCompleteScreen: React.FC = () => {
     })
   ).current;
 
-  // Get the most recent workout (just completed)
-  const completedWorkout = workoutHistory[0];
+  // Resolve the session by route identity; history order is not an identity contract.
+  const completedWorkout = workoutHistory.find(workout => workout.id === route.params?.workoutId) ?? workoutHistory[0];
 
   const handleDone = () => {
     navigation.navigate('HomeTabs' as never);

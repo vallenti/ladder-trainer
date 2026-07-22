@@ -7,16 +7,13 @@ import { SUPPORT_EMAIL, APP_VERSION } from '../constants/config';
 import Constants from 'expo-constants';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import type { StackNavigationProp } from '@react-navigation/stack';
-import type { SettingsStackParamList } from '../types/navigation';
+import type { SettingsNavigation } from '../types/navigation';
 
 type FeedbackType = 'bug' | 'feature' | null;
 
-type NavigationProp = StackNavigationProp<SettingsStackParamList>;
-
 const SettingsScreen: React.FC = () => {
   const theme = useTheme();
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<SettingsNavigation>();
   const { themeMode, setThemeMode } = useThemeStore();
   const [feedbackDialogVisible, setFeedbackDialogVisible] = useState(false);
   const [feedbackType, setFeedbackType] = useState<FeedbackType>(null);

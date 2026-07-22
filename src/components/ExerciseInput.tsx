@@ -10,7 +10,7 @@ interface ExerciseInputProps {
   onChange: (exercise: Exercise) => void;
   onDelete: () => void;
   canDelete: boolean;
-  scrollViewRef?: React.RefObject<ScrollView>;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const ExerciseInput: React.FC<ExerciseInputProps> = ({

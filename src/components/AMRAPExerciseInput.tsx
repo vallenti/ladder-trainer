@@ -12,7 +12,7 @@ interface AMRAPExerciseInputProps {
   onDelete: () => void;
   canDelete: boolean;
   exerciseNumber: number;
-  scrollViewRef?: React.RefObject<ScrollView>;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({

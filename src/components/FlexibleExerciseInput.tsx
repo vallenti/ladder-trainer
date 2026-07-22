@@ -12,7 +12,7 @@ interface FlexibleExerciseInputProps {
   onDelete: () => void;
   canDelete: boolean;
   exerciseNumber: number;
-  scrollViewRef?: React.RefObject<ScrollView>;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 const FlexibleExerciseInput: React.FC<FlexibleExerciseInputProps> = ({
