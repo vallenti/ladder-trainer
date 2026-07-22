@@ -57,7 +57,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
                   {getLadderTypeName()}
                 </Text>
               </View>
-              
+
               <View style={styles.statBadge}>
                 <MaterialCommunityIcons 
                   name="dumbbell" 

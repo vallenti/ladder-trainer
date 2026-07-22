@@ -11,6 +11,7 @@ import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ShareableWorkoutCard } from '../../components/ShareableWorkoutCard';
 import { shareWorkoutImage } from '../../utils/shareUtils';
+import { formatLoad, formatTotalLoad } from '../../utils/weight';
 
 const formatTimeWithMs = (totalSeconds: number): string => {
   const seconds = Math.floor(totalSeconds);
@@ -268,7 +269,7 @@ const LogbookScreen: React.FC = () => {
         message += `  • BUY IN: ${workout.buyInOutExercise?.name || 'Exercise'}: ${workout.buyInOutExercise?.repsPerRound || 1} ${workout.buyInOutExercise?.unit || 'reps'}\n`;
       }
       exerciseTotals.forEach(ex => {
-        message += `  • ${ex.name}: ${ex.totalAmount} ${ex.unit || 'reps'}\n`;
+        message += `  • ${ex.name}: ${ex.totalAmount} ${ex.unit || 'reps'}${formatTotalLoad(ex.load, ex.totalAmount) ? ` · ${formatTotalLoad(ex.load, ex.totalAmount)}` : ''}\n`;
       });
       if (workout.hasBuyInOut && workout.buyInOutExercise) {
         message += `  • BUY OUT: ${workout.buyInOutExercise?.name || 'Exercise'}: ${workout.buyInOutExercise?.repsPerRound || 1} ${workout.buyInOutExercise?.unit || 'reps'}\n`;
@@ -487,10 +488,10 @@ const LogbookScreen: React.FC = () => {
                               ]}
                             >
                               <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                                {exercise.name}
+                                {exercise.name}{formatLoad(exercise.load) ? ` · ${formatLoad(exercise.load)}` : ''}
                               </Text>
                               <Text variant="bodyMedium" style={[styles.exerciseTotal, { color: theme.colors.tertiary }]}>
-                                {exercise.totalAmount} {(exercise.unit || 'reps').toLowerCase()}
+                                {exercise.totalAmount} {(exercise.unit || 'reps').toLowerCase()}{formatTotalLoad(exercise.load, exercise.totalAmount) ? ` · ${formatTotalLoad(exercise.load, exercise.totalAmount)}` : ''}
                               </Text>
                             </View>
                           ))}

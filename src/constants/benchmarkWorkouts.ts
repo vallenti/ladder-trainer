@@ -6,7 +6,7 @@ import { Template } from '../types';
  * Users can modify or delete these, and restore them using the restore feature.
  */
 
-export const BENCHMARK_WORKOUTS: Omit<Template, 'id' | 'createdAt'>[] = [
+export const BENCHMARK_WORKOUTS: Omit<Template, 'id' | 'createdAt' | 'isBenchmark' | 'source'>[] = [
   // ============ DESCENDING LADDER ============
   {
     name: 'Fran',
@@ -490,6 +490,8 @@ export const generateBenchmarkWorkouts = (): Template[] => {
   return BENCHMARK_WORKOUTS.map((workout, index) => ({
     ...workout,
     id: `${BENCHMARK_ID_PREFIX}${index}`,
+    isBenchmark: true,
+    source: 'built-in',
     createdAt: new Date(),
   }));
 };

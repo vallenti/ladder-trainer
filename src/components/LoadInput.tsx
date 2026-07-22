@@ -44,7 +44,7 @@ const LoadInput: React.FC<Props> = ({ exercise, onChange }) => {
         style={[styles.unitButton, { borderColor: theme.colors.outline }]}
       >
         <Text variant="bodyMedium" style={[styles.unitText, { color: theme.colors.onSurface }]}>
-          {unit === 'kg' ? 'lb' : 'kg'}
+          {unit}
         </Text>
       </TouchableOpacity>
     </View>}

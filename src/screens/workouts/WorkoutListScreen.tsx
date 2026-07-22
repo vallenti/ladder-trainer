@@ -57,35 +57,6 @@ const WorkoutListScreen: React.FC = () => {
     }
   };
 
-  if (!isLoading && customWorkouts.length === 0 && activeTab === 'custom') {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Appbar.Header>
-          <Appbar.Content title="LadFit" />
-          <Appbar.Action icon="plus" onPress={handleCreateWorkout} />
-        </Appbar.Header>
-        <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background }]}>
-          <Text variant="headlineSmall" style={styles.emptyText}>
-            No workouts yet
-          </Text>
-          <Text variant="bodyLarge" style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
-            Create your first workout to get started!
-          </Text>
-          <Button
-            icon="plus"
-            mode="contained"
-            onPress={handleCreateWorkout}
-            buttonColor={theme.colors.primary}
-            textColor="#FFFFFF"
-            style={styles.emptyButton}
-          >
-            Create Workout
-          </Button>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
@@ -163,11 +134,28 @@ const WorkoutListScreen: React.FC = () => {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyListContainer}>
-            <Text variant="bodyLarge" style={[styles.emptyListText, { color: theme.colors.onSurfaceVariant }]}>
-              {activeTab === 'custom' 
-                ? 'No custom workouts yet. Create one to get started!' 
-                : 'No benchmark workouts available.'}
-            </Text>
+            {activeTab === 'custom' ? (
+              <>
+                <Text variant="headlineSmall" style={styles.emptyText}>No workouts yet</Text>
+                <Text variant="bodyLarge" style={[styles.emptyListText, { color: theme.colors.onSurfaceVariant }]}>
+                  Create your first workout to get started!
+                </Text>
+                <Button
+                  icon="plus"
+                  mode="contained"
+                  onPress={handleCreateWorkout}
+                  buttonColor={theme.colors.primary}
+                  textColor="#FFFFFF"
+                  style={styles.emptyButton}
+                >
+                  Create Workout
+                </Button>
+              </>
+            ) : (
+              <Text variant="bodyLarge" style={[styles.emptyListText, { color: theme.colors.onSurfaceVariant }]}>
+                No benchmark workouts available.
+              </Text>
+            )}
           </View>
         }
       />

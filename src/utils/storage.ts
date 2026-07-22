@@ -121,8 +121,9 @@ export const restoreBenchmarkWorkouts = async (): Promise<void> => {
     const existingWorkouts = await loadWorkouts();
     const benchmarkWorkouts = generateBenchmarkWorkouts();
     
-    // Remove all existing benchmark workouts
-    const customWorkouts = existingWorkouts.filter(w => !w.id.startsWith('benchmark_'));
+    // Only built-in workouts are reset. User-created workouts, including custom
+    // benchmarks, remain exactly as the user configured them.
+    const customWorkouts = existingWorkouts.filter(w => w.source !== 'built-in');
     
     // Add fresh benchmark workouts
     const allWorkouts = [...benchmarkWorkouts, ...customWorkouts];

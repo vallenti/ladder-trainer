@@ -14,3 +14,7 @@ export const roundedDisplayWeight = (valueKg: number, unit: WeightUnit): number 
 
 export const formatLoad = (load?: ExerciseLoad): string | undefined =>
   load ? `${roundedDisplayWeight(load.valueKg, load.displayUnit)} ${load.displayUnit}` : undefined;
+
+/** Total volume for a loaded exercise: load per rep multiplied by completed reps. */
+export const formatTotalLoad = (load: ExerciseLoad | undefined, totalReps: number): string | undefined =>
+  load ? `${roundedDisplayWeight(load.valueKg * totalReps, load.displayUnit)} ${load.displayUnit}` : undefined;

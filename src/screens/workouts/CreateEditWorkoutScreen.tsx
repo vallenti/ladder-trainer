@@ -52,6 +52,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const [timeCapSeconds, setTimeCapSeconds] = useState(initialTimeCap % 60);
   
   const [name, setName] = useState(existingWorkout?.name || '');
+  const [isBenchmark, setIsBenchmark] = useState(existingWorkout?.isBenchmark || false);
   const [hasRest, setHasRest] = useState((existingWorkout?.restPeriodSeconds || 0) > 0);
   const [restPeriod, setRestPeriod] = useState(
     existingWorkout?.restPeriodSeconds?.toString() || '60'
@@ -483,6 +484,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       hasBuyInOut: shouldIncludeBuyInOut,
       buyInOutExercise: shouldIncludeBuyInOut ? buyInOutExercise : undefined,
       buyInOutRestSeconds: shouldIncludeBuyInOut && hasBuyInOutRest ? parseInt(buyInOutRestPeriod, 10) : undefined,
+      isBenchmark,
     };
 
     if (isEditing && workoutId) {
@@ -1025,6 +1027,19 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   placeholder={generateDefaultWorkoutName()}
                   maxLength={100}
                 />
+
+                <View style={styles.checkboxRow}>
+                  <Checkbox
+                    status={isBenchmark ? 'checked' : 'unchecked'}
+                    onPress={() => setIsBenchmark(value => !value)}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text variant="bodyLarge" style={styles.checkboxLabel}>Mark as benchmark</Text>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Show this workout in the Benchmarks tab.
+                    </Text>
+                  </View>
+                </View>
 
             {/* Time Cap - Only for AMRAP */}
             {ladderType === 'amrap' && (

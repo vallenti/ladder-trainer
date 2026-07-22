@@ -17,7 +17,7 @@ const WorkoutDetailsScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RouteParams, 'WorkoutDetails'>>();
-  const { getWorkout, deleteWorkout } = useWorkoutStore();
+  const { getWorkout, deleteWorkout, updateWorkout } = useWorkoutStore();
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 
   const workout = getWorkout(route.params.workoutId);
@@ -50,6 +50,10 @@ const WorkoutDetailsScreen: React.FC = () => {
   const handleStartWorkout = () => {
     // @ts-ignore
     navigation.navigate('Countdown', { workoutId: workout.id });
+  };
+
+  const handleToggleBenchmark = async () => {
+    await updateWorkout(workout.id, { isBenchmark: !workout.isBenchmark });
   };
 
   // Get ladder type display name
@@ -264,6 +268,11 @@ const WorkoutDetailsScreen: React.FC = () => {
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
         <Appbar.Content title={workout.name} />
+        <Appbar.Action
+          icon={workout.isBenchmark ? 'trophy' : 'trophy-outline'}
+          onPress={handleToggleBenchmark}
+          accessibilityLabel={workout.isBenchmark ? 'Remove benchmark' : 'Mark as benchmark'}
+        />
         <Appbar.Action icon="pencil" onPress={handleEdit} />
         <Appbar.Action icon="delete" onPress={() => setDeleteDialogVisible(true)} />
       </Appbar.Header>
@@ -276,6 +285,11 @@ const WorkoutDetailsScreen: React.FC = () => {
               <Text variant="headlineSmall" style={[styles.workoutTypeTitle, { color: theme.colors.primary }]}>
                 {getLadderTypeDisplay()}
               </Text>
+              {workout.isBenchmark && (
+                <Chip icon="trophy" compact style={styles.benchmarkChip}>
+                  {workout.source === 'built-in' ? 'Built-in benchmark' : 'Benchmark workout'}
+                </Chip>
+              )}
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>ROUNDS</Text>
@@ -548,6 +562,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: spacing.md,
     textAlign: 'center',
+  },
+  benchmarkChip: {
+    alignSelf: 'center',
+    marginTop: -spacing.xs,
+    marginBottom: spacing.md,
   },
   statsRow: {
     flexDirection: 'row',

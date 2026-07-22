@@ -59,6 +59,10 @@ export interface Template {
   buyInOutExercise?: Exercise; // Optional buy-in/out exercise
   hasBuyInOut?: boolean; // Whether buy-in/out is enabled
   buyInOutRestSeconds?: number; // Optional rest after buy-in and before buy-out
+  /** Whether this workout is shown in the Benchmarks tab. */
+  isBenchmark: boolean;
+  /** Built-in workouts can be restored; user workouts are never reset by restore. */
+  source: 'built-in' | 'user';
   createdAt: Date;
 }
 
