@@ -1,5 +1,7 @@
 # Architecture — LadFit
 
+> Audited against source on 2026-07-16. `AI_CONTEXT.md` and `ai/architecture-summary.md` are canonical. Persistence is split across `storage.ts` and the active, exercise, and theme stores.
+
 > Last updated: June 24, 2026
 
 ## Overview

@@ -1,5 +1,7 @@
 # Development Workflow — LadFit
 
+> Canonical agent workflow: `ai/development-workflow.md`. Resolve conflicts in favor of that guide and current source.
+
 > This document describes the end-to-end development process from idea to merged code.
 > Follow this process for all features, bug fixes, and refactors.
 

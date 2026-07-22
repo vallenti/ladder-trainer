@@ -1,5 +1,7 @@
 # Project Roadmap — LadFit
 
+> Planning only, not current behavior. Confirm shipped status in source and `ai/feature-index.md`. Acceptance criteria must address persistence, lifecycle, errors, accessibility, and tests.
+
 > Last updated: June 24, 2026  
 > Status: v1.0.0 — Active Development
 

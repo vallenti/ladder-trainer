@@ -1,132 +1,75 @@
-# Development Workflow — AI Agent Guide
+# Development Workflow for Coding Agents
 
-> This file describes how an AI agent should approach development tasks in the LadFit codebase.
+## Definition of ready
 
----
+Before editing, state the user-visible outcome, identify the persisted entities and routes involved, and read every source-of-truth file listed for that feature in `ai/feature-index.md`. Check `git status` and preserve unrelated changes.
 
-## Before Starting Any Task
+## Implementation sequence
 
-1. **Read `AI_CONTEXT.md`** — project rules, key files, known issues.
-2. **Read `ai/architecture-summary.md`** — fast architectural orientation.
-3. **Read `ai/feature-index.md`** — locate relevant existing code.
-4. **Read `docs/coding-standards.md`** — conventions to follow.
-5. **Identify all files that will change** before writing any code.
+1. Write acceptance cases, including old persisted data, empty/error states, app backgrounding, and type-specific behavior.
+2. Update domain and navigation types. Decide whether a field belongs to a template, session snapshot, round, or UI-only state.
+3. Add hydration/default/migration behavior at the key owner. Never change a storage key in place.
+4. Implement pure business logic or strategy behavior.
+5. Update store actions and lifecycle transitions.
+6. Update create/edit validation and inputs.
+7. Update every reader: cards, details preview, active UI, completion, logbook, text/image sharing.
+8. Add focused tests and run validation.
+9. Update business rules, schema/contracts, feature index, and project memory.
 
----
+## Compatibility rules
 
-## Task Execution Order
+- Adding a required runtime field to persisted JSON is breaking even if TypeScript compiles. Hydrate a default or run a versioned migration.
+- New template execution fields normally need a corresponding workout snapshot field.
+- Rehydrate all new dates in templates, history, rounds, and paused state.
+- Treat parsed JSON as `unknown`; reject or repair invalid collection/items deliberately.
+- A migration must be idempotent and must not destroy valid user data.
+- Because save helpers may swallow errors today, do not assume awaiting them proves durability; improve error propagation when the feature requires reliable feedback.
 
-### For Feature Work
+## Feature checklists
+
+### New ladder type
+
+- `LadderType`, defaults, strategy class, factory case, and formula tests.
+- Type-selection card, exercise input mode, add/reset transformation, validation, save mapping.
+- Active round list and end condition, rest behavior, pause/restore.
+- Workout card/details labels and preview.
+- Completion/logbook totals, round labels, partial-work rules, text and image sharing.
+- Seed examples if desired; docs and migration for existing values.
+
+### New template/session field
+
+- Define ownership and optionality separately on `Template` and `Workout`.
+- Populate it during `startWorkout` if history must snapshot it.
+- Cover template load, history load, and paused-workout load.
+- Update edit initialization, reset on type changes, validation, save mapping, details, execution, and results.
+
+### New screen or route
+
+- Add an exact param type and navigator registration.
+- Type `navigation` and `route`; do not copy current `any` patterns.
+- Update every caller, including startup restoration and nested navigators.
+- Define missing/invalid-param behavior and Android back behavior.
+
+### Persistence change
+
+- Locate the owner using `AI_CONTEXT.md`.
+- Test absent key, valid old data, malformed JSON, invalid item, read failure, write failure, and idempotent migration.
+- Preserve initialization flags unless reseeding is explicitly required.
+
+## Validation
+
+Always run:
+
+```powershell
+npx tsc --noEmit
 ```
-1. Read FEATURE_TEMPLATE.md for the spec
-2. Read IMPLEMENTATION_PLAN_TEMPLATE.md to plan
-3. Update types first (src/types/index.ts)
-4. Update storage/migration (src/utils/storage.ts)
-5. Update stores (src/store/)
-6. Add utility functions (src/utils/)
-7. Build/update components (src/components/)
-8. Build/update screens (src/screens/)
-9. Update navigation (src/types/navigation.ts + src/navigation/)
-10. Write tests
-```
 
-### For Bug Fixes
-```
-1. Read BUG_REPORT_TEMPLATE.md for context
-2. Locate root cause: store → storage → strategy → screen
-3. Write a minimal fix — do not refactor while fixing
-4. Add a comment explaining why the fix is correct
-5. Check for migration needs (does stored data need updating?)
-```
+At audit time this command is blocked by TS5095: `tsconfig.json` sets CommonJS while Expo's base uses bundler module resolution. Do not misreport it as passing; fix the config in a separately scoped change or record the blocker. There is no test npm script or committed suite. If tests are added, also add a reproducible script and report the exact command. For UI/lifecycle work, manually smoke-test the affected path on Expo, including background/foreground when timing or persistence changes.
 
-### For Refactoring
-```
-1. Read docs/prompts/refactoring.md for recipes
-2. Confirm external behavior is preserved before starting
-3. Make one change at a time
-4. Check no public API was renamed
-5. Verify TypeScript compiles after each change
-```
+## Review gates
 
----
-
-## File Change Checklist
-
-When modifying a file, verify:
-
-### `src/types/index.ts`
-- [ ] New fields are optional (`?`) for backward compatibility
-- [ ] `LadderType` union updated if adding a new type
-- [ ] No `any` types introduced
-
-### `src/utils/storage.ts`
-- [ ] New fields re-hydrated with defaults in `loadWorkouts()` / `loadWorkoutHistory()`
-- [ ] `Date` fields re-hydrated with `new Date(w.fieldName)`
-- [ ] Migration comment added explaining what changed
-
-### `src/store/*.ts`
-- [ ] Actions are `async` if touching AsyncStorage
-- [ ] State updates are immutable (spread operator)
-- [ ] `try/catch` wraps all AsyncStorage operations
-- [ ] `console.error` on failures
-
-### `src/utils/ladderStrategies.ts`
-- [ ] New strategy implements all 3 `LadderStrategy` methods
-- [ ] `getLadderStrategy()` factory has new case
-- [ ] Round numbers are 1-indexed in strategy methods
-
-### `src/screens/*.tsx`
-- [ ] Wrapped in `SafeAreaView`
-- [ ] Uses `useTheme()` for colors
-- [ ] `StyleSheet.create()` at bottom
-- [ ] Text from `react-native-paper`
-- [ ] Navigation types are correct (no `any`)
-
----
-
-## AI Agent Task Patterns
-
-### "Add field X to Template"
-
-**Minimal change set:**
-1. `src/types/index.ts` — add `x?: Type` to `Template`
-2. `src/utils/storage.ts` — add `x: w.x ?? defaultValue` in `loadWorkouts()`
-3. `src/store/activeWorkoutStore.ts` — add `x: template.x` to `startWorkout()` snapshot
-4. UI: `CreateEditWorkoutScreen.tsx` + `WorkoutDetailsScreen.tsx`
-
-### "Fix a rep count bug in ladder type X"
-
-**Investigation path:**
-1. `src/utils/ladderStrategies.ts` — read the strategy class
-2. Check: is `roundNumber` 1-indexed in the call from the screen?
-3. Check: is `stepSize` and `startingReps` passed correctly to `getLadderStrategy()`?
-4. Verify with the `getDescription()` example values
-
-### "Add a new screen to the Workout tab"
-
-**Minimal change set:**
-1. `src/types/navigation.ts` — add `NewScreen: { param: Type }` to `WorkoutStackParamList`
-2. `src/navigation/WorkoutNavigator.tsx` — add `<Stack.Screen name="NewScreen" component={NewScreen} />`
-3. `src/screens/workouts/NewScreen.tsx` — create the screen
-
-### "Fix data not persisting"
-
-**Investigation path:**
-1. Store action: is `await saveX(updated)` called before `set({ ... })`?
-2. Storage function: is the AsyncStorage key correct?
-3. Load function: is the key correct on load?
-4. App startup: is `loadX()` called in `App.tsx` or screen `useEffect`?
-
----
-
-## Common Mistake Prevention
-
-| Mistake | Prevention |
-|---|---|
-| Calling `AsyncStorage` in a screen | Always use a store action |
-| 0-indexed vs 1-indexed round confusion | `currentRoundIndex + 1` when calling `getExercisesForRound()` |
-| Forgetting to snapshot new fields | Check `activeWorkoutStore.startWorkout()` when adding Template fields |
-| Missing migration for new fields | Always add default in `storage.ts loadWorkouts()` |
-| Using `any` | Use `unknown` + type guard, or define the exact interface |
-| Hardcoding colors or spacing | `theme.colors.*`, `spacing.*`, `borderRadius.*` |
-| Forgetting to re-hydrate Dates | All `Date` fields must use `new Date(w.fieldName)` in storage.ts |
+- No duplicated business formula unless it is clearly presentation-only and covered against the strategy.
+- No new `any`, untyped route, hardcoded storage key at a second owner, or mutation of Zustand arrays.
+- User-facing errors are actionable; storage failures are not reported as success.
+- Accessibility labels/roles and touch targets exist for new controls.
+- Documentation describes current behavior and labels proposals explicitly.

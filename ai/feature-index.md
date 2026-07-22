@@ -1,131 +1,51 @@
-# Feature Index — LadFit
+# Feature Index
 
-> A searchable index of all implemented features. Use this to locate relevant code quickly.
+Use this index to find an entire implementation slice. File names are relative to `src/`.
 
----
+| Feature | Entry/UI | State/business logic | Persistence/output |
+|---|---|---|---|
+| App bootstrap | `App.tsx` | theme, history, exercise, paused-session loads | each owning store |
+| Template list/tabs | `screens/workouts/WorkoutListScreen.tsx`, `components/WorkoutCard.tsx` | `store/workoutStore.ts` | `utils/storage.ts` |
+| Create/edit template | `CreateEditWorkoutScreen.tsx`, exercise input components | validation in screen; `ladderDefaults.ts`; workout/exercise stores | workouts + auto-added catalog items |
+| Template details/preview | `WorkoutDetailsScreen.tsx` | manual preview formulas plus strategy semantics | none |
+| Benchmark seed/restore | list and settings screens | `benchmarkWorkouts.ts`, workout store | `storage.ts`; prefix `benchmark_` |
+| Exercise catalog | `ManageExercisesScreen.tsx`, `AutocompleteExerciseInput.tsx` | `exerciseStore.ts`, `defaultExercises.ts` | exercise store direct AsyncStorage |
+| Session countdown/start | `CountdownScreen.tsx` | workout lookup + `activeWorkoutStore.startWorkout()` | in memory until pause/complete |
+| Active execution | `ActiveWorkoutScreen.tsx` | active store + `getLadderStrategy()` | paused snapshot/history |
+| Round rest | `RestScreen.tsx` | active store next-round/pause actions | paused snapshot |
+| Buy-in/out | create/edit, details, active, completion/logbook | active store flags; ordinary rounds currently record timing | template/session/history JSON |
+| AMRAP timeout/partial reps | active + complete screens | time cap; history `savePartialRoundReps()`; AMRAP strategy totals | history exercises `partialReps` |
+| Completion | `WorkoutCompleteScreen.tsx` | active store writes history; completion reads newest history entry | history + paused-key removal |
+| Logbook filters/delete | `LogBookScreen.tsx` | local name/date filters; history store | history |
+| Result sharing | completion/logbook, `ShareableWorkoutCard.tsx` | `shareUtils.ts`, native text Share in logbook | temporary PNG/file sharing |
+| Theme | settings and `App.tsx` | `themeStore.ts`, `theme.ts` | theme key |
+| Legal/config | settings, `LegalScreen.tsx` | `legal.ts`, `config.ts` | none |
+| Audio/focus/awake | active/countdown/rest | `soundUtils.ts`, active mute/focus state, Expo keep-awake | mute not persisted; focus persists only in paused state |
 
-## Workout Templates
+## Ladder implementation matrix
 
-| Feature | Key Files |
-|---|---|
-| Create new template | `CreateEditWorkoutScreen.tsx`, `useWorkoutStore.addWorkout()` |
-| Edit existing template | `CreateEditWorkoutScreen.tsx` (workoutId param), `useWorkoutStore.updateWorkout()` |
-| Delete template | `WorkoutListScreen.tsx` or `WorkoutDetailsScreen.tsx`, `useWorkoutStore.deleteWorkout()` |
-| View template details | `WorkoutDetailsScreen.tsx`, `useWorkoutStore.getWorkout()` |
-| List all templates | `WorkoutListScreen.tsx`, `useWorkoutStore.workouts` |
-| Restore benchmark workouts | `SettingsScreen.tsx`, `useWorkoutStore.restoreBenchmarks()`, `storage.restoreBenchmarkWorkouts()` |
-| Benchmark workout detection | `isBenchmarkWorkout()` in `benchmarkWorkouts.ts` |
+All types use `ladderStrategies.ts`; creation is coordinated by `CreateEditWorkoutScreen.tsx`.
 
----
+| Type | Input component | Persisted special fields | End rule |
+|---|---|---|---|
+| `christmas` | `ExerciseInput` | global `maxRounds` | round cap, max 12 |
+| `ascending` | `ExerciseInput` | `startingReps`, `stepSize`, `maxRounds` | round cap |
+| `descending` | `ExerciseInput` | `startingReps`, `stepSize`, `maxRounds` | round cap |
+| `pyramid` | `ExerciseInput` | `stepSize`, `maxRounds` | round cap |
+| `flexible` | `FlexibleExerciseInput` | per exercise direction/start/step; global rounds | round cap |
+| `chipper` | `FixedRepsExerciseInput` | per exercise `fixedReps`; rounds derived from count | last exercise |
+| `amrap` | `AMRAPExerciseInput` | per exercise start/step; `timeCap`; sentinel rounds | time cap |
+| `forreps` | `ForRepsExerciseInput` | per exercise `repsPerRound`; global rounds | round cap |
 
-## Exercise Catalog
+## Undocumented/dead modules agents should recognize
 
-| Feature | Key Files |
-|---|---|
-| Search exercises with autocomplete | `AutocompleteExerciseInput.tsx`, `useExerciseStore.searchExercises()` |
-| Add custom exercise | `ManageExercisesScreen.tsx`, `useExerciseStore.addExercise()` |
-| Edit exercise | `ManageExercisesScreen.tsx`, `useExerciseStore.updateExercise()` |
-| Delete exercise | `ManageExercisesScreen.tsx`, `useExerciseStore.deleteExercise()` |
-| Restore default exercises | `ManageExercisesScreen.tsx`, `useExerciseStore.restoreDefaults()` |
+- `calculations.ts`: generic time formatter plus legacy Christmas-only helpers.
+- `shareUtils.ts`: PNG capture/share/save utilities; text sharing is implemented inside `LogBookScreen`.
+- `soundUtils.ts`: generated beep/success audio and iOS silent-mode setup.
+- `HomeScreen.tsx` and `ExampleComponent.tsx`: unused scaffolding, not extension points.
+- `ChipperExerciseInput.tsx` exists, but current create/edit imports `FixedRepsExerciseInput.tsx`; verify usage before changing either.
+- `src/types/index.ts` contains unused scaffold/API/Strava types.
 
----
+## Cross-cutting readers to search before a change
 
-## Ladder Type Configuration
-
-| Ladder Type | Exercise Input Component | Config Fields |
-|---|---|---|
-| `christmas` | `ExerciseInput.tsx` (base) | None |
-| `ascending` | `ExerciseInput.tsx` (base) | `startingReps`, `stepSize`, `maxRounds` |
-| `descending` | `ExerciseInput.tsx` (base) | `startingReps`, `stepSize`, `maxRounds` |
-| `pyramid` | `ExerciseInput.tsx` (base) | `stepSize`, `maxRounds` |
-| `flexible` | `FlexibleExerciseInput.tsx` | per-exercise: `direction`, `startingReps`, `stepSize` |
-| `chipper` | `ChipperExerciseInput.tsx` | per-exercise: `fixedReps` |
-| `amrap` | `AMRAPExerciseInput.tsx` | `timeCap`; per-exercise: `startingReps`, `stepSize` |
-| `forreps` | `ForRepsExerciseInput.tsx` | `maxRounds`; per-exercise: `repsPerRound` |
-
----
-
-## Active Workout Session
-
-| Feature | Key Files |
-|---|---|
-| Start workout | `WorkoutDetailsScreen.tsx` → navigate to Countdown, `useActiveWorkoutStore.startWorkout()` |
-| 3-2-1 countdown | `CountdownScreen.tsx` |
-| Track active round | `ActiveWorkoutScreen.tsx`, `useActiveWorkoutStore` |
-| Complete a round | `ActiveWorkoutScreen.tsx`, `useActiveWorkoutStore.completeRound()` |
-| Rest between rounds | `RestScreen.tsx` |
-| Start next round | `RestScreen.tsx`, `useActiveWorkoutStore.startNextRound()` |
-| Buy-in exercise | `ActiveWorkoutScreen.tsx`, `useActiveWorkoutStore.completeBuyIn()` |
-| Buy-out exercise | `ActiveWorkoutScreen.tsx`, `useActiveWorkoutStore.completeBuyOut()` |
-| Complete workout | `ActiveWorkoutScreen.tsx`, `useActiveWorkoutStore.completeWorkout()` |
-| Workout complete summary | `WorkoutCompleteScreen.tsx` |
-| Pause workout | `ActiveWorkoutScreen.tsx`, `useActiveWorkoutStore.pauseWorkout()` |
-| Resume workout | `ActiveWorkoutScreen.tsx`, `useActiveWorkoutStore.resumeWorkout()` |
-| Discard paused workout | Dialog in app, `useActiveWorkoutStore.discardPausedWorkout()` |
-| Restore paused workout on relaunch | `App.tsx` or initial screen, `useActiveWorkoutStore.loadPausedWorkout()` |
-| Mute audio | `ActiveWorkoutScreen.tsx`, `useActiveWorkoutStore.toggleMute()` |
-| Timer focus mode | `ActiveWorkoutScreen.tsx`, `useActiveWorkoutStore.setTimerFocusMode()` |
-| Keep screen awake | `ActiveWorkoutScreen.tsx`, `expo-keep-awake` |
-
----
-
-## Audio / Haptics
-
-| Feature | Key Files |
-|---|---|
-| Short beep (round complete, etc.) | `soundUtils.playShortBeep()` |
-| Long beep | `soundUtils.playLongBeep()` |
-| Success sound (workout complete) | `soundUtils.playSuccessSound()` |
-| Silent mode playback (iOS) | `soundUtils.ts` — `Audio.setAudioModeAsync({ playsInSilentModeIOS: true })` |
-| Haptic feedback | `expo-haptics` (installed, TODO: wire up to round completion) |
-
----
-
-## Workout History / Logbook
-
-| Feature | Key Files |
-|---|---|
-| View history | `LogBookScreen.tsx`, `useWorkoutHistoryStore.workoutHistory` |
-| Search by workout name | `LogBookScreen.tsx` — `Searchbar` + filter logic |
-| Filter by date | `LogBookScreen.tsx` — `DateTimePicker` + `isSameDay()` |
-| Filter by ladder type | `LogBookScreen.tsx` — chip selector |
-| Delete history entry | `LogBookScreen.tsx`, `useWorkoutHistoryStore.deleteWorkoutFromHistory()` |
-| Share workout result as image | `LogBookScreen.tsx`, `shareUtils.shareWorkoutImage()`, `ShareableWorkoutCard.tsx` |
-| AMRAP partial round reps | `LogBookScreen.tsx`, `useWorkoutHistoryStore.savePartialRoundReps()` |
-
----
-
-## Settings
-
-| Feature | Key Files |
-|---|---|
-| Toggle light/dark theme | `SettingsScreen.tsx`, `useThemeStore.setThemeMode()` |
-| Restore benchmark workouts | `SettingsScreen.tsx`, `useWorkoutStore.restoreBenchmarks()` |
-| Manage exercise catalog | Navigate to `ManageExercisesScreen` |
-| View legal / privacy policy | `LegalScreen.tsx` |
-| App version display | `SettingsScreen.tsx`, `APP_VERSION` from `constants/config.ts` |
-| Support email | `SUPPORT_EMAIL` from `constants/config.ts` |
-
----
-
-## Sharing Feature
-
-| Feature | Key Files |
-|---|---|
-| Share workout card as PNG | `shareUtils.shareWorkoutImage()`, `expo-sharing` |
-| Capture workout card as screenshot | `react-native-view-shot`, `ShareableWorkoutCard.tsx` |
-| Save to file system | `shareUtils.saveWorkoutImage()`, `expo-file-system` |
-
----
-
-## Data Persistence
-
-| Feature | Key Files |
-|---|---|
-| Load templates on startup | `useWorkoutStore.loadWorkouts()`, `storage.loadWorkouts()` |
-| Save template changes | `storage.saveWorkouts()` |
-| Load workout history | `useWorkoutHistoryStore.loadHistory()`, `storage.loadWorkoutHistory()` |
-| Save workout to history | `storage.saveWorkoutHistory()` |
-| First-launch benchmark seeding | `storage.initializeBenchmarkWorkouts()` |
-| First-launch exercise seeding | `useExerciseStore.loadExercises()` |
-| Data migration (v1 → v2) | `useWorkoutStore.loadWorkouts()`, `useWorkoutHistoryStore.loadHistory()` |
+For a ladder type or session field, search by the discriminator/field across `CreateEditWorkoutScreen`, `WorkoutDetailsScreen`, `WorkoutCard`, `ActiveWorkoutScreen`, `WorkoutCompleteScreen`, `LogBookScreen`, `ShareableWorkoutCard`, strategies, defaults, benchmarks, stores, types, and docs. Do not stop after the factory compiles.

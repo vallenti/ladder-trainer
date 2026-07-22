@@ -1,174 +1,94 @@
-# Business Rules — LadFit
+# Business Rules
 
-> Last updated: June 24, 2026
+This document records behavior enforced by the current application. “Required” means the create/edit UI or runtime enforces it; architectural recommendations are kept elsewhere.
 
----
+## Entities and identity
 
-## Core Domain Concepts
+- A `Template` is a reusable definition. New IDs are `Date.now().toString()` and `createdAt` is set at creation.
+- A `Workout` is a session snapshot with a separately generated timestamp ID. It has no link to the source template other than `templateName`.
+- A `Round` records one timed segment with one-based `roundNumber`, dates, and duration seconds.
+- Template exercises are embedded values. The catalog supplies suggestions only and is updated automatically when a saved exercise name is new (case-insensitive).
+- Template and session names are snapshots; renaming or deleting a template does not alter history.
 
-### Workout Template (`Template`)
-A reusable workout blueprint that a user creates and saves. Templates are never mutated during a live session — all active session data is snapshotted from the template at start time.
+## Common template validation
 
-### Workout Session (`Workout`)
-An immutable snapshot of a template's configuration at start time, plus live session tracking (rounds completed, timestamps, paused state). Stored in workout history after completion.
+- Name is trimmed, required, and at most 100 characters.
+- At least one named exercise is required; the UI permits at most 12.
+- Positions are contiguous integers starting at one.
+- Optional regular rest must be a positive integer; disabled rest persists as zero.
+- Units are free text; blank units are displayed as reps in several result views.
+- There is no uniqueness requirement for template names or exercise names within a template.
 
-### Exercise
-An individual movement within a template. Has a `position` (1–12), a `name`, a `unit` (reps / calories / meters / seconds), and optional per-ladder-type fields.
+## Ladder rules
 
-### Round
-A time-tracked unit of work within a workout session. Each completed round records its `startTime`, `endTime`, and `duration`.
+### Christmas
 
----
+Round N performs positions N down to 1. Each exercise’s reps equal its position. Maximum rounds is 12 and the template must contain at least as many exercises as rounds.
 
-## Ladder Types and Their Rules
+### Ascending
 
-### Christmas (`christmas`)
-- Inspired by "12 Days of Christmas".
-- Exercises are numbered by position (1–12). Position doubles as that exercise's rep count.
-- Round N: exercises at positions N, N-1, …, 1 performed in descending position order.
-- Each exercise is performed with reps = its position number.
-- Maximum 12 exercises / 12 rounds.
-- Default: `maxRounds = 12`.
+Every round contains every exercise. Reps are `startingReps + (round - 1) * stepSize`. Step and rounds must be positive. The current form does not separately validate global `startingReps` as positive; preserve compatibility or fix explicitly.
 
-### Ascending (`ascending`)
-- All exercises are performed every round.
-- Reps per round = `startingReps + (roundNumber - 1) × stepSize`.
-- Default: `startingReps = 1`, `stepSize = 1`, `maxRounds = 10`.
+### Descending
 
-### Descending (`descending`)
-- All exercises are performed every round.
-- Reps per round = `startingReps - (roundNumber - 1) × stepSize`.
-- Classic benchmark: Fran (21-15-9).
-- Default: `startingReps = 10`, `stepSize = 1`, `maxRounds = 10`.
+Every round contains every exercise. Reps are `startingReps - (round - 1) * stepSize`. Step and rounds must be positive. The current form does not guarantee the last round remains positive, so invalid-looking configurations can be persisted.
 
-### Pyramid (`pyramid`)
-- All exercises are performed every round.
-- Ascends to peak rep count then descends symmetrically.
-- Peak round = `ceil(maxRounds / 2)`.
-- Odd `maxRounds`: peak occurs once; Even: peak repeats twice.
-- Default: `stepSize = 1`, `maxRounds = 5`.
+### Pyramid
 
-### Flexible (`flexible`)
-- Each exercise has independent direction (`ascending`, `descending`, or `constant`), `startingReps`, and `stepSize`.
-- All exercises must yield the same number of rounds.
-- Default: `maxRounds = 5`.
+Every round contains every exercise. With total R, peak index is `ceil(R/2)`; reps rise by step and then fall. Even round counts repeat the peak. Global starting reps is not used.
 
-### Chipper (`chipper`)
-- Each exercise is completed exactly once with a fixed rep count (`fixedReps`).
-- Each exercise = one round (performed sequentially).
-- `maxRounds` equals the number of exercises.
-- Default: `maxRounds = 5`.
+### Flexible
 
-### AMRAP (`amrap`)
-- As Many Rounds As Possible within a `timeCap` (seconds).
-- `maxRounds = 999` (conceptually unlimited; time is the constraint).
-- Each exercise has optional `startingReps` and `stepSize` for progressive rep increases per round.
-- Supports partial round completion (`partialReps` per exercise).
-- Default: `timeCap = 600` (10 minutes).
+Every exercise has `ascending`, `descending`, or `constant`, a positive starting/fixed value, and a positive step for non-constant directions. Runtime descending reps clamp to zero. The create form attempts to ensure configurations cover `maxRounds`, but its ascending “calculated rounds” validation is based on the round count as though it were a target rep value; treat changes here as bug-sensitive.
 
-### ForReps (`forreps`)
-- Fixed number of rounds; each round contains all exercises with the same `repsPerRound`.
-- Default: `maxRounds = 5`.
+### Chipper
 
----
+Each exercise is one round in position order with positive `fixedReps`. On save, `maxRounds` is overwritten with the exercise count.
 
-## Exercise Rules
+### AMRAP
 
-- A template can have 1–12 exercises.
-- Exercises are identified by `position` (1-indexed). Position is also the rep count in Christmas ladders.
-- Valid `unit` values: `"reps"`, `"calories"`, `"meters"`, `"seconds"` (and any free-text string the user enters).
-- Exercise names come from the exercise catalog (default + custom). Users may add custom exercises.
-- The exercise catalog supports fuzzy search (exact match > starts-with > contains > character-order fuzzy).
+Every round contains all exercises. Each exercise has positive `startingReps` and `stepSize >= 0`; zero means fixed. `timeCap` must exceed zero seconds. `maxRounds` persists as 999 solely as an internal “unlimited” sentinel. On timeout, the completion route may prompt for per-exercise reps from the incomplete round; those values are stored as `partialReps` on session exercises and added by AMRAP total calculations.
 
----
+### For Reps
 
-## Buy-In / Buy-Out Rules
+Every round contains all exercises with positive per-exercise `repsPerRound`. `maxRounds` is positive and ends the workout.
 
-- Optional feature on any template (`hasBuyInOut = true`).
-- A single `buyInOutExercise` is performed once before the first round (buy-in) and once after the last round (buy-out).
-- Optional `buyInOutRestSeconds` introduces a rest period after buy-in and before buy-out.
-- Session tracks `buyInCompleted` and `buyOutCompleted` independently.
+## Buy-in/out and rest
 
----
+- The saved create/edit workflow supports buy-in/out only for AMRAP, Chipper, and For Reps.
+- One embedded exercise definition is used for both buy-in and buy-out; its displayed count comes from `repsPerRound` or defaults to one.
+- An optional positive `buyInOutRestSeconds` is used after buy-in and before buy-out.
+- Completion flags are stored on the session.
+- Timing for buy-in/out is currently mixed into `Workout.rounds`; consumers infer the first/last special segments from flags. Do not assume every round entry is a main ladder round.
+- Regular `restPeriodSeconds` occurs between main rounds when nonzero; the rest screen can be skipped and supports pause/discard.
 
-## Rest Period Rules
+## Session lifecycle and timing
 
-- `restPeriodSeconds = 0` means no rest between rounds.
-- When `restPeriodSeconds > 0`, the app navigates to `RestScreen` after each completed round.
-- Rest is skipped after the final round.
+- Countdown looks up a template and calls `startWorkout`, creating a snapshot and setting round index zero.
+- Completing a segment appends a round and clears `currentRoundStartTime`; advancing increments the zero-based index and starts a new timer.
+- Non-AMRAP sessions terminate after configured work. AMRAP terminates at the time cap.
+- App backgrounding calls `pauseWorkout` when a session is active and not already paused.
+- A paused snapshot is restored on launch. Mute is not restored; timer focus mode is.
+- Resume adds wall-clock pause duration to `totalPausedTime`.
+- Completion calculates `totalTime` from session start to end, prepends history, removes the paused key, and clears active state. Confirm whether pause/rest exclusion is intended before changing timing formulas.
+- Stop/discard removes paused state and does not add history.
 
----
+## History and sharing
 
-## Benchmark Workouts
+- Only completed workouts are added by the active store.
+- New history entries are prepended. Delete is permanent after confirmation.
+- Logbook search is case-insensitive by template name; an eight-digit `YYYYMMDD` query is interpreted as a local date. A date picker provides a second same-day filter.
+- Result totals come from the ladder strategy using `workout.rounds.length`; because special rounds share that array, buy-in/out can affect totals unless consumers compensate. This is a known ambiguity.
+- Image sharing requires native sharing availability and uses an off-screen `ViewShot`. Logbook also builds a native text share message.
 
-- Seeded from `benchmarkWorkouts.ts` on first app launch (guarded by `@benchmarks_initialized` flag).
-- Cannot be distinguished from user workouts by type — identified by a hardcoded list of IDs.
-- Users may delete benchmarks; they can be restored via **Settings → Restore Benchmarks**.
-- Benchmarks include: Fran, 12 Days, plus other examples for each ladder type.
+## Benchmark and catalog rules
 
----
+- Benchmarks seed once when `@benchmarks_initialized` is absent.
+- Benchmark identity is an ID beginning with `benchmark_`.
+- Restore removes all current templates with that prefix, regenerates benchmarks, and preserves other templates.
+- Catalog add is trimmed and case-insensitive duplicate-safe. Default restore regenerates defaults and retains custom entries.
+- Editing or deleting catalog items never changes existing templates/history.
 
-## Session Lifecycle
+## Compatibility and unresolved rules
 
-```
-Template Selected
-      ↓
-startWorkout() — snapshot template → Workout object
-      ↓
-CountdownScreen (3-2-1)
-      ↓
-ActiveWorkoutScreen
-      ↓  [optional: buy-in if hasBuyInOut]
-completeBuyIn()
-      ↓  [for each round]
-completeRound() → [if rest > 0] RestScreen → startNextRound()
-      ↓  [optional: buy-out if hasBuyInOut]
-completeBuyOut()
-      ↓
-completeWorkout() → saveToHistory() → WorkoutCompleteScreen
-```
-
-### Pause / Resume
-- User can pause mid-workout; state is serialized to `@ladder_trainer_paused_workout`.
-- On app reload, `loadPausedWorkout()` restores the session.
-- User can choose to resume or discard the paused workout.
-
----
-
-## Workout History Rules
-
-- All completed sessions (status `'completed'`) and manually-stopped sessions are stored.
-- History is sorted newest-first.
-- Logbook allows:
-  - Search by workout name.
-  - Filter by date (single day selection via date picker).
-  - Filter by ladder type (chip selector).
-  - Delete individual history entries.
-  - Share workout results as a PNG image.
-
----
-
-## Theme Rules
-
-- Supports `'light'` and `'dark'` modes.
-- Theme selection is persisted per-device.
-- Primary color: `#FF6B35` (energetic orange) in both themes.
-- Secondary color: `#4ECDC4` (teal) in light / `#6EDDD6` in dark.
-
----
-
-## Data Integrity Rules
-
-- On every load, both `workoutStore` and `workoutHistoryStore` run data migrations to add missing fields introduced in newer app versions.
-- Individual malformed records in storage arrays are skipped (logged as warnings) rather than crashing the load.
-- `Date` objects are serialized as ISO strings in JSON and re-hydrated on load.
-
----
-
-## TODO / Open Questions
-
-- [ ] **Maximum history entries** — no cap enforced; could cause performance issues on long-running devices.
-- [ ] **Template versioning** — history snapshots do not link back to the original template; if a template is edited, old history entries show stale exercise names.
-- [ ] **Unit validation** — no enforcement that `reps ≥ 1` or `timeCap > 0` at the store layer.
-- [ ] **Multi-device sync** — not supported; all data is local.
-- [ ] **Strava integration** — `StravaTokens` type is defined but no Strava functionality is implemented.
+The product currently lacks explicit decisions for duplicate template names, maximum numeric inputs/time caps, whether paused time counts toward AMRAP/total time, whether history totals exclude special segments, and recovery UX for persistence failures. New features touching these areas must define acceptance criteria and tests rather than inventing a silent convention.

@@ -1,5 +1,7 @@
 # Coding Standards — LadFit
 
+> Target standards, audited on 2026-07-16. Existing violations are debt, not precedent. Direct AsyncStorage belongs only in the store owning the key; screens/components must not use it. The intended `npx tsc --noEmit` check is currently blocked by TS5095 from the tsconfig module/moduleResolution mismatch; no lint/test scripts exist.
+
 > Last updated: June 24, 2026
 
 ---

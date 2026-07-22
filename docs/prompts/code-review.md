@@ -1,5 +1,7 @@
 # Prompt: Code Review — LadFit
 
+> Require source evidence, old-JSON compatibility, and consistency across execution, details preview, completion, logbook, and sharing.
+
 > Copy this prompt and fill in the `[PLACEHOLDERS]`. Use it to request an AI code review.
 
 ---

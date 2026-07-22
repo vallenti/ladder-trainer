@@ -1,146 +1,104 @@
-# AI Context — LadFit
+# LadFit AI Context
 
-> This file is the primary AI onboarding document. Read this before working on any task in this repository.
+This is the entry point for coding agents. It describes the repository as implemented, not an aspirational architecture.
 
----
+## Product and runtime
 
-## Project Identity
+LadFit is an offline-first Expo 54 / React Native 0.81 application for creating, running, recording, and sharing functional-fitness workouts. It has no backend, accounts, synchronization, analytics, or network requirement. Device data is JSON in AsyncStorage and application state is held in five Zustand stores.
 
-- **App Name:** LadFit (internal codebase name: `ladder-trainer-app`)
-- **Platform:** React Native + Expo (iOS & Android)
-- **Version:** 1.0.0
-- **Language:** TypeScript
-- **Architecture:** Offline-first, no backend
+The supported user journey is:
 
----
+`template list -> create/edit or details -> countdown -> active workout -> optional rest -> completion -> logbook`
 
-## What This App Does
+Read in this order before changing code:
 
-LadFit is a functional fitness workout timer and logger. Users create workout **templates** using one of 8 **ladder types**, then run live workout **sessions** which are timed, tracked, and saved to a **logbook**. Workout results can be shared as images.
+1. `ai/architecture-summary.md`
+2. `docs/business-rules.md`
+3. `ai/feature-index.md`
+4. The affected types, store, screen, and utility
+5. `ai/development-workflow.md`
 
-**Core user flow:**  
-Create Template → Start Session → Complete Rounds → View Results → Log History
+## Vocabulary
 
----
+- **Template**: reusable workout definition (`Template`).
+- **Workout/session**: a snapshot created from a template when countdown begins (`Workout`).
+- **Round**: a timed segment stored in `Workout.rounds`.
+- **Exercise catalog item**: an autocomplete suggestion; it is not referenced by ID from template exercises.
+- **Benchmark**: a seeded template whose ID starts with `benchmark_`; it is not a separate entity type.
+- **Ladder type**: the persisted lowercase discriminator in `LadderType`.
 
-## Critical Domain Knowledge
+Use these exact terms in types and documentation. UI labels may use “For Reps”, “AMRAP”, and “Workout History”.
 
-### The 8 Ladder Types (memorize these)
+## Non-negotiable invariants
 
-| Type | Pattern | Key Config |
-|---|---|---|
-| `christmas` | "12 Days" — accumulates exercises round by round (reverse order) | `maxRounds` (≤12) |
-| `ascending` | Reps go up each round | `startingReps`, `stepSize`, `maxRounds` |
-| `descending` | Reps go down each round (e.g. Fran: 21-15-9) | `startingReps`, `stepSize`, `maxRounds` |
-| `pyramid` | Ascend to peak then descend | `stepSize`, `maxRounds` |
-| `flexible` | Each exercise has independent direction + reps | per-exercise `direction`, `startingReps`, `stepSize` |
-| `chipper` | Each exercise done once with fixed reps | per-exercise `fixedReps` |
-| `amrap` | Max rounds in time cap | per-exercise `startingReps`, `stepSize`; `timeCap` |
-| `forreps` | Fixed rounds, same reps each round | per-exercise `repsPerRound`, `maxRounds` |
+- `Exercise.position` is contiguous and one-based. Reindex after deletion or reordering.
+- `Workout.currentRoundIndex` is zero-based; strategy `roundNumber` and `Round.roundNumber` are one-based.
+- Starting a session snapshots template values. Later template edits must not change history.
+- Persisted dates must be rehydrated after `JSON.parse`.
+- Existing AsyncStorage key strings are compatibility contracts; do not rename them without a copy-and-verify migration.
+- Ladder calculations belong in `src/utils/ladderStrategies.ts`. Screens currently contain preview/display calculations; new execution rules must use the strategy first and keep previews consistent.
+- Chipper persists `maxRounds = exercises.length`. AMRAP persists `maxRounds = 999` and terminates by `timeCap`.
+- Buy-in/out is currently saved only for `amrap`, `chipper`, and `forreps`, even though the fields exist on the shared types.
 
-### Key Design Decision
-Templates are **snapshots** — when a workout starts, all template data is copied into the `Workout` object. Editing a template never changes historical workout records.
+## Source-of-truth map
 
-### Strategy Pattern
-All ladder logic is in `src/utils/ladderStrategies.ts`. Adding a new ladder type requires:
-1. New class implementing `LadderStrategy`
-2. New entry in `LadderType` union (`src/types/index.ts`)
-3. New entry in `LADDER_DEFAULTS` (`src/constants/ladderDefaults.ts`)
-4. New case in `getLadderStrategy()` factory
-5. New `ExerciseInput` component variant
-6. UI wiring in `CreateEditWorkoutScreen`
-
----
-
-## File Location Quick Reference
-
-| What | Where |
+| Concern | Authoritative code |
 |---|---|
-| Domain types | `src/types/index.ts` |
-| Navigation types | `src/types/navigation.ts` |
-| All ladder business logic | `src/utils/ladderStrategies.ts` |
-| Time/rep calculations | `src/utils/calculations.ts` |
-| AsyncStorage wrappers | `src/utils/storage.ts` |
-| Share feature | `src/utils/shareUtils.ts` |
-| Audio beeps | `src/utils/soundUtils.ts` |
-| All Zustand stores | `src/store/` |
-| Theme tokens | `src/constants/theme.ts` |
-| App config | `src/constants/config.ts` |
-| Benchmark workouts | `src/constants/benchmarkWorkouts.ts` |
-| Exercise catalog defaults | `src/constants/defaultExercises.ts` |
-| Ladder type defaults | `src/constants/ladderDefaults.ts` |
+| Domain shapes | `src/types/index.ts` |
+| Route names/params | `src/types/navigation.ts` and `src/navigation/` |
+| Workout validation/defaulting | `CreateEditWorkoutScreen.tsx`, `ladderDefaults.ts` |
+| Executed reps | `src/utils/ladderStrategies.ts` |
+| Session transitions/timing | `activeWorkoutStore.ts`, `ActiveWorkoutScreen.tsx`, `RestScreen.tsx` |
+| Template/history serialization | `storage.ts`, workout/history stores |
+| Paused session serialization | `activeWorkoutStore.ts` |
+| Exercise catalog serialization | `exerciseStore.ts` |
+| Theme serialization | `themeStore.ts` |
+| Startup hydration | `App.tsx`, `WorkoutListScreen.tsx` |
+| Results and sharing | `WorkoutCompleteScreen.tsx`, `LogBookScreen.tsx`, `shareUtils.ts` |
 
----
+## Persistence ownership
 
-## State Management Pattern
+Do not assume every key is wrapped by `storage.ts`.
 
-All global state → Zustand stores. No Context API for data, no prop-drilling for business state.
+| Key | Owner |
+|---|---|
+| `@workouts` | `storage.ts` via `workoutStore.ts` |
+| `@workout_history` | `storage.ts` via `workoutHistoryStore.ts` |
+| `@benchmarks_initialized` | `storage.ts` |
+| `@exercise_catalog`, `@exercises_initialized` | `exerciseStore.ts` |
+| `@ladder_trainer_theme_mode` | `themeStore.ts` |
+| `@ladder_trainer_paused_workout` | `activeWorkoutStore.ts` |
 
-Stores: `useWorkoutStore`, `useWorkoutHistoryStore`, `useActiveWorkoutStore`, `useExerciseStore`, `useThemeStore`
+New persistence should have one named owner and typed load/save boundaries. Validate unknown parsed data before trusting it. Preserve old records by supplying defaults during hydration.
 
-Each store has load/save actions that wrap `AsyncStorage` operations. Do not call `AsyncStorage` directly from screens or components.
+## Adding or changing a feature
 
----
+Trace the full vertical slice: persisted type -> hydration/migration -> store action -> strategy/business utility -> UI input and display -> route contract -> history/share output -> tests and docs. A new `Template` field generally also needs a `Workout` snapshot field and paused/history hydration behavior.
 
-## Persistence Keys
+A new ladder type requires at least:
 
-All `AsyncStorage` keys: `@workouts`, `@workout_history`, `@exercise_catalog`, `@exercises_initialized`, `@benchmarks_initialized`, `@ladder_trainer_theme_mode`, `@ladder_trainer_paused_workout`
+1. `LadderType`, field semantics, and defaults.
+2. A strategy and factory case.
+3. Create/edit selection, input component, validation, serialization, and reset logic.
+4. Details preview, workout card label, active execution/termination behavior.
+5. Completion, logbook, text share, and image share display.
+6. Benchmark data if applicable and strategy/lifecycle tests.
+7. Updates to `docs/business-rules.md` and `ai/feature-index.md`.
 
----
+## Validation baseline
 
-## Things That Do NOT Exist
+There is no `test` or `typecheck` npm script and no test files. The intended check is `npx tsc --noEmit`, but it currently fails before checking source with TS5095 because local `module: commonjs` conflicts with Expo's `moduleResolution: bundler`. Fix that configuration as scoped quality work; until then, report the blocker rather than claiming type safety. Expo smoke testing should cover creation, start, background/pause/restore, completion, history, and sharing as applicable.
 
-- No backend / REST API
-- No authentication
-- No real-time features
-- No push notifications
-- No analytics tracking
-- No Strava integration (type defined, not implemented)
-- No tests (Jest configured but no test files)
+## Known implementation hazards
 
----
+- `WorkoutCompleteScreen` uses `workoutHistory[0]` instead of its `workoutId` route param.
+- `App.tsx` restores by navigating to `ActiveWorkout` without the required `workoutId` param and types its navigation ref as `any`.
+- Buy-in/out timing is represented by ordinary `Round` entries, so consumers slice the first/last round heuristically.
+- Strategy defaults use `||`; a persisted zero is treated as missing in several calculations.
+- Flexible descending total calculation can disagree with per-round clamping after values reach zero.
+- `calculateTotalReps` in `calculations.ts` assumes a full 12-round Christmas workout and is not a general total calculator.
+- Store persistence helpers often swallow write failures, so UI state may appear successful without durable storage.
+- `searchExercises()` sorts the Zustand array in place when the query is empty.
+- Dead scaffold/domain types and unused dependencies remain; see `ai/project-memory.md`.
 
-## Known Issues / Tech Debt
-
-1. `axios` dependency unused — should be removed
-2. `HomeScreen.tsx` is dead code — no navigator references it
-3. `ExampleComponent.tsx` is scaffold placeholder — should be removed
-4. `@types/react-native` pinned to `0.73.0` but RN is `^0.81.5`
-5. No ESLint/Prettier config
-6. `HomeScreenProps.navigation` typed as `any` in `src/types/index.ts`
-7. No React Error Boundary in `App.tsx`
-8. No unit tests
-
----
-
-## How to Generate IDs
-
-Templates and workout sessions use `Date.now().toString()` as IDs. This is a timestamp-string pattern — not a UUID. Be aware of this when writing code that creates new entities.
-
----
-
-## Theming
-
-- Always use `useTheme()` from `react-native-paper` to get the current theme.
-- Use `spacing.*` and `borderRadius.*` from `src/constants/theme.ts` — never hardcode pixel values.
-- Primary accent: `#FF6B35` (energetic orange). Do not introduce new brand colors without updating `theme.ts`.
-
----
-
-## How Exercise Positions Work in Christmas Ladder
-
-In the Christmas ladder, `exercise.position` serves two purposes:
-1. The order/step number of the exercise
-2. The rep count when that exercise appears in a round
-
-So position=3 means: perform 3 reps of that exercise, starting from round 3 onward.
-
----
-
-## Recommended Reading Order for New AI Context
-
-1. `src/types/index.ts` — understand the data shapes
-2. `src/utils/ladderStrategies.ts` — understand the core business logic
-3. `src/store/workoutStore.ts` + `activeWorkoutStore.ts` — understand state management
-4. `src/navigation/AppNavigator.tsx` — understand the screen flow
-5. `docs/business-rules.md` — understand the rules governing data
+Do not silently “fix” these while implementing unrelated work. Account for them, add regression coverage, and scope a fix explicitly.

@@ -1,5 +1,7 @@
 # Prompt: Performance Optimization — LadFit
 
+> Preserve timing and persistence semantics, measure before/after, avoid mutating Zustand arrays, and verify background/pause behavior for timer changes.
+
 > Copy this prompt and fill in the `[PLACEHOLDERS]`. Use it to investigate and fix performance issues.
 
 ---

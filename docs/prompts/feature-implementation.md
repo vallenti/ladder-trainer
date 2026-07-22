@@ -1,5 +1,7 @@
 # Prompt: Feature Implementation — LadFit
 
+> Use with `AI_CONTEXT.md` and `ai/development-workflow.md`; inspect source and update contracts/business docs when behavior changes.
+
 > Copy this prompt and fill in the `[PLACEHOLDERS]`. Paste it into your AI coding assistant to implement a new feature.
 
 ---

@@ -1,5 +1,7 @@
 # API Contracts — LadFit
 
+> Audited on 2026-07-16. These are internal contracts, not network APIs. Verify source signatures; routes live in `src/types/navigation.ts`, persisted shapes in `docs/database-schema.md`, and behavior in `docs/business-rules.md`.
+
 > Last updated: June 24, 2026
 
 ## Overview

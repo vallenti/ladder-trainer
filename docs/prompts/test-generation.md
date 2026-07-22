@@ -1,5 +1,7 @@
 # Prompt: Test Generation — LadFit
 
+> Jest is configured but unproven: no committed suite or test script exists. Add compatible setup and a reproducible npm script with generated tests.
+
 > Copy this prompt and fill in the `[PLACEHOLDERS]`. Use it to generate unit tests with an AI assistant.
 
 ---

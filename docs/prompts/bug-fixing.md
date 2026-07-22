@@ -1,5 +1,7 @@
 # Prompt: Bug Fixing — LadFit
 
+> Use with `AI_CONTEXT.md` and affected source. Locate the AsyncStorage key owner first; not all persistence goes through `storage.ts`.
+
 > Copy this prompt and fill in the `[PLACEHOLDERS]`. Paste it into your AI coding assistant to diagnose and fix a bug.
 
 ---

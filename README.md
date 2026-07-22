@@ -1,6 +1,8 @@
-# My Expo App
+# LadFit
 
-This is a React Native application built with Expo and TypeScript. The project aims to provide a template for implementing CRUD functionality in a mobile application.
+> Coding agents should begin with [`AI_CONTEXT.md`](AI_CONTEXT.md), then read `docs/business-rules.md` and `ai/development-workflow.md`.
+
+LadFit is an offline-first Expo/React Native workout-template, timer, logbook, and sharing application for functional-fitness ladder workouts.
 
 ## Project Structure
 

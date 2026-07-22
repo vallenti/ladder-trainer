@@ -1,5 +1,7 @@
 # Prompt: Refactoring — LadFit
 
+> No behavior change includes JSON compatibility, route params, round indexing, snapshots, totals, and share output. Add characterization tests first.
+
 > Copy this prompt and fill in the `[PLACEHOLDERS]`. Use it to safely refactor code with an AI assistant.
 
 ---

@@ -1,5 +1,7 @@
 # Implementation Plan Template — LadFit
 
+> A complete plan identifies each storage-key owner, migration/default behavior, route contract, business-rule source, and cross-cutting reader affected.
+
 > Use this template to structure an AI-assisted implementation plan before writing code.
 > Filling this out first dramatically improves AI output quality.
 

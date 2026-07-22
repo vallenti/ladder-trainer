@@ -1,5 +1,7 @@
 # MCP Architecture — LadFit
 
+> Proposal only. No LadFit MCP server exists in this repository; agents must not assume these resources/tools are available.
+
 > Model Context Protocol (MCP) integration design for LadFit.  
 > This document defines how AI agents should interact with the project's knowledge and tooling.
 

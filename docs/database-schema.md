@@ -1,200 +1,76 @@
-# Database Schema — LadFit
+# Persistence Schema
 
-> Last updated: June 24, 2026  
-> Storage Engine: AsyncStorage (React Native) — JSON serialized, device-local
+AsyncStorage contains unversioned JSON. TypeScript interfaces are compile-time only; current loaders do little runtime validation.
 
-There is no relational database. All persistence is key-value JSON stored in `AsyncStorage`. This document describes the shape of each stored collection.
+## Keys and owners
 
----
-
-## Storage Keys
-
-| Key | Type | Description |
+| Key | JSON value | Owner/loader |
 |---|---|---|
-| `@workouts` | `Template[]` | All workout templates (user + benchmark) |
-| `@workout_history` | `Workout[]` | All completed/incomplete workout sessions |
-| `@exercise_catalog` | `ExerciseCatalogItem[]` | Exercise name catalog |
-| `@exercises_initialized` | `"true"` | First-launch flag for exercise catalog seed |
-| `@benchmarks_initialized` | `"true"` | First-launch flag for benchmark seed |
-| `@ladder_trainer_theme_mode` | `"light" \| "dark"` | User theme preference |
-| `@ladder_trainer_paused_workout` | `PausedWorkoutState` | Active paused session (optional) |
+| `@workouts` | `Template[]` | `storage.ts` / workout store |
+| `@workout_history` | `Workout[]` | `storage.ts` / history store |
+| `@benchmarks_initialized` | string `"true"` | `storage.ts` |
+| `@exercise_catalog` | `ExerciseCatalogItem[]` | exercise store |
+| `@exercises_initialized` | string `"true"` | exercise store |
+| `@ladder_trainer_theme_mode` | `"light" | "dark"` | theme store |
+| `@ladder_trainer_paused_workout` | `PausedWorkoutState` | active store |
 
----
+## Persisted shapes
 
-## Type: `Template`
+```ts
+type LadderType =
+  | 'christmas' | 'ascending' | 'descending' | 'pyramid'
+  | 'flexible' | 'chipper' | 'amrap' | 'forreps';
 
-Workout blueprint (never mutated during a session).
-
-```typescript
-interface Template {
-  id: string;                    // Timestamp string: Date.now().toString()
-  name: string;                  // User-defined workout name
-  exercises: Exercise[];         // 1–12 exercises
-  restPeriodSeconds: number;     // 0 = no rest
-  ladderType: LadderType;        // See LadderType below
-  maxRounds: number;             // Total rounds to complete
-  stepSize?: number;             // Rep increment per round (ascending/descending/pyramid)
-  startingReps?: number;         // Starting rep count (ascending/descending)
-  timeCap?: number;              // Seconds (AMRAP only)
-  buyInOutExercise?: Exercise;   // Optional single exercise for buy-in and buy-out
-  hasBuyInOut?: boolean;         // Whether buy-in/out is enabled
-  buyInOutRestSeconds?: number;  // Rest after buy-in / before buy-out
-  createdAt: Date;               // ISO string in storage, re-hydrated to Date on load
-}
-```
-
----
-
-## Type: `Exercise`
-
-An individual movement within a template or workout session.
-
-```typescript
 interface Exercise {
-  position: number;              // 1–12; also the rep count in Christmas ladders
-  unit: string;                  // "reps" | "calories" | "meters" | "seconds" | custom
-  name: string;                  // Display name, e.g. "Thrusters"
-
-  // Flexible ladder only
+  position: number;
+  unit: string;
+  name: string;
   direction?: 'ascending' | 'descending' | 'constant';
   startingReps?: number;
   stepSize?: number;
-
-  // Chipper ladder only
   fixedReps?: number;
-
-  // AMRAP only (partial round tracking)
   partialReps?: number;
-
-  // ForReps only
   repsPerRound?: number;
 }
-```
 
----
-
-## Type: `LadderType`
-
-```typescript
-type LadderType =
-  | 'christmas'
-  | 'ascending'
-  | 'descending'
-  | 'pyramid'
-  | 'flexible'
-  | 'chipper'
-  | 'amrap'
-  | 'forreps';
-```
-
----
-
-## Type: `Workout`
-
-An in-progress or completed workout session. Snapshots all relevant template data at start time.
-
-```typescript
-interface Workout {
-  id: string;                    // Timestamp string
-  templateName: string;          // Snapshot of template name at start time
-  exercises: Exercise[];         // Snapshot of template exercises
-  restPeriodSeconds: number;     // Snapshot
-  ladderType: LadderType;        // Snapshot
-  maxRounds: number;             // Snapshot
-  stepSize?: number;             // Snapshot
-  startingReps?: number;         // Snapshot
-  timeCap?: number;              // Snapshot (AMRAP)
-  buyInOutExercise?: Exercise;   // Snapshot
-  hasBuyInOut?: boolean;         // Snapshot
-  buyInOutRestSeconds?: number;  // Snapshot
-  buyInCompleted?: boolean;      // Live tracking
-  buyOutCompleted?: boolean;     // Live tracking
-  startTime: Date;               // ISO string in storage
-  endTime?: Date;                // ISO string in storage; undefined until completed
-  status: WorkoutStatus;         // 'incomplete' | 'completed'
-  totalTime: number;             // Total elapsed seconds
-  rounds: Round[];               // Completed rounds
-  currentRoundIndex: number;     // 0-indexed; used for resume
+interface Template {
+  id: string; name: string; exercises: Exercise[];
+  restPeriodSeconds: number; ladderType: LadderType; maxRounds: number;
+  stepSize?: number; startingReps?: number; timeCap?: number;
+  buyInOutExercise?: Exercise; hasBuyInOut?: boolean;
+  buyInOutRestSeconds?: number; createdAt: Date;
 }
 
-type WorkoutStatus = 'incomplete' | 'completed';
-```
-
----
-
-## Type: `Round`
-
-A time-tracked round within a workout session.
-
-```typescript
 interface Round {
-  roundNumber: number;   // 1-indexed
-  startTime: Date;       // ISO string in storage
-  endTime?: Date;        // ISO string in storage
-  duration: number;      // Seconds (float for ms precision)
+  roundNumber: number; startTime: Date; endTime?: Date; duration: number;
+}
+
+interface Workout {
+  id: string; templateName: string; exercises: Exercise[];
+  restPeriodSeconds: number; ladderType: LadderType; maxRounds: number;
+  stepSize?: number; startingReps?: number; timeCap?: number;
+  buyInOutExercise?: Exercise; hasBuyInOut?: boolean;
+  buyInOutRestSeconds?: number; buyInCompleted?: boolean; buyOutCompleted?: boolean;
+  startTime: Date; endTime?: Date; status: 'incomplete' | 'completed';
+  totalTime: number; rounds: Round[]; currentRoundIndex: number;
 }
 ```
 
----
+`ExerciseCatalogItem` is defined in `defaultExercises.ts` (not the domain types file) and contains `id`, `name`, optional `suggestedUnit`, `isCustom`, and optional usage metadata. `PausedWorkoutState` is private to `activeWorkoutStore.ts` and includes the active workout plus timer/pause/focus fields.
 
-## Type: `ExerciseCatalogItem`
+## Serialization and hydration
 
-An entry in the exercise name catalog.
+Dates serialize to ISO strings. Template load rehydrates `createdAt`; history load rehydrates workout start/end and every round start/end; paused load rehydrates workout start and round/current-round dates. Adding a date anywhere requires updating all relevant loaders.
 
-```typescript
-interface ExerciseCatalogItem {
-  id: string;                // "default_N" for seeded; timestamp string for custom
-  name: string;              // e.g. "Pull-ups"
-  suggestedUnit?: string;    // Pre-filled unit when selected (e.g. "calories" for Row)
-  isCustom: boolean;         // false for defaults, true for user-added
-}
-```
+The only implemented migration adds missing `ladderType = 'christmas'` and derives `maxRounds` from exercise count in workout, history, and paused paths. There is no schema version, migration registry, rollback, validation library, or quarantine for bad records.
 
----
+## Schema-change protocol
 
-## Type: `PausedWorkoutState`
+1. Decide whether the field belongs to template, session snapshot, round, paused-only, or catalog data.
+2. Keep new persisted fields optional at the read boundary until old data is normalized.
+3. Hydrate a deterministic default or implement an idempotent versioned migration.
+4. Rehydrate nested dates and validate discriminated type-specific fields.
+5. Test missing key, old record, malformed JSON, partially invalid collection, read/write failure, and repeated migration.
+6. Never rename/remove a key or discriminator without copying old data and verifying the new write before cleanup.
 
-Serialized in `@ladder_trainer_paused_workout` when a user pauses mid-session.
-
-```typescript
-interface PausedWorkoutState {
-  activeWorkout: Workout;
-  currentRoundStartTime: Date | null;
-  elapsedTime: number;
-  totalPausedTime: number;
-  pauseStartTime: number;
-  isTimerFocusMode: boolean;
-}
-```
-
----
-
-## Type: `StravaTokens` (Defined but unused)
-
-```typescript
-interface StravaTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;   // Unix timestamp seconds
-}
-```
-
-> **Note:** Strava integration is not implemented. This type is a placeholder for future work.
-
----
-
-## Data Migration History
-
-| Version | Migration | Location |
-|---|---|---|
-| v1 → v2 | Added `ladderType` and `maxRounds` to `Template` and `Workout` | `workoutStore.loadWorkouts()`, `workoutHistoryStore.loadHistory()` |
-
----
-
-## Recommended Future Schema Changes
-
-- [ ] Add `templateId` foreign key to `Workout` so history entries can link back to templates.
-- [ ] Add `version` field to `Template` for tracking edit history.
-- [ ] Add `tags` array to `Template` for user-defined categorization.
-- [ ] Cap `@workout_history` to the last N entries (e.g. 500) to prevent storage bloat.
-- [ ] Consider SQLite (via `expo-sqlite`) for improved query performance as history grows.
+Recommended future work is a small codec/schema layer with a `schemaVersion`, runtime validation, explicit error propagation, and fixtures for every historical version.

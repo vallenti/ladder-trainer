@@ -1,5 +1,7 @@
 # UI Guidelines — LadFit
 
+> Audited on 2026-07-16. Accessibility and reduced-motion TODOs are missing quality gates, not shipped behavior. New UI must add roles, labels, focus order, dynamic-text resilience, and adequate touch targets.
+
 > Last updated: June 24, 2026
 
 ---

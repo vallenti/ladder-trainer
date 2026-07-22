@@ -1,5 +1,7 @@
 # Feature Template — LadFit
 
+> Complete the impact analysis in `ai/development-workflow.md`: persisted compatibility, snapshot behavior, lifecycle/background behavior, result/share readers, accessibility, and validation.
+
 > Use this template when requesting a new feature from an AI agent or writing a feature spec.
 
 ---

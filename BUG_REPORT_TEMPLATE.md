@@ -1,5 +1,7 @@
 # Bug Report Template — LadFit
 
+> Record ladder type, persisted-data age, foreground/background and pause/rest/buy-in/out state, plus whether the issue occurs in active UI, completion, logbook, text share, or image share.
+
 > Use this template when reporting a bug to an AI agent or filing a GitHub issue.
 
 ---

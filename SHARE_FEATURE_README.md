@@ -1,5 +1,7 @@
 # Share Workout as Image Feature
 
+> Image sharing uses `ViewShot` and `shareUtils.ts`; logbook text sharing is separate screen logic. New session fields and ladder types must update both plus `ShareableWorkoutCard.tsx`.
+
 ## Overview
 This feature allows users to share their completed workouts as beautiful, shareable images on social media or messaging apps. The implementation uses React Native ViewShot to capture a styled component as an image.
 
