@@ -11,6 +11,7 @@ import FixedRepsExerciseInput from '../../components/FixedRepsExerciseInput';
 import AMRAPExerciseInput from '../../components/AMRAPExerciseInput';
 import NumberStepper from '../../components/NumberStepper';
 import AutocompleteExerciseInput from '../../components/AutocompleteExerciseInput';
+import LoadInput from '../../components/LoadInput';
 import { Exercise, LadderType } from '../../types';
 import { spacing } from '../../constants/theme';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
@@ -451,13 +452,13 @@ const CreateEditWorkoutScreen: React.FC = () => {
     // Auto-catalog custom exercises
     for (const exercise of exercises) {
       if (exercise.name.trim()) {
-        await addExerciseIfNotExists(exercise.name, exercise.unit);
+        await addExerciseIfNotExists(exercise.name, exercise.unit, Boolean(exercise.load));
       }
     }
 
     // Auto-catalog buy-in/out exercise if applicable
     if (hasBuyInOut && buyInOutExercise.name.trim()) {
-      await addExerciseIfNotExists(buyInOutExercise.name, buyInOutExercise.unit);
+      await addExerciseIfNotExists(buyInOutExercise.name, buyInOutExercise.unit, Boolean(buyInOutExercise.load));
     }
 
     // For chipper, maxRounds equals number of exercises; for AMRAP, set high number
@@ -1390,6 +1391,10 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           style={styles.buyInOutNameInput}
                           maxLength={100}
                           onFocus={handleBuyInOutExerciseNameFocus}
+                        />
+                        <LoadInput
+                          exercise={buyInOutExercise}
+                          onChange={setBuyInOutExercise}
                         />
 
                         {/* Buy In/Out Rest Period */}

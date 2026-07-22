@@ -10,6 +10,7 @@ import { spacing } from '../../constants/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ShareableWorkoutCard } from '../../components/ShareableWorkoutCard';
 import { shareWorkoutImage } from '../../utils/shareUtils';
+import { formatLoad } from '../../utils/weight';
 
 type RouteParams = {
   WorkoutComplete: {
@@ -206,7 +207,7 @@ const WorkoutCompleteScreen: React.FC = () => {
                   )}
                   {exerciseTotals.map((exercise) => (
                     <View key={exercise.position} style={[styles.exerciseSummaryItem, { borderBottomColor: theme.colors.outline }]}>
-                      <Text variant="bodyLarge">{exercise.name}</Text>
+                      <Text variant="bodyLarge">{exercise.name}{formatLoad(exercise.load) ? ` · ${formatLoad(exercise.load)}` : ''}</Text>
                       <Text variant="bodyLarge" style={[styles.exerciseTotalText, { color: theme.colors.tertiary }]}>
                         {exercise.totalAmount} {(exercise.unit || 'reps').toLowerCase()}
                       </Text>

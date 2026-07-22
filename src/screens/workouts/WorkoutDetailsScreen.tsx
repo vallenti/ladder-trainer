@@ -5,6 +5,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { spacing } from '../../constants/theme';
 import { Exercise } from '../../types';
+import { formatLoad } from '../../utils/weight';
 
 type RouteParams = {
   WorkoutDetails: {
@@ -114,7 +115,7 @@ const WorkoutDetailsScreen: React.FC = () => {
       }
     }
     
-    return `${repsInfo}${exercise.unit ? exercise.unit + ' ' : ''}${exercise.name}`;
+    return `${repsInfo}${exercise.unit ? exercise.unit + ' ' : ''}${exercise.name}${formatLoad(exercise.load) ? ` · ${formatLoad(exercise.load)}` : ''}`;
   };
 
   // Generate detailed round preview

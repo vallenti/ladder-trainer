@@ -13,6 +13,7 @@ import {
   Divider,
   IconButton,
   Chip
+  ,Switch
 } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useExerciseStore } from '../store/exerciseStore';
@@ -40,6 +41,7 @@ const ManageExercisesScreen: React.FC = () => {
   const [selectedExercise, setSelectedExercise] = useState<ExerciseCatalogItem | null>(null);
   const [exerciseName, setExerciseName] = useState('');
   const [exerciseUnit, setExerciseUnit] = useState('');
+  const [supportsLoad, setSupportsLoad] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [filterMode, setFilterMode] = useState<'all' | 'default' | 'custom'>('all');
 
@@ -63,6 +65,7 @@ const ManageExercisesScreen: React.FC = () => {
     setDialogMode('add');
     setExerciseName('');
     setExerciseUnit('');
+    setSupportsLoad(false);
     setSelectedExercise(null);
     setShowDialog(true);
   };
@@ -71,6 +74,7 @@ const ManageExercisesScreen: React.FC = () => {
     setDialogMode('edit');
     setExerciseName(exercise.name);
     setExerciseUnit(exercise.suggestedUnit || '');
+    setSupportsLoad(exercise.supportsLoad ?? false);
     setSelectedExercise(exercise);
     setShowDialog(true);
   };
@@ -91,11 +95,12 @@ const ManageExercisesScreen: React.FC = () => {
 
     try {
       if (dialogMode === 'add') {
-        await addExercise(exerciseName, exerciseUnit || undefined);
+        await addExercise(exerciseName, exerciseUnit || undefined, supportsLoad);
       } else if (selectedExercise) {
         await updateExercise(selectedExercise.id, {
           name: exerciseName,
           suggestedUnit: exerciseUnit || undefined,
+          supportsLoad,
         });
       }
       setShowDialog(false);
@@ -113,7 +118,7 @@ const ManageExercisesScreen: React.FC = () => {
     <List.Item
       key={exercise.id}
       title={exercise.name}
-      description={exercise.suggestedUnit ? `Unit: ${exercise.suggestedUnit}` : 'No suggested unit'}
+      description={`${exercise.suggestedUnit ? `Unit: ${exercise.suggestedUnit}` : 'No suggested unit'}${exercise.supportsLoad ? ' • Load enabled' : ''}`}
       left={(props) => (
         <List.Icon 
           {...props} 
@@ -160,7 +165,7 @@ const ManageExercisesScreen: React.FC = () => {
           placeholder="Search exercises..."
           onChangeText={setSearchQuery}
           value={searchQuery}
-          style={styles.searchBar}
+          style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}
         />
 
         {/* Filter Chips */}
@@ -217,7 +222,11 @@ const ManageExercisesScreen: React.FC = () => {
 
       {/* Add/Edit Dialog */}
       <Portal>
-        <Dialog visible={showDialog} onDismiss={() => setShowDialog(false)}>
+        <Dialog
+          visible={showDialog}
+          onDismiss={() => setShowDialog(false)}
+          style={{ backgroundColor: theme.colors.surface }}
+        >
           <Dialog.Title>
             {dialogMode === 'add' ? 'Add Exercise' : 'Edit Exercise'}
           </Dialog.Title>
@@ -227,7 +236,7 @@ const ManageExercisesScreen: React.FC = () => {
               value={exerciseName}
               onChangeText={setExerciseName}
               mode="outlined"
-              style={styles.dialogInput}
+              style={[styles.dialogInput, { backgroundColor: theme.colors.surface }]}
               maxLength={100}
             />
             <TextInput
@@ -235,9 +244,18 @@ const ManageExercisesScreen: React.FC = () => {
               value={exerciseUnit}
               onChangeText={setExerciseUnit}
               mode="outlined"
-              style={styles.dialogInput}
+              style={[styles.dialogInput, { backgroundColor: theme.colors.surface }]}
               placeholder="reps, calories, meters, etc."
             />
+            <View style={styles.loadSwitchRow}>
+              <Text variant="bodyMedium" style={styles.loadSwitchLabel} numberOfLines={1}>
+                Allow weight to be added
+              </Text>
+              <Switch value={supportsLoad} onValueChange={setSupportsLoad} />
+            </View>
+            <Text variant="bodySmall" style={[styles.loadSwitchDescription, { color: theme.colors.onSurfaceVariant }]}>
+              Enable for barbells, dumbbells, kettlebells, or a weighted vest.
+            </Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setShowDialog(false)}>Cancel</Button>
@@ -246,7 +264,11 @@ const ManageExercisesScreen: React.FC = () => {
         </Dialog>
 
         {/* Restore Defaults Dialog */}
-        <Dialog visible={showRestoreDialog} onDismiss={() => setShowRestoreDialog(false)}>
+        <Dialog
+          visible={showRestoreDialog}
+          onDismiss={() => setShowRestoreDialog(false)}
+          style={{ backgroundColor: theme.colors.surface }}
+        >
           <Dialog.Title>Restore Default Exercises?</Dialog.Title>
           <Dialog.Content>
             <Text variant="bodyMedium">
@@ -304,6 +326,18 @@ const styles = StyleSheet.create({
   },
   dialogInput: {
     marginBottom: spacing.md,
+  },
+  loadSwitchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  loadSwitchLabel: {
+    flexShrink: 1,
+    marginRight: spacing.sm,
+  },
+  loadSwitchDescription: {
+    marginTop: -spacing.xs,
   },
 });
 

@@ -5,6 +5,7 @@ import { Workout } from '../types';
 import { formatTime } from '../utils/calculations';
 import { getLadderStrategy } from '../utils/ladderStrategies';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { formatLoad } from '../utils/weight';
 
 interface ShareableWorkoutCardProps {
   workout: Workout;
@@ -117,7 +118,7 @@ export const ShareableWorkoutCard: React.FC<ShareableWorkoutCardProps> = ({
             style={[styles.exerciseRow, { borderBottomColor: theme.colors.outlineVariant }]}
           >
             <Text style={[styles.exerciseName, { color: theme.colors.onSurface }]}>
-              {ex.name}
+              {ex.name}{formatLoad(ex.load) ? ` · ${formatLoad(ex.load)}` : ''}
             </Text>
             <Text style={[styles.exerciseTotal, { color: theme.colors.tertiary }]}>
               {ex.totalAmount} {(ex.unit || 'reps').toLowerCase()}

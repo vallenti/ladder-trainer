@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Platform, Linking, KeyboardAvoidingView } from 'react-native';
 import { Text, Card, RadioButton, useTheme, Portal, Dialog, TextInput, Button, List, Appbar } from 'react-native-paper';
 import { useThemeStore, ThemeMode } from '../store/themeStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { spacing } from '../constants/theme';
 import { SUPPORT_EMAIL, APP_VERSION } from '../constants/config';
 import Constants from 'expo-constants';
@@ -15,6 +16,7 @@ const SettingsScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation<SettingsNavigation>();
   const { themeMode, setThemeMode } = useThemeStore();
+  const { preferredWeightUnit, setPreferredWeightUnit } = useSettingsStore();
   const [feedbackDialogVisible, setFeedbackDialogVisible] = useState(false);
   const [feedbackType, setFeedbackType] = useState<FeedbackType>(null);
   const [feedbackText, setFeedbackText] = useState('');
@@ -117,6 +119,21 @@ Device Information:
                   />
                 </View>
               ))}
+            </RadioButton.Group>
+          </Card.Content>
+        </Card>
+
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text variant="titleLarge" style={styles.sectionTitle}>Weight unit</Text>
+            <Text variant="bodyMedium" style={[styles.sectionDescription, { color: theme.colors.onSurfaceVariant }]}>Default unit when adding exercise load</Text>
+            <RadioButton.Group onValueChange={(value) => setPreferredWeightUnit(value as 'kg' | 'lb')} value={preferredWeightUnit}>
+              <View style={styles.radioOption}>
+                <RadioButton.Item label="Kilograms (kg)" value="kg" labelVariant="bodyLarge" labelStyle={{ textAlign: 'left' }} position="leading" style={styles.radioItem} />
+              </View>
+              <View style={styles.radioOption}>
+                <RadioButton.Item label="Pounds (lb)" value="lb" labelVariant="bodyLarge" labelStyle={{ textAlign: 'left' }} position="leading" style={styles.radioItem} />
+              </View>
             </RadioButton.Group>
           </Card.Content>
         </Card>

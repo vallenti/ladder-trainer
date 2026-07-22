@@ -20,11 +20,19 @@ export interface ApiResponse<T> {
 }
 
 export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'flexible' | 'chipper' | 'amrap' | 'forreps';
+export type WeightUnit = 'kg' | 'lb';
+
+export interface ExerciseLoad {
+  /** Canonical storage value. Keep this in kg to make conversions deterministic. */
+  valueKg: number;
+  displayUnit: WeightUnit;
+}
 
 export interface Exercise {
   position: number; // 1-12
   unit: string; // "reps", "calories", "meters"
   name: string; // "Wall Walk", "Row"
+  load?: ExerciseLoad;
   // Flexible ladder per-exercise settings
   direction?: 'ascending' | 'descending' | 'constant';
   startingReps?: number;

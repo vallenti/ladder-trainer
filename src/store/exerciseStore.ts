@@ -11,8 +11,8 @@ interface ExerciseStore {
   exercises: ExerciseCatalogItem[];
   isLoading: boolean;
   loadExercises: () => Promise<void>;
-  addExercise: (name: string, unit?: string) => Promise<ExerciseCatalogItem>;
-  addExerciseIfNotExists: (name: string, unit?: string) => Promise<ExerciseCatalogItem | null>;
+  addExercise: (name: string, unit?: string, supportsLoad?: boolean) => Promise<ExerciseCatalogItem>;
+  addExerciseIfNotExists: (name: string, unit?: string, supportsLoad?: boolean) => Promise<ExerciseCatalogItem | null>;
   updateExercise: (id: string, updates: Partial<ExerciseCatalogItem>) => Promise<void>;
   deleteExercise: (id: string) => Promise<void>;
   restoreDefaults: () => Promise<void>;
@@ -86,7 +86,11 @@ export const useExerciseStore = create<ExerciseStore>((set, get) => ({
       // Load existing exercises
       const stored = await AsyncStorage.getItem(EXERCISE_CATALOG_KEY);
       if (stored) {
-        const exercises: ExerciseCatalogItem[] = JSON.parse(stored);
+        const exercises: ExerciseCatalogItem[] = JSON.parse(stored).map((exercise: ExerciseCatalogItem) => ({
+          ...exercise,
+          supportsLoad: exercise.supportsLoad ?? false,
+        }));
+        await AsyncStorage.setItem(EXERCISE_CATALOG_KEY, JSON.stringify(exercises));
         set({ exercises, isLoading: false });
       } else {
         // Fallback: initialize with defaults if storage is empty
@@ -100,7 +104,7 @@ export const useExerciseStore = create<ExerciseStore>((set, get) => ({
     }
   },
 
-  addExercise: async (name: string, unit?: string) => {
+  addExercise: async (name: string, unit?: string, supportsLoad = false) => {
     const trimmedName = name.trim();
     if (!trimmedName) {
       throw new Error('Exercise name cannot be empty');
@@ -119,6 +123,7 @@ export const useExerciseStore = create<ExerciseStore>((set, get) => ({
       id: `custom_${Date.now()}`,
       name: trimmedName,
       suggestedUnit: unit,
+      supportsLoad,
       isCustom: true,
     };
 
@@ -129,7 +134,7 @@ export const useExerciseStore = create<ExerciseStore>((set, get) => ({
     return newExercise;
   },
 
-  addExerciseIfNotExists: async (name: string, unit?: string) => {
+  addExerciseIfNotExists: async (name: string, unit?: string, supportsLoad = false) => {
     const trimmedName = name.trim();
     if (!trimmedName) {
       return null;
@@ -145,7 +150,7 @@ export const useExerciseStore = create<ExerciseStore>((set, get) => ({
     }
 
     // Add new custom exercise
-    return await get().addExercise(trimmedName, unit);
+    return await get().addExercise(trimmedName, unit, supportsLoad);
   },
 
   updateExercise: async (id: string, updates: Partial<ExerciseCatalogItem>) => {

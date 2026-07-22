@@ -8,12 +8,14 @@ import { useThemeStore } from './store/themeStore';
 import { useActiveWorkoutStore } from './store/activeWorkoutStore';
 import { useWorkoutHistoryStore } from './store/workoutHistoryStore';
 import { useExerciseStore } from './store/exerciseStore';
+import { useSettingsStore } from './store/settingsStore';
 
 const App = () => {
   const { themeMode, loadThemePreference } = useThemeStore();
   const { activeWorkout, isPaused, pauseWorkout, elapsedTime, totalPausedTime, loadPausedWorkout } = useActiveWorkoutStore();
   const { loadHistory } = useWorkoutHistoryStore();
   const { loadExercises } = useExerciseStore();
+  const { loadWeightUnit } = useSettingsStore();
   const appState = useRef(AppState.currentState);
   const navigationRef = useRef<any>(null);
 
@@ -26,6 +28,7 @@ const App = () => {
     
     // Load exercise catalog
     loadExercises();
+    loadWeightUnit();
     
     // Load paused workout if exists and navigate to it
     const initializePausedWorkout = async () => {

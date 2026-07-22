@@ -4,6 +4,7 @@ import { TextInput, IconButton, Text, Chip, useTheme } from 'react-native-paper'
 import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
 import AutocompleteExerciseInput from './AutocompleteExerciseInput';
+import LoadInput from './LoadInput';
 
 interface ExerciseInputProps {
   exercise: Exercise;
@@ -135,6 +136,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({
           </View>
         )}
       </View>
+      <LoadInput exercise={exercise} onChange={onChange} />
     </View>
   );
 };

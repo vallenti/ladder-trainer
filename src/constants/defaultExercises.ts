@@ -7,6 +7,7 @@ export interface ExerciseCatalogItem {
   id: string;
   name: string;
   suggestedUnit?: string; // 'reps', 'calories', 'meters', etc.
+  supportsLoad?: boolean;
   isCustom: boolean;      // false for defaults, true for user-added
 }
 
@@ -35,28 +36,28 @@ export const DEFAULT_EXERCISES: Omit<ExerciseCatalogItem, 'id' | 'usageCount' | 
   { name: 'Triple Unders', isCustom: false },
   
   // Weightlifting
-  { name: 'Deadlifts', isCustom: false },
-  { name: 'Squats', isCustom: false },
-  { name: 'Front Squats', isCustom: false },
-  { name: 'Overhead Squats', isCustom: false },
-  { name: 'Thrusters', isCustom: false },
-  { name: 'Cleans', isCustom: false },
-  { name: 'Hang Cleans', isCustom: false },
-  { name: 'Power Cleans', isCustom: false },
-  { name: 'Clean and Jerks', isCustom: false },
-  { name: 'Snatches', isCustom: false },
-  { name: 'Hang Snatches', isCustom: false },
-  { name: 'Power Snatches', isCustom: false },
-  { name: 'Shoulder Press', isCustom: false },
-  { name: 'Push Press', isCustom: false },
-  { name: 'Push Jerks', isCustom: false },
-  { name: 'Bench Press', isCustom: false },
-  { name: 'Sumo Deadlift High Pulls', isCustom: false },
-  { name: 'Kettlebell Swings', isCustom: false },
-  { name: 'Goblet Squats', isCustom: false },
-  { name: 'Turkish Get-ups', isCustom: false },
-  { name: 'Dumbbell Thrusters', isCustom: false },
-  { name: 'Dumbbell Snatches', isCustom: false },
+  { name: 'Deadlifts', supportsLoad: true, isCustom: false },
+  { name: 'Squats', supportsLoad: true, isCustom: false },
+  { name: 'Front Squats', supportsLoad: true, isCustom: false },
+  { name: 'Overhead Squats', supportsLoad: true, isCustom: false },
+  { name: 'Thrusters', supportsLoad: true, isCustom: false },
+  { name: 'Cleans', supportsLoad: true, isCustom: false },
+  { name: 'Hang Cleans', supportsLoad: true, isCustom: false },
+  { name: 'Power Cleans', supportsLoad: true, isCustom: false },
+  { name: 'Clean and Jerks', supportsLoad: true, isCustom: false },
+  { name: 'Snatches', supportsLoad: true, isCustom: false },
+  { name: 'Hang Snatches', supportsLoad: true, isCustom: false },
+  { name: 'Power Snatches', supportsLoad: true, isCustom: false },
+  { name: 'Shoulder Press', supportsLoad: true, isCustom: false },
+  { name: 'Push Press', supportsLoad: true, isCustom: false },
+  { name: 'Push Jerks', supportsLoad: true, isCustom: false },
+  { name: 'Bench Press', supportsLoad: true, isCustom: false },
+  { name: 'Sumo Deadlift High Pulls', supportsLoad: true, isCustom: false },
+  { name: 'Kettlebell Swings', supportsLoad: true, isCustom: false },
+  { name: 'Goblet Squats', supportsLoad: true, isCustom: false },
+  { name: 'Turkish Get-ups', supportsLoad: true, isCustom: false },
+  { name: 'Dumbbell Thrusters', supportsLoad: true, isCustom: false },
+  { name: 'Dumbbell Snatches', supportsLoad: true, isCustom: false },
   
   // Cardio
   { name: 'Run', suggestedUnit: 'meters', isCustom: false },
@@ -75,9 +76,9 @@ export const DEFAULT_EXERCISES: Omit<ExerciseCatalogItem, 'id' | 'usageCount' | 
   { name: 'Back Extensions', isCustom: false },
   { name: 'Rope Climbs', isCustom: false },
   { name: 'Bear Crawls', suggestedUnit: 'meters', isCustom: false },
-  { name: 'Farmers Carry', suggestedUnit: 'meters', isCustom: false },
-  { name: 'Sled Push', suggestedUnit: 'meters', isCustom: false },
-  { name: 'Sled Pull', suggestedUnit: 'meters', isCustom: false },
+  { name: 'Farmers Carry', suggestedUnit: 'meters', supportsLoad: true, isCustom: false },
+  { name: 'Sled Push', suggestedUnit: 'meters', supportsLoad: true, isCustom: false },
+  { name: 'Sled Pull', suggestedUnit: 'meters', supportsLoad: true, isCustom: false },
 ];
 
 /**
@@ -96,6 +97,7 @@ export const EXERCISES_INITIALIZED_KEY = '@exercises_initialized';
 export const generateDefaultExercises = (): ExerciseCatalogItem[] => {
   return DEFAULT_EXERCISES.map((exercise, index) => ({
     ...exercise,
+    supportsLoad: exercise.supportsLoad ?? false,
     id: `default_${index}`,
   }));
 };

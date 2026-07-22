@@ -9,6 +9,7 @@ import { spacing } from '../../constants/theme';
 import { Exercise } from '../../types';
 import * as Haptics from 'expo-haptics';
 import { playSuccessSound } from '../../utils/soundUtils';
+import { formatLoad } from '../../utils/weight';
 
 const formatTimeWithMs = (totalSeconds: number): { main: string; ms: string } => {
   const seconds = Math.floor(totalSeconds);
@@ -472,7 +473,7 @@ const ActiveWorkoutScreen: React.FC = () => {
                         isCurrent && { fontWeight: 'bold' },
                         isCompleted && { textDecorationLine: 'line-through', opacity: 0.6 }
                       ]}>
-                        {(exercise.unit || '').toLowerCase()} {exercise.name}
+                        {(exercise.unit || '').toLowerCase()} {exercise.name}{formatLoad(exercise.load) ? ` · ${formatLoad(exercise.load)}` : ''}
                       </Text>
                     </View>
                   );
@@ -528,7 +529,7 @@ const ActiveWorkoutScreen: React.FC = () => {
                         { color: theme.colors.onSurface },
                         isNewExercise && { fontWeight: 'bold' }
                       ]}>
-                        {(exercise.unit || '').toLowerCase()} {exercise.name}
+                        {(exercise.unit || '').toLowerCase()} {exercise.name}{formatLoad(exercise.load) ? ` · ${formatLoad(exercise.load)}` : ''}
                       </Text>
                     </View>
                   );

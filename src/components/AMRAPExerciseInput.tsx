@@ -5,6 +5,7 @@ import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
 import NumberStepper from './NumberStepper';
 import AutocompleteExerciseInput from './AutocompleteExerciseInput';
+import LoadInput from './LoadInput';
 
 interface AMRAPExerciseInputProps {
   exercise: Exercise;
@@ -159,6 +160,7 @@ const AMRAPExerciseInput: React.FC<AMRAPExerciseInputProps> = ({
           </View>
         )}
       </View>
+      <LoadInput exercise={exercise} onChange={onChange} />
 
       {/* Progression Type */}
       <Text variant="bodySmall" style={[styles.label, { color: theme.colors.onSurface }]}>

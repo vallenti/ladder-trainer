@@ -5,6 +5,7 @@ import { Exercise } from '../types';
 import { spacing } from '../constants/theme';
 import NumberStepper from './NumberStepper';
 import AutocompleteExerciseInput from './AutocompleteExerciseInput';
+import LoadInput from './LoadInput';
 
 interface FixedRepsExerciseInputProps {
   exercise: Exercise;
@@ -146,6 +147,7 @@ const FixedRepsExerciseInput: React.FC<FixedRepsExerciseInputProps> = ({
           </View>
         )}
       </View>
+      <LoadInput exercise={exercise} onChange={onChange} />
 
       {/* Count Field */}
       <NumberStepper
