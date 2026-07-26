@@ -37,6 +37,10 @@ Every round contains every exercise. Reps are `startingReps - (round - 1) * step
 
 Every round contains every exercise. With total R, peak index is `ceil(R/2)`; reps rise by step and then fall. Even round counts repeat the peak. Global starting reps is not used.
 
+### Reverse Pyramid
+
+Every round contains every exercise. With total R, bottom index is `ceil(R/2)`; reps fall by step and then rise. Even round counts repeat the bottom. Global starting reps is not used.
+
 ### Flexible
 
 Every exercise has `ascending`, `descending`, or `constant`, a positive starting/fixed value, and a positive step for non-constant directions. Runtime descending reps clamp to zero. The create form attempts to ensure configurations cover `maxRounds`, but its ascending “calculated rounds” validation is based on the round count as though it were a target rep value; treat changes here as bug-sensitive.

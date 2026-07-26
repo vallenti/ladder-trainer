@@ -65,6 +65,8 @@ const WorkoutDetailsScreen: React.FC = () => {
         return 'Descending Ladder';
       case 'pyramid':
         return 'Pyramid Ladder';
+      case 'reversepyramid':
+        return 'Reverse Pyramid Ladder';
       case 'christmas':
         return 'Christmas Ladder';
       case 'flexible':
@@ -90,6 +92,7 @@ const WorkoutDetailsScreen: React.FC = () => {
     if (workout.ladderType === 'ascending') return '↑';
     if (workout.ladderType === 'descending') return '↓';
     if (workout.ladderType === 'pyramid') return '↕';
+    if (workout.ladderType === 'reversepyramid') return '↕';
     if (workout.ladderType === 'chipper' || workout.ladderType === 'forreps') return '→';
     if (workout.ladderType === 'amrap') {
       const step = exercise.stepSize || 0;
@@ -145,7 +148,7 @@ const WorkoutDetailsScreen: React.FC = () => {
           </View>
         );
       }
-    } else if (workout.ladderType === 'ascending' || workout.ladderType === 'descending' || workout.ladderType === 'pyramid') {
+    } else if (workout.ladderType === 'ascending' || workout.ladderType === 'descending' || workout.ladderType === 'pyramid' || workout.ladderType === 'reversepyramid') {
       const step = workout.stepSize || 1;
       const starting = workout.startingReps || 1;
       
@@ -155,9 +158,12 @@ const WorkoutDetailsScreen: React.FC = () => {
           reps = starting + (r - 1) * step;
         } else if (workout.ladderType === 'descending') {
           reps = starting - (r - 1) * step;
-        } else { // pyramid
+        } else if (workout.ladderType === 'pyramid') {
           const peak = Math.ceil(rounds / 2);
           reps = r <= peak ? r * step : (rounds - r + 1) * step;
+        } else { // reverse pyramid
+          const reversePeak = Math.ceil(rounds / 2);
+          reps = (reversePeak - Math.min(r - 1, rounds - r)) * step;
         }
         
         previewRounds.push(
@@ -391,6 +397,7 @@ const WorkoutDetailsScreen: React.FC = () => {
                               : workout.ladderType === 'ascending' ? 'Ascending' :
                                 workout.ladderType === 'descending' ? 'Descending' :
                                 workout.ladderType === 'pyramid' ? 'Pyramid' :
+                                workout.ladderType === 'reversepyramid' ? 'Reverse Pyramid' :
                                 workout.ladderType === 'amrap' ? ((exercise.stepSize || 0) > 0 ? 'Increasing' : 'Fixed') :
                                 'Fixed'}
                             {workout.ladderType === 'flexible' && exercise.direction !== 'constant' && (
@@ -406,6 +413,11 @@ const WorkoutDetailsScreen: React.FC = () => {
                             {(workout.ladderType === 'ascending' || workout.ladderType === 'descending' || workout.ladderType === 'pyramid') && (
                               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                                 {' • Start: '}{workout.startingReps || 1}{', Step: '}{workout.stepSize || 1}
+                              </Text>
+                            )}
+                            {workout.ladderType === 'reversepyramid' && (
+                              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                                {' • Step: '}{workout.stepSize || 1}
                               </Text>
                             )}
                           </Text>
@@ -468,7 +480,7 @@ const WorkoutDetailsScreen: React.FC = () => {
           {/* Workout Configuration Card - hidden for ascending/descending/pyramid as info is shown per exercise */}
           {(workout.stepSize || workout.startingReps) && workout.ladderType !== 'flexible' && 
            workout.ladderType !== 'chipper' && workout.ladderType !== 'forreps' &&
-           workout.ladderType !== 'ascending' && workout.ladderType !== 'descending' && workout.ladderType !== 'pyramid' && (
+           workout.ladderType !== 'ascending' && workout.ladderType !== 'descending' && workout.ladderType !== 'pyramid' && workout.ladderType !== 'reversepyramid' && (
             <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
               <Card.Content>
                 <Text variant="titleMedium" style={styles.sectionTitle}>

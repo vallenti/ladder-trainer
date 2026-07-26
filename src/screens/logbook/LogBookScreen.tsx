@@ -245,6 +245,7 @@ const LogbookScreen: React.FC = () => {
       ascending: 'Ascending Ladder',
       descending: 'Descending Ladder',
       pyramid: 'Pyramid Ladder',
+      reversepyramid: 'Reverse Pyramid Ladder',
       flexible: 'Flexible Ladder',
       chipper: 'Chipper',
       amrap: 'AMRAP',

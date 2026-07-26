@@ -365,7 +365,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       }
     }
 
-    if (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') {
+    if (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid' || ladderType === 'reversepyramid') {
       const step = parseInt(stepSize, 10);
       if (isNaN(step) || step <= 0) {
         newErrors.push('Step size must be a positive number');
@@ -477,7 +477,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       restPeriodSeconds: hasRest ? parseInt(restPeriod, 10) : 0,
       ladderType,
       maxRounds: finalMaxRounds,
-      stepSize: (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') ? parseInt(stepSize, 10) : undefined,
+      stepSize: (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid' || ladderType === 'reversepyramid') ? parseInt(stepSize, 10) : undefined,
       startingReps: (ladderType === 'ascending' || ladderType === 'descending') ? parseInt(startingReps, 10) : undefined,
       timeCap: ladderType === 'amrap' ? totalTimeCap : undefined,
       // Buy In/Out
@@ -511,6 +511,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       ascending: 'Ascending',
       descending: 'Descending',
       pyramid: 'Pyramid',
+      reversepyramid: 'Reverse Pyramid',
       flexible: 'Flexible',
       chipper: 'Chipper',
       amrap: 'AMRAP',
@@ -582,6 +583,13 @@ const CreateEditWorkoutScreen: React.FC = () => {
           } else {
             repsArray.push((rounds - i + 1) * step);
           }
+        }
+        break;
+
+      case 'reversepyramid':
+        const reversePeak = Math.ceil(rounds / 2);
+        for (let i = 1; i <= rounds; i++) {
+          repsArray.push((reversePeak - Math.min(i - 1, rounds - i)) * step);
         }
         break;
       
@@ -707,6 +715,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   </Card.Content>
                 </Card>
 
+               
+
                 {/* Descending Ladder Card */}
                 <Card 
                   style={[
@@ -777,6 +787,44 @@ const CreateEditWorkoutScreen: React.FC = () => {
                         )}
                       </View>
                       {ladderType === 'pyramid' && (
+                        <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
+                      )}
+                    </View>
+                  </Card.Content>
+                </Card>
+
+                 {/* Reverse Pyramid Ladder Card */}
+                <Card
+                  style={[
+                    styles.ladderTypeCard,
+                    { backgroundColor: theme.colors.surface },
+                    ladderType === 'reversepyramid' && {
+                      borderColor: theme.colors.primary,
+                      borderWidth: 2,
+                      backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer
+                    }
+                  ]}
+                  onPress={() => setLadderType('reversepyramid')}
+                >
+                  <Card.Content>
+                    <View style={styles.ladderTypeHeader}>
+                      <MaterialCommunityIcons
+                        name="triangle-outline"
+                        size={48}
+                        color={ladderType === 'reversepyramid' ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                        style={styles.ladderTypeIcon}
+                      />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'reversepyramid' && { color: theme.colors.primary }]}>
+                          Reverse Pyramid
+                        </Text>
+                        {ladderType === 'reversepyramid' && (
+                          <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>
+                            {getLadderStrategy('reversepyramid', parseInt(stepSize, 10) || 1, parseInt(maxRounds, 10) || 10).getDescription()}
+                          </Text>
+                        )}
+                      </View>
+                      {ladderType === 'reversepyramid' && (
                         <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />
                       )}
                     </View>
@@ -1007,6 +1055,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           ascending: 'Ascending Ladder',
                           descending: 'Descending Ladder',
                           pyramid: 'Pyramid Ladder',
+                          reversepyramid: 'Reverse Pyramid Ladder',
                           flexible: 'Flexible Ladder',
                           chipper: 'Chipper Ladder',
                           amrap: 'AMRAP',
@@ -1119,8 +1168,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
               />
             )}
 
-            {/* Step Size - Only for ascending, descending, and pyramid ladder */}
-            {(ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid') && (
+            {/* Step Size - Only for ascending, descending, and pyramid ladders */}
+            {(ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid' || ladderType === 'reversepyramid') && (
               <TextInput
                 mode="outlined"
                 label="Step Size"

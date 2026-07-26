@@ -19,7 +19,7 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
-export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'flexible' | 'chipper' | 'amrap' | 'forreps';
+export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'reversepyramid' | 'flexible' | 'chipper' | 'amrap' | 'forreps';
 export type WeightUnit = 'kg' | 'lb';
 
 export interface ExerciseLoad {

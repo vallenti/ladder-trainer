@@ -7,6 +7,7 @@ import {
   FlexibleLadderStrategy,
   ForRepsLadderStrategy,
   PyramidLadderStrategy,
+  ReversePyramidLadderStrategy,
 } from '../src/utils/ladderStrategies';
 import type { Exercise } from '../src/types';
 
@@ -33,6 +34,14 @@ describe('ladder strategies', () => {
     const even = new PyramidLadderStrategy(1, 6);
     expect([1, 2, 3, 2, 1].map((_, i) => odd.getExercisesForRound(i + 1, exercises)[0].reps)).toEqual([1, 2, 3, 2, 1]);
     expect([1, 2, 3, 3, 2, 1].map((_, i) => even.getExercisesForRound(i + 1, exercises)[0].reps)).toEqual([1, 2, 3, 3, 2, 1]);
+  });
+
+  it('calculates a reverse pyramid for odd and even round counts', () => {
+    const odd = new ReversePyramidLadderStrategy(10, 5);
+    const even = new ReversePyramidLadderStrategy(10, 6);
+    expect([1, 2, 3, 4, 5].map(round => odd.getExercisesForRound(round, exercises)[0].reps)).toEqual([30, 20, 10, 20, 30]);
+    expect([1, 2, 3, 4, 5, 6].map(round => even.getExercisesForRound(round, exercises)[0].reps)).toEqual([30, 20, 10, 10, 20, 30]);
+    expect(odd.calculateTotalReps(exercises[0], 5)).toBe(110);
   });
 
   it('supports independent flexible directions and clamps negative reps', () => {

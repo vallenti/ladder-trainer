@@ -40,6 +40,8 @@ export const ShareableWorkoutCard: React.FC<ShareableWorkoutCardProps> = ({
         return 'Descending';
       case 'pyramid':
         return 'Pyramid';
+      case 'reversepyramid':
+        return 'Reverse Pyramid';
       case 'flexible':
         return 'Flexible';
       case 'chipper':

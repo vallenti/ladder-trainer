@@ -32,6 +32,7 @@ All types use `ladderStrategies.ts`; creation is coordinated by `CreateEditWorko
 | `ascending` | `ExerciseInput` | `startingReps`, `stepSize`, `maxRounds` | round cap |
 | `descending` | `ExerciseInput` | `startingReps`, `stepSize`, `maxRounds` | round cap |
 | `pyramid` | `ExerciseInput` | `stepSize`, `maxRounds` | round cap |
+| `reversepyramid` | `ExerciseInput` | `stepSize`, `maxRounds` | round cap |
 | `flexible` | `FlexibleExerciseInput` | per exercise direction/start/step; global rounds | round cap |
 | `chipper` | `FixedRepsExerciseInput` | per exercise `fixedReps`; rounds derived from count | last exercise |
 | `amrap` | `AMRAPExerciseInput` | per exercise start/step; `timeCap`; sentinel rounds | time cap |

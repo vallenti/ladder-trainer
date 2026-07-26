@@ -28,6 +28,11 @@ export const LADDER_DEFAULTS: Record<LadderType, LadderDefaults> = {
     stepSize: 1,
     startingReps: 1,
   },
+  reversepyramid: {
+    maxRounds: 5,
+    stepSize: 1,
+    startingReps: 1, // Not relevant/used
+  },
   flexible: {
     maxRounds: 5,
     stepSize: 1, // Not relevant/used (per exercise)

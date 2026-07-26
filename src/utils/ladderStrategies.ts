@@ -173,6 +173,43 @@ export class PyramidLadderStrategy implements LadderStrategy {
 }
 
 /**
+ * Reverse Pyramid Ladder Strategy
+ * Pattern: Descends to the bottom then ascends.
+ * For 5 rounds step 1: 3, 2, 1, 2, 3
+ * For 6 rounds step 1: 3, 2, 1, 1, 2, 3
+ */
+export class ReversePyramidLadderStrategy implements LadderStrategy {
+  private stepSize: number;
+  private maxRounds: number;
+
+  constructor(stepSize: number = 1, maxRounds?: number) {
+    this.stepSize = stepSize;
+    this.maxRounds = maxRounds || 10;
+  }
+
+  getExercisesForRound(roundNumber: number, exercises: Exercise[]): Array<{ exercise: Exercise; reps: number }> {
+    const peak = Math.ceil(this.maxRounds / 2);
+    const distanceFromEnd = Math.min(roundNumber - 1, this.maxRounds - roundNumber);
+    const reps = (peak - distanceFromEnd) * this.stepSize;
+    return exercises.map(exercise => ({ exercise, reps }));
+  }
+
+  calculateTotalReps(exercise: Exercise, totalRounds: number): number {
+    const bottom = Math.ceil(totalRounds / 2);
+    return totalRounds % 2 === 1
+      ? (bottom * (bottom + 1) - 1) * this.stepSize
+      : bottom * (bottom + 1) * this.stepSize;
+  }
+
+  getDescription(): string {
+    if (this.stepSize === 1) {
+      return 'Descends to the bottom then ascends (3, 2, 1, 2, 3...)';
+    }
+    return `Descends to the bottom then ascends (${this.stepSize * 3}, ${this.stepSize * 2}, ${this.stepSize}, ${this.stepSize * 2}...)`;
+  }
+}
+
+/**
  * Ascending Ladder Strategy
  * Pattern: Each round increases reps by stepSize for all exercises
  * Starting from startingReps and going up by stepSize each round
@@ -418,6 +455,8 @@ export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, 
       return new DescendingLadderStrategy(stepSize, maxRounds, startingReps);
     case 'pyramid':
       return new PyramidLadderStrategy(stepSize, maxRounds);
+    case 'reversepyramid':
+      return new ReversePyramidLadderStrategy(stepSize, maxRounds);
     case 'flexible':
       return new FlexibleLadderStrategy(maxRounds);
     case 'chipper':
