@@ -19,7 +19,7 @@ AsyncStorage contains unversioned JSON. TypeScript interfaces are compile-time o
 ```ts
 type LadderType =
   | 'christmas' | 'ascending' | 'descending' | 'pyramid'
-  | 'flexible' | 'chipper' | 'amrap' | 'forreps';
+  | 'flexible' | 'chipper' | 'amrap' | 'forreps' | 'emom';
 
 interface Exercise {
   position: number;
@@ -33,10 +33,18 @@ interface Exercise {
   repsPerRound?: number;
 }
 
+interface EmomInterval {
+  id: string;
+  position: number;
+  type: 'work' | 'rest';
+  exercises: Exercise[];
+}
+
 interface Template {
   id: string; name: string; exercises: Exercise[];
   restPeriodSeconds: number; ladderType: LadderType; maxRounds: number;
   stepSize?: number; startingReps?: number; timeCap?: number;
+  intervalSeconds?: number; emomCycles?: number; emomIntervals?: EmomInterval[];
   buyInOutExercise?: Exercise; hasBuyInOut?: boolean;
   buyInOutRestSeconds?: number; createdAt: Date;
 }
@@ -49,6 +57,7 @@ interface Workout {
   id: string; templateName: string; exercises: Exercise[];
   restPeriodSeconds: number; ladderType: LadderType; maxRounds: number;
   stepSize?: number; startingReps?: number; timeCap?: number;
+  intervalSeconds?: number; emomCycles?: number; emomIntervals?: EmomInterval[];
   buyInOutExercise?: Exercise; hasBuyInOut?: boolean;
   buyInOutRestSeconds?: number; buyInCompleted?: boolean; buyOutCompleted?: boolean;
   startTime: Date; endTime?: Date; status: 'incomplete' | 'completed';

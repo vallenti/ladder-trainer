@@ -10,6 +10,7 @@ import { Exercise } from '../../types';
 import * as Haptics from 'expo-haptics';
 import { playSuccessSound } from '../../utils/soundUtils';
 import { formatLoad } from '../../utils/weight';
+import { formatEmomLabel, getEmomInterval } from '../../utils/emom';
 
 const formatTimeWithMs = (totalSeconds: number): { main: string; ms: string } => {
   const seconds = Math.floor(totalSeconds);
@@ -39,6 +40,7 @@ const ActiveWorkoutScreen: React.FC = () => {
   const { 
     activeWorkout, 
     completeRound, 
+    syncEmomProgress,
     startNextRound, 
     completeWorkout,
     completeBuyIn,
@@ -61,6 +63,8 @@ const ActiveWorkoutScreen: React.FC = () => {
   const [totalPausedTime, setTotalPausedTime] = useState(storeTotalPausedTime);
   const [frozenElapsedTime, setFrozenElapsedTime] = useState(storeElapsedTime);
   const [showSuccessCheckmark, setShowSuccessCheckmark] = useState(false);
+  const lastEmomIntervalRef = useRef(0);
+  const emomCompletingRef = useRef(false);
 
   // Animation refs
   const buttonScale = useRef(new Animated.Value(1)).current;
@@ -85,6 +89,21 @@ const ActiveWorkoutScreen: React.FC = () => {
         const totalElapsedMs = new Date().getTime() - activeWorkout.startTime.getTime();
         const elapsed = (totalElapsedMs / 1000) - totalPausedTime;
         setElapsedTime(elapsed);
+
+        if (activeWorkout.ladderType === 'emom' && activeWorkout.intervalSeconds) {
+          const completedIntervals = Math.min(Math.floor(elapsed / activeWorkout.intervalSeconds), activeWorkout.maxRounds);
+          syncEmomProgress(completedIntervals);
+          if (completedIntervals > lastEmomIntervalRef.current) {
+            if (completedIntervals === lastEmomIntervalRef.current + 1) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+            }
+            lastEmomIntervalRef.current = completedIntervals;
+          }
+          if (completedIntervals >= activeWorkout.maxRounds && !emomCompletingRef.current) {
+            emomCompletingRef.current = true;
+            handleWorkoutComplete();
+          }
+        }
         
         // Check time cap for AMRAP workouts
         if (activeWorkout.ladderType === 'amrap' && activeWorkout.timeCap && elapsed >= activeWorkout.timeCap) {
@@ -98,7 +117,7 @@ const ActiveWorkoutScreen: React.FC = () => {
     }, 100);
 
     return () => clearInterval(timer);
-  }, [activeWorkout, isPaused, totalPausedTime, frozenElapsedTime]);
+  }, [activeWorkout, isPaused, totalPausedTime, frozenElapsedTime, syncEmomProgress]);
 
   // Handle Android back button
   useEffect(() => {
@@ -127,7 +146,18 @@ const ActiveWorkoutScreen: React.FC = () => {
 
   const currentRound = activeWorkout.currentRoundIndex + 1;
   const totalRounds = activeWorkout.maxRounds;
-  const ladderStrategy = getLadderStrategy(activeWorkout.ladderType, activeWorkout.stepSize || 1, activeWorkout.maxRounds, activeWorkout.startingReps);
+  const ladderStrategy = getLadderStrategy(activeWorkout.ladderType, activeWorkout.stepSize || 1, activeWorkout.maxRounds, activeWorkout.startingReps, activeWorkout.emomIntervals);
+  const isEmom = activeWorkout.ladderType === 'emom';
+  const emomIntervalSeconds = activeWorkout.intervalSeconds || 60;
+  const emomRemaining = isEmom
+    ? elapsedTime >= activeWorkout.maxRounds * emomIntervalSeconds
+      ? 0
+      : Math.max(0, emomIntervalSeconds - (elapsedTime % emomIntervalSeconds))
+    : elapsedTime;
+  const emomSequenceIndex = isEmom && activeWorkout.emomIntervals?.length ? activeWorkout.currentRoundIndex % activeWorkout.emomIntervals.length : 0;
+  const currentEmomInterval = isEmom ? activeWorkout.emomIntervals?.[emomSequenceIndex] : undefined;
+  const nextEmomInterval = isEmom && activeWorkout.emomIntervals?.length ? activeWorkout.emomIntervals[(emomSequenceIndex + 1) % activeWorkout.emomIntervals.length] : undefined;
+  const emomCycle = isEmom && activeWorkout.emomIntervals?.length ? Math.floor(activeWorkout.currentRoundIndex / activeWorkout.emomIntervals.length) + 1 : 1;
   
   // Determine current phase: buy-in, main workout, or buy-out
   const hasBuyInOut = activeWorkout.hasBuyInOut && activeWorkout.buyInOutExercise;
@@ -341,14 +371,14 @@ const ActiveWorkoutScreen: React.FC = () => {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.timerContainer, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.timerRow}>
-          <IconButton
+          {!isEmom ? <IconButton
             icon={isMuted ? "volume-off" : "volume-high"}
             size={28}
             iconColor={theme.colors.primary}
             onPress={toggleMute}
             style={styles.muteButton}
             hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-          />
+          /> : <View style={styles.muteButton} />}
           <IconButton
             icon={isTimerFocusMode ? "format-list-bulleted" : "timer"}
             size={28}
@@ -364,13 +394,13 @@ const ActiveWorkoutScreen: React.FC = () => {
                   variant="displayMedium"
                   style={[styles.timer, { color: theme.colors.primary }]}
                 >
-                  {formatTimeWithMs(elapsedTime).main}
+                  {formatTimeWithMs(isEmom ? emomRemaining : elapsedTime).main}
                 </Text>
                 <Text 
                   variant="headlineSmall"
                   style={[styles.timerMs, { color: theme.colors.primary }]}
                 >
-                  {formatTimeWithMs(elapsedTime).ms}
+                  {formatTimeWithMs(isEmom ? emomRemaining : elapsedTime).ms}
                 </Text>
               </View>
               {isPaused && (
@@ -400,7 +430,9 @@ const ActiveWorkoutScreen: React.FC = () => {
       <View style={styles.progressBarContainer}>
         <ProgressBar
           progress={
-            activeWorkout.ladderType === 'amrap' && activeWorkout.timeCap
+            isEmom
+              ? Math.min(elapsedTime / (activeWorkout.maxRounds * emomIntervalSeconds), 1)
+              : activeWorkout.ladderType === 'amrap' && activeWorkout.timeCap
               ? Math.min(elapsedTime / activeWorkout.timeCap, 1)
               : activeWorkout.currentRoundIndex / totalRounds
           }
@@ -422,7 +454,20 @@ const ActiveWorkoutScreen: React.FC = () => {
                 </Text>
               </View>
             )}
-            {activeWorkout.ladderType === 'chipper' ? (
+            {isEmom ? (
+              <>
+                <Text variant="titleMedium" style={styles.cardTitle}>{formatEmomLabel(emomIntervalSeconds)} · Cycle {emomCycle} of {activeWorkout.emomCycles}</Text>
+                <Text variant="bodyMedium" style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant, marginBottom: spacing.md }}>Interval {emomSequenceIndex + 1} of {activeWorkout.emomIntervals?.length} · Total {currentRound} of {totalRounds}</Text>
+                {currentEmomInterval?.type === 'rest' ? (
+                  <Text variant="displaySmall" style={{ textAlign: 'center', color: theme.colors.primary, fontWeight: 'bold' }}>REST</Text>
+                ) : exercisesInRound.map(item => {
+                  const exercise = 'exercise' in item ? item.exercise : item;
+                  const reps = 'reps' in item ? item.reps : exercise.repsPerRound || 0;
+                  return <View key={exercise.position} style={[styles.exerciseRow, { borderBottomColor: theme.colors.outline }]}><View style={styles.repsContainer}><Text variant="titleLarge" style={[styles.repsNumber, { color: theme.colors.primary }]}>{reps}</Text></View><Text variant="bodyLarge" style={[styles.exerciseName, { color: theme.colors.onSurface }]}>{(exercise.unit || 'reps').toLowerCase()} {exercise.name}{formatLoad(exercise.load) ? ` · ${formatLoad(exercise.load)}` : ''}</Text></View>;
+                })}
+                <Text variant="bodyMedium" style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant, marginTop: spacing.lg }}>Next: {nextEmomInterval?.type === 'rest' ? 'Rest' : nextEmomInterval?.exercises[0] ? `${nextEmomInterval.exercises[0].repsPerRound} ${nextEmomInterval.exercises[0].name}` : '—'}</Text>
+              </>
+            ) : activeWorkout.ladderType === 'chipper' ? (
               <>
                 <Animated.View style={{ transform: [{ scale: roundNumberScale }] }}>
                   <Text variant="titleMedium" style={styles.cardTitle}>
@@ -561,7 +606,7 @@ const ActiveWorkoutScreen: React.FC = () => {
                   isLandscape && styles.timerLandscape
                 ]}
               >
-                {formatTimeWithMs(elapsedTime).main}
+                {formatTimeWithMs(isEmom ? emomRemaining : elapsedTime).main}
               </Text>
               <Text 
                 variant="headlineLarge"
@@ -572,7 +617,7 @@ const ActiveWorkoutScreen: React.FC = () => {
                   isLandscape && styles.timerMsLandscape
                 ]}
               >
-                {formatTimeWithMs(elapsedTime).ms}
+                {formatTimeWithMs(isEmom ? emomRemaining : elapsedTime).ms}
               </Text>
             </View>
             {isPaused && (
@@ -591,7 +636,7 @@ const ActiveWorkoutScreen: React.FC = () => {
         </View>
       )}
 
-      <View style={[
+      {!isEmom && <View style={[
         isTimerFocusMode ? styles.buttonContainerFocus : styles.buttonContainer,
         isLandscape && styles.buttonContainerLandscape,
         { 
@@ -619,7 +664,7 @@ const ActiveWorkoutScreen: React.FC = () => {
               : 'Complete Round'}
           </Button>
         </Animated.View>
-      </View>
+      </View>}
 
       <Portal>
         <Dialog visible={pauseDialogVisible} onDismiss={handleResume}>

@@ -19,7 +19,7 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
-export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'reversepyramid' | 'flexible' | 'chipper' | 'amrap' | 'forreps';
+export type LadderType = 'christmas' | 'ascending' | 'descending' | 'pyramid' | 'reversepyramid' | 'flexible' | 'chipper' | 'amrap' | 'forreps' | 'emom';
 export type WeightUnit = 'kg' | 'lb';
 
 export interface ExerciseLoad {
@@ -45,6 +45,14 @@ export interface Exercise {
   repsPerRound?: number;
 }
 
+export interface EmomInterval {
+  id: string;
+  position: number;
+  type: 'work' | 'rest';
+  /** V1 permits exactly one exercise for work and none for rest. */
+  exercises: Exercise[];
+}
+
 export interface Template {
   id: string;
   name: string;
@@ -55,6 +63,9 @@ export interface Template {
   stepSize?: number; // For ascending/descending ladder: step increment (default 1)
   startingReps?: number; // For ascending/descending ladder: starting reps (default 1)
   timeCap?: number; // For AMRAP: time cap in seconds
+  intervalSeconds?: number; // For EMOM: shared interval duration
+  emomCycles?: number;
+  emomIntervals?: EmomInterval[];
   // Buy In/Out exercise (same exercise before and after workout)
   buyInOutExercise?: Exercise; // Optional buy-in/out exercise
   hasBuyInOut?: boolean; // Whether buy-in/out is enabled
@@ -85,6 +96,9 @@ export interface Workout {
   stepSize?: number; // snapshot from template
   startingReps?: number; // snapshot from template
   timeCap?: number; // snapshot from template - for AMRAP
+  intervalSeconds?: number; // snapshot from template - for EMOM
+  emomCycles?: number;
+  emomIntervals?: EmomInterval[];
   // Buy In/Out
   buyInOutExercise?: Exercise; // snapshot from template
   hasBuyInOut?: boolean; // snapshot from template

@@ -6,6 +6,7 @@ import { formatTime } from '../utils/calculations';
 import { getLadderStrategy } from '../utils/ladderStrategies';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatLoad, formatTotalLoad } from '../utils/weight';
+import { formatEmomLabel } from '../utils/emom';
 
 interface ShareableWorkoutCardProps {
   workout: Workout;
@@ -22,7 +23,8 @@ export const ShareableWorkoutCard: React.FC<ShareableWorkoutCardProps> = ({
     workout.ladderType, 
     workout.stepSize || 1, 
     workout.maxRounds, 
-    workout.startingReps
+    workout.startingReps,
+    workout.emomIntervals
   );
   
   const exerciseTotals = workout.exercises.map(exercise => ({
@@ -50,6 +52,8 @@ export const ShareableWorkoutCard: React.FC<ShareableWorkoutCardProps> = ({
         return 'AMRAP';
       case 'forreps':
         return 'For Reps';
+      case 'emom':
+        return formatEmomLabel(workout.intervalSeconds);
       default:
         return 'Workout';
     }
@@ -92,7 +96,7 @@ export const ShareableWorkoutCard: React.FC<ShareableWorkoutCardProps> = ({
         <View style={styles.statRow}>
           <View style={styles.stat}>
             <Text style={[styles.statLabel, { color: theme.colors.onPrimaryContainer }]}>
-              Rounds
+              {workout.ladderType === 'emom' ? 'Intervals' : 'Rounds'}
             </Text>
             <Text style={[styles.statValue, { color: theme.colors.onPrimaryContainer }]}>
               {workout.ladderType === 'amrap' ? `${workout.rounds.length - 1}+` : workout.rounds.length}
@@ -112,7 +116,7 @@ export const ShareableWorkoutCard: React.FC<ShareableWorkoutCardProps> = ({
       {/* Exercise Summary */}
       <View style={styles.exercisesContainer}>
         <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-          Exercise Summary
+          {workout.ladderType === 'emom' ? 'Prescribed Volume' : 'Exercise Summary'}
         </Text>
         {exerciseTotals.map((ex) => (
           <View 
@@ -133,13 +137,13 @@ export const ShareableWorkoutCard: React.FC<ShareableWorkoutCardProps> = ({
       {workout.rounds.length <= 6 && (
         <View style={styles.roundsContainer}>
           <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-            Round Times
+            {workout.ladderType === 'emom' ? 'Interval Times' : 'Round Times'}
           </Text>
           <View style={styles.roundsGrid}>
             {workout.rounds.map((round) => (
               <View key={round.roundNumber} style={styles.roundBadge}>
                 <Text style={[styles.roundNumber, { color: theme.colors.onSurfaceVariant }]}>
-                  R{round.roundNumber}
+                  {workout.ladderType === 'emom' ? 'I' : 'R'}{round.roundNumber}
                 </Text>
                 <Text style={[styles.roundTime, { color: theme.colors.primary }]}>
                   {formatTime(round.duration)}

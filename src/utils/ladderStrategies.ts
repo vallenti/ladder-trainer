@@ -1,4 +1,5 @@
-import { Exercise, LadderType } from '../types';
+import { EmomInterval, Exercise, LadderType } from '../types';
+import { getEmomInterval } from './emom';
 
 /**
  * Strategy interface for different ladder workout types
@@ -442,10 +443,39 @@ export class ForRepsLadderStrategy implements LadderStrategy {
   }
 }
 
+export class EMOMLadderStrategy implements LadderStrategy {
+  constructor(private intervals: EmomInterval[] = []) {}
+
+  getExercisesForRound(roundNumber: number): Array<{ exercise: Exercise; reps: number }> {
+    const interval = getEmomInterval(roundNumber, this.intervals);
+    if (!interval || interval.type === 'rest') return [];
+    return interval.exercises.map(exercise => ({
+      exercise,
+      reps: exercise.repsPerRound || 0,
+    }));
+  }
+
+  calculateTotalReps(exercise: Exercise, totalRounds: number): number {
+    let total = 0;
+    for (let round = 1; round <= totalRounds; round += 1) {
+      const interval = getEmomInterval(round, this.intervals);
+      if (interval?.type !== 'work') continue;
+      for (const scheduled of interval.exercises) {
+        if (scheduled.position === exercise.position) total += scheduled.repsPerRound || 0;
+      }
+    }
+    return total;
+  }
+
+  getDescription(): string {
+    return 'Complete one fixed prescription each interval. The sequence repeats automatically, including optional rest intervals.';
+  }
+}
+
 /**
  * Factory function to get the appropriate ladder strategy
  */
-export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, maxRounds?: number, startingReps?: number): LadderStrategy {
+export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, maxRounds?: number, startingReps?: number, emomIntervals?: EmomInterval[]): LadderStrategy {
   switch (ladderType) {
     case 'christmas':
       return new ChristmasLadderStrategy();
@@ -465,6 +495,8 @@ export function getLadderStrategy(ladderType: LadderType, stepSize: number = 1, 
       return new AMRAPLadderStrategy();
     case 'forreps':
       return new ForRepsLadderStrategy();
+    case 'emom':
+      return new EMOMLadderStrategy(emomIntervals);
     default:
       throw new Error(`Unknown ladder type: ${ladderType}`);
   }

@@ -5,6 +5,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useActiveWorkoutStore } from '../../store/activeWorkoutStore';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { playShortBeep, playLongBeep } from '../../utils/soundUtils';
+import * as Haptics from 'expo-haptics';
 
 type RouteParams = {
   Countdown: {
@@ -26,6 +27,9 @@ const CountdownScreen: React.FC = () => {
   useEffect(() => {
     if (countdown === 0) {
       if (template) {
+        if (template.ladderType === 'emom') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+        }
         startWorkout(template);
         // @ts-ignore
         navigation.replace('ActiveWorkout', { workoutId: route.params.workoutId });
@@ -34,7 +38,7 @@ const CountdownScreen: React.FC = () => {
     }
 
     // Play beeps at 3, 2, 1
-    if (!isMuted) {
+    if (!isMuted && template?.ladderType !== 'emom') {
       if (countdown === 3 || countdown === 2) {
         playShortBeep();
       } else if (countdown === 1) {
@@ -70,7 +74,7 @@ const CountdownScreen: React.FC = () => {
       </Text>
       {template.ladderType !== 'amrap' && (
         <Text variant="bodyLarge" style={[styles.info, { color: '#FFFFFF' }]}>
-          {template.maxRounds} rounds
+          {template.maxRounds} {template.ladderType === 'emom' ? 'intervals' : 'rounds'}
         </Text>
       )}
       {template.restPeriodSeconds > 0 && (

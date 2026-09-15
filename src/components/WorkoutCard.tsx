@@ -4,6 +4,7 @@ import { Card, Text, IconButton, useTheme, Surface } from 'react-native-paper';
 import { Template } from '../types';
 import { spacing } from '../constants/theme';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { formatDuration, formatEmomLabel, getEmomTotalDuration } from '../utils/emom';
 
 interface WorkoutCardProps {
   workout: Template;
@@ -34,6 +35,8 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
         return 'AMRAP';
       case 'forreps':
         return 'For Reps';
+      case 'emom':
+        return formatEmomLabel(workout.intervalSeconds);
       default:
         return 'Christmas';
     }
@@ -81,6 +84,12 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onPress, onStart }) 
                   <Text variant="bodySmall" style={[styles.statText, { color: theme.colors.onSurfaceVariant }]}>
                     {Math.floor(workout.timeCap / 60)}:{(workout.timeCap % 60).toString().padStart(2, '0')}
                   </Text>
+                </View>
+              )}
+              {workout.ladderType === 'emom' && (
+                <View style={styles.statBadge}>
+                  <MaterialCommunityIcons name="clock-outline" size={16} color={theme.colors.primary} />
+                  <Text variant="bodySmall" style={[styles.statText, { color: theme.colors.onSurfaceVariant }]}>{formatDuration(getEmomTotalDuration(workout.intervalSeconds, workout.emomIntervals, workout.emomCycles))}</Text>
                 </View>
               )}
               

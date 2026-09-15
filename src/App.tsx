@@ -12,7 +12,7 @@ import { useSettingsStore } from './store/settingsStore';
 
 const App = () => {
   const { themeMode, loadThemePreference } = useThemeStore();
-  const { activeWorkout, isPaused, pauseWorkout, elapsedTime, totalPausedTime, loadPausedWorkout } = useActiveWorkoutStore();
+  const { activeWorkout, isPaused, pauseWorkout, checkpointWorkout, elapsedTime, totalPausedTime, loadPausedWorkout } = useActiveWorkoutStore();
   const { loadHistory } = useWorkoutHistoryStore();
   const { loadExercises } = useExerciseStore();
   const { loadWeightUnit } = useSettingsStore();
@@ -54,7 +54,8 @@ const App = () => {
       ) {
         // App is going to background - pause active workout
         if (activeWorkout && !isPaused) {
-          pauseWorkout(elapsedTime, totalPausedTime);
+          if (activeWorkout.ladderType === 'emom') checkpointWorkout(elapsedTime, totalPausedTime);
+          else pauseWorkout(elapsedTime, totalPausedTime);
         }
       }
       
@@ -64,7 +65,7 @@ const App = () => {
     return () => {
       subscription.remove();
     };
-  }, [activeWorkout, isPaused, elapsedTime, totalPausedTime]);
+  }, [activeWorkout, isPaused, elapsedTime, totalPausedTime, checkpointWorkout, pauseWorkout]);
 
   const currentTheme = themeMode === 'dark' ? darkTheme : lightTheme;
   

@@ -6,6 +6,7 @@ import { useWorkoutStore } from '../../store/workoutStore';
 import { spacing } from '../../constants/theme';
 import { Exercise } from '../../types';
 import { formatLoad } from '../../utils/weight';
+import { formatDuration, formatEmomLabel, getEmomTotalDuration } from '../../utils/emom';
 
 type RouteParams = {
   WorkoutDetails: {
@@ -77,6 +78,8 @@ const WorkoutDetailsScreen: React.FC = () => {
         return 'AMRAP';
       case 'forreps':
         return 'For Reps';
+      case 'emom':
+        return formatEmomLabel(workout.intervalSeconds);
       default:
         return workout.ladderType;
     }
@@ -93,7 +96,7 @@ const WorkoutDetailsScreen: React.FC = () => {
     if (workout.ladderType === 'descending') return '↓';
     if (workout.ladderType === 'pyramid') return '↕';
     if (workout.ladderType === 'reversepyramid') return '↕';
-    if (workout.ladderType === 'chipper' || workout.ladderType === 'forreps') return '→';
+    if (workout.ladderType === 'chipper' || workout.ladderType === 'forreps' || workout.ladderType === 'emom') return '→';
     if (workout.ladderType === 'amrap') {
       const step = exercise.stepSize || 0;
       return step > 0 ? '↑' : '→';
@@ -114,6 +117,8 @@ const WorkoutDetailsScreen: React.FC = () => {
       repsInfo = `${exercise.fixedReps || 0} `;
     } else if (workout.ladderType === 'forreps') {
       repsInfo = `${exercise.repsPerRound || 0} `;
+    } else if (workout.ladderType === 'emom') {
+      repsInfo = `${exercise.repsPerRound || 0} `;
     } else if (workout.ladderType === 'amrap') {
       // For AMRAP, don't show start/step in name - it's in the progression container
       const step = exercise.stepSize || 0;
@@ -131,7 +136,18 @@ const WorkoutDetailsScreen: React.FC = () => {
     const maxPreviewRounds = 10; // Show first 10
     const previewRounds: React.ReactNode[] = [];
 
-    if (workout.ladderType === 'christmas') {
+    if (workout.ladderType === 'emom') {
+      (workout.emomIntervals || []).forEach((interval, index) => {
+        const exercise = interval.exercises[0];
+        previewRounds.push(
+          <View key={interval.id} style={styles.roundPreviewItem}>
+            <Text variant="labelMedium" style={styles.roundNumber}>Interval {index + 1}</Text>
+            <Text variant="bodyMedium" style={styles.exerciseLineItem}>{interval.type === 'rest' ? 'REST' : `${exercise?.repsPerRound || 0}${exercise?.unit ? ` ${exercise.unit}` : ''} ${exercise?.name || ''}`}</Text>
+          </View>
+        );
+      });
+      previewRounds.push(<Text key="repeat" variant="bodySmall" style={styles.moreRounds}>Repeat {workout.emomCycles || 1} cycle{workout.emomCycles === 1 ? '' : 's'} · {formatDuration(getEmomTotalDuration(workout.intervalSeconds, workout.emomIntervals, workout.emomCycles))}</Text>);
+    } else if (workout.ladderType === 'christmas') {
       for (let r = 1; r <= Math.min(rounds, maxPreviewRounds); r++) {
         const exercisesInRound = workout.exercises
           .filter(ex => ex.position <= r)
@@ -254,7 +270,7 @@ const WorkoutDetailsScreen: React.FC = () => {
       }
     }
 
-    if (workout.ladderType !== 'amrap') {
+    if (workout.ladderType !== 'amrap' && workout.ladderType !== 'emom') {
       if (rounds > maxPreviewRounds) {
             previewRounds.push(
               <Text key="more" variant="bodySmall" style={styles.moreRounds}>
@@ -298,7 +314,7 @@ const WorkoutDetailsScreen: React.FC = () => {
               )}
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
-                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>ROUNDS</Text>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>{workout.ladderType === 'emom' ? 'INTERVALS' : 'ROUNDS'}</Text>
                   <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
                     {workout.ladderType === 'amrap' ? 'Max' : workout.maxRounds}
                   </Text>
@@ -312,9 +328,9 @@ const WorkoutDetailsScreen: React.FC = () => {
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>REST</Text>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>{workout.ladderType === 'emom' ? 'CYCLES' : 'REST'}</Text>
                   <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
-                    {workout.restPeriodSeconds === 0 ? 'None' : `${workout.restPeriodSeconds}s`}
+                    {workout.ladderType === 'emom' ? workout.emomCycles : workout.restPeriodSeconds === 0 ? 'None' : `${workout.restPeriodSeconds}s`}
                   </Text>
                 </View>
                 {workout.ladderType === 'amrap' && workout.timeCap && (
@@ -336,7 +352,7 @@ const WorkoutDetailsScreen: React.FC = () => {
           <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
             <Card.Content>
               <Text variant="titleMedium" style={styles.sectionTitle}>
-                Exercises
+                {workout.ladderType === 'emom' ? 'Work exercises' : 'Exercises'}
               </Text>
 
               {/* Buy In Exercise */}
@@ -467,10 +483,10 @@ const WorkoutDetailsScreen: React.FC = () => {
           <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
             <Card.Content>
               <Text variant="titleMedium" style={styles.sectionTitle}>
-                Round-by-Round Preview
+                {workout.ladderType === 'emom' ? 'Interval Sequence' : 'Round-by-Round Preview'}
               </Text>
               <Text variant="bodySmall" style={[styles.previewSubtext, { color: theme.colors.onSurfaceVariant }]}>
-                What you'll do in each round
+                {workout.ladderType === 'emom' ? `Every ${formatDuration(workout.intervalSeconds || 60)}` : `What you'll do in each round`}
               </Text>
               <Divider style={styles.previewDivider} />
               {generateDetailedRoundPreview()}
@@ -479,7 +495,7 @@ const WorkoutDetailsScreen: React.FC = () => {
 
           {/* Workout Configuration Card - hidden for ascending/descending/pyramid as info is shown per exercise */}
           {(workout.stepSize || workout.startingReps) && workout.ladderType !== 'flexible' && 
-           workout.ladderType !== 'chipper' && workout.ladderType !== 'forreps' &&
+           workout.ladderType !== 'chipper' && workout.ladderType !== 'forreps' && workout.ladderType !== 'emom' &&
            workout.ladderType !== 'ascending' && workout.ladderType !== 'descending' && workout.ladderType !== 'pyramid' && workout.ladderType !== 'reversepyramid' && (
             <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
               <Card.Content>

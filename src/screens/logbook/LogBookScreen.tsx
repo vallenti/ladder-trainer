@@ -12,6 +12,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ShareableWorkoutCard } from '../../components/ShareableWorkoutCard';
 import { shareWorkoutImage } from '../../utils/shareUtils';
 import { formatLoad, formatTotalLoad } from '../../utils/weight';
+import { formatEmomLabel } from '../../utils/emom';
 
 const formatTimeWithMs = (totalSeconds: number): string => {
   const seconds = Math.floor(totalSeconds);
@@ -228,7 +229,7 @@ const LogbookScreen: React.FC = () => {
     if (!workout) return;
 
     const { dateStr, timeStr } = formatDateTime(workout.startTime);
-    const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds, workout.startingReps);
+    const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds, workout.startingReps, workout.emomIntervals);
     
     // Calculate exercise summary using ladder strategy
     const exerciseTotals = workout.exercises.map(exercise => {
@@ -249,9 +250,10 @@ const LogbookScreen: React.FC = () => {
       flexible: 'Flexible Ladder',
       chipper: 'Chipper',
       amrap: 'AMRAP',
-      forreps: 'For Reps'
+      forreps: 'For Reps',
+      emom: 'EMOM'
     };
-    const ladderTypeName = ladderTypeNames[workout.ladderType] || 'Custom Workout';
+    const ladderTypeName = workout.ladderType === 'emom' ? formatEmomLabel(workout.intervalSeconds) : ladderTypeNames[workout.ladderType] || 'Custom Workout';
     let message = `🏋️ ${workout.templateName}\n`;
     message += `📊 ${ladderTypeName}\n\n`;
     message += `📅 ${dateStr} at ${timeStr}\n`;
@@ -259,13 +261,17 @@ const LogbookScreen: React.FC = () => {
       message += `⏱️ Total Time: ${formatTime(workout.totalTime)}\n`;
       message += `🔄 Rounds Completed: ${workout.rounds.length - 1}+\n\n`;
     }
+    else if (workout.ladderType === 'emom') {
+      message += `⏱️ Total Time: ${formatTime(workout.totalTime)}\n`;
+      message += `🔄 Intervals: ${workout.rounds.length}/${workout.maxRounds} · ${workout.emomCycles || 1} cycles\n\n`;
+    }
     else {
       message += `⏱️ Total Time: ${formatTimeWithMs(workout.totalTime)}\n`;
       message += `🔄 Rounds Completed: ${workout.rounds.length}/${workout.maxRounds}\n\n`;
     }
     
     if (exerciseTotals.length > 0 || (workout.hasBuyInOut && workout.buyInOutExercise)) {
-      message += `💪 Exercise Summary:\n`;
+      message += `💪 ${workout.ladderType === 'emom' ? 'Prescribed Volume' : 'Exercise Summary'}:\n`;
       if (workout.hasBuyInOut && workout.buyInOutExercise) {
         message += `  • BUY IN: ${workout.buyInOutExercise?.name || 'Exercise'}: ${workout.buyInOutExercise?.repsPerRound || 1} ${workout.buyInOutExercise?.unit || 'reps'}\n`;
       }
@@ -278,16 +284,16 @@ const LogbookScreen: React.FC = () => {
       message += '\n';
     }
     
-    message += `🔥 Round Times:\n`;
+    message += `🔥 ${workout.ladderType === 'emom' ? 'Interval Times' : 'Round Times'}:\n`;
     if (workout.hasBuyInOut && workout.buyInCompleted && workout.rounds?.length > 0) {
       message += `  Buy In: ${formatTimeWithMs(workout.rounds[0]?.duration || 0)}\n`;
     }
     const mainRounds = (workout.rounds || []).slice(
       workout.hasBuyInOut && workout.buyInCompleted ? 1 : 0,
       workout.hasBuyInOut && workout.buyOutCompleted ? -1 : undefined
-    );
+    ).slice(0, workout.ladderType === 'emom' ? workout.emomIntervals?.length || 0 : undefined);
     mainRounds.forEach((round, index) => {
-      message += `  Round ${index + 1}: ${formatTimeWithMs(round?.duration || 0)}\n`;
+      message += `  ${workout.ladderType === 'emom' ? 'Interval' : 'Round'} ${index + 1}: ${formatTimeWithMs(round?.duration || 0)}\n`;
     });
     if (workout.hasBuyInOut && workout.buyOutCompleted && workout.rounds?.length > 0) {
       message += `  Buy Out: ${formatTimeWithMs(workout.rounds[workout.rounds.length - 1]?.duration || 0)}\n`;
@@ -404,7 +410,7 @@ const LogbookScreen: React.FC = () => {
           filteredWorkouts.map((workout) => {
           const isExpanded = expandedWorkoutId === workout.id;
           const { dateStr, timeStr } = formatDateTime(workout.startTime);
-          const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds, workout.startingReps);
+          const ladderStrategy = getLadderStrategy(workout.ladderType, workout.stepSize || 1, workout.maxRounds, workout.startingReps, workout.emomIntervals);
           const exerciseTotals = workout.exercises.map(exercise => {
             const totalAmount = ladderStrategy.calculateTotalReps(exercise, workout.rounds.length);
             return {
@@ -467,7 +473,7 @@ const LogbookScreen: React.FC = () => {
                           <View style={styles.sectionHeader}>
                             <MaterialCommunityIcons name="dumbbell" size={18} color={theme.colors.primary} />
                             <Text variant="titleSmall" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-                              Exercise Summary
+                              {workout.ladderType === 'emom' ? 'Prescribed Volume' : 'Exercise Summary'}
                             </Text>
                           </View>
                           {workout.hasBuyInOut && workout.buyInOutExercise && (
@@ -512,7 +518,7 @@ const LogbookScreen: React.FC = () => {
                           <View style={styles.sectionHeader}>
                             <MaterialCommunityIcons name="timer-outline" size={18} color={theme.colors.primary} />
                             <Text variant="titleSmall" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-                              Round Times
+                              {workout.ladderType === 'emom' ? `Interval Sequence · ${workout.emomCycles} cycles` : 'Round Times'}
                             </Text>
                           </View>
                           {workout.hasBuyInOut && workout.buyInCompleted && workout.rounds?.length > 0 && (
@@ -527,6 +533,7 @@ const LogbookScreen: React.FC = () => {
                           )}
                           {(workout.rounds || [])
                             .slice(workout.hasBuyInOut && workout.buyInCompleted ? 1 : 0, workout.hasBuyInOut && workout.buyOutCompleted ? -1 : undefined)
+                            .slice(0, workout.ladderType === 'emom' ? workout.emomIntervals?.length || 0 : undefined)
                             .map((round, index) => (
                               <View 
                                 key={round.roundNumber} 
@@ -536,7 +543,7 @@ const LogbookScreen: React.FC = () => {
                                 ]}
                               >
                                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                                  Round {index + 1}
+                                  {workout.ladderType === 'emom' ? 'Interval' : 'Round'} {index + 1}
                                 </Text>
                                 <Text variant="bodyMedium" style={[styles.roundTime, { color: theme.colors.primary }]}>
                                   {formatTimeWithMs(round?.duration || 0)}

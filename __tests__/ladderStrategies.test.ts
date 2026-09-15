@@ -4,12 +4,14 @@ import {
   ChipperLadderStrategy,
   ChristmasLadderStrategy,
   DescendingLadderStrategy,
+  EMOMLadderStrategy,
   FlexibleLadderStrategy,
   ForRepsLadderStrategy,
   PyramidLadderStrategy,
   ReversePyramidLadderStrategy,
 } from '../src/utils/ladderStrategies';
 import type { Exercise } from '../src/types';
+import { formatEmomLabel, getEmomTotalDuration, getEmomTotalIntervals } from '../src/utils/emom';
 
 const exercises: Exercise[] = [
   { position: 1, name: 'A', unit: 'reps' },
@@ -64,5 +66,30 @@ describe('ladder strategies', () => {
     const strategy = new AMRAPLadderStrategy();
     const exercise = { ...exercises[0], startingReps: 2, stepSize: 1, partialReps: 3 };
     expect(strategy.calculateTotalReps(exercise, 2)).toBe(8);
+  });
+
+  it('repeats EMOM work and rest intervals with fixed prescribed totals', () => {
+    const burpees = { ...exercises[0], name: 'Burpees', repsPerRound: 10 };
+    const lunges = { ...exercises[1], name: 'Lunges', repsPerRound: 10 };
+    const intervals = [
+      { id: '1', position: 1, type: 'work' as const, exercises: [burpees] },
+      { id: '2', position: 2, type: 'work' as const, exercises: [lunges] },
+      { id: '3', position: 3, type: 'rest' as const, exercises: [] },
+    ];
+    const strategy = new EMOMLadderStrategy(intervals);
+    expect(strategy.getExercisesForRound(1)[0].exercise.name).toBe('Burpees');
+    expect(strategy.getExercisesForRound(3)).toEqual([]);
+    expect(strategy.getExercisesForRound(4)[0].exercise.name).toBe('Burpees');
+    expect(strategy.calculateTotalReps(burpees, 6)).toBe(20);
+    expect(strategy.calculateTotalReps(lunges, 6)).toBe(20);
+  });
+
+  it('calculates EMOM labels, complete-cycle interval counts, and durations', () => {
+    const intervals = [{ id: '1', position: 1, type: 'rest' as const, exercises: [] }];
+    expect(formatEmomLabel(60)).toBe('EMOM');
+    expect(formatEmomLabel(180)).toBe('E3MOM');
+    expect(formatEmomLabel(90)).toBe('Every 1:30');
+    expect(getEmomTotalIntervals(intervals, 5)).toBe(5);
+    expect(getEmomTotalDuration(90, intervals, 5)).toBe(450);
   });
 });

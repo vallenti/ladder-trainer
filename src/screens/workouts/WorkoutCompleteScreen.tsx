@@ -122,7 +122,7 @@ const WorkoutCompleteScreen: React.FC = () => {
   }
 
   // Calculate exercise totals using ladder strategy
-  const ladderStrategy = getLadderStrategy(completedWorkout.ladderType, completedWorkout.stepSize || 1, completedWorkout.maxRounds, completedWorkout.startingReps);
+  const ladderStrategy = getLadderStrategy(completedWorkout.ladderType, completedWorkout.stepSize || 1, completedWorkout.maxRounds, completedWorkout.startingReps, completedWorkout.emomIntervals);
   const exerciseTotals = completedWorkout.exercises.map(exercise => {
     const totalAmount = ladderStrategy.calculateTotalReps(exercise, completedWorkout.rounds.length);
     
@@ -169,7 +169,7 @@ const WorkoutCompleteScreen: React.FC = () => {
                     activeTab === 'exercises' && [styles.activeTabText, { color: theme.colors.primary }]
                   ]}
                 >
-                  Exercise Summary
+                  {completedWorkout.ladderType === 'emom' ? 'Prescribed Volume' : 'Exercise Summary'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -235,9 +235,15 @@ const WorkoutCompleteScreen: React.FC = () => {
                       </Text>
                     </View>
                   )}
-                  {(completedWorkout.rounds || []).slice(completedWorkout.hasBuyInOut && completedWorkout.buyInCompleted ? 1 : 0, completedWorkout.hasBuyInOut && completedWorkout.buyOutCompleted ? -1 : undefined).map((round, index) => (
+                  {completedWorkout.ladderType === 'emom' ? (
+                    <>
+                      <View style={[styles.roundItem, { borderBottomColor: theme.colors.outline }]}><Text variant="bodyLarge">Cycles</Text><Text variant="bodyLarge" style={[styles.roundTime, { color: theme.colors.primary }]}>{completedWorkout.emomCycles}</Text></View>
+                      <View style={[styles.roundItem, { borderBottomColor: theme.colors.outline }]}><Text variant="bodyLarge">Work intervals</Text><Text variant="bodyLarge" style={[styles.roundTime, { color: theme.colors.primary }]}>{(completedWorkout.emomIntervals || []).filter(interval => interval.type === 'work').length * (completedWorkout.emomCycles || 0)}</Text></View>
+                      <View style={[styles.roundItem, { borderBottomColor: theme.colors.outline }]}><Text variant="bodyLarge">Rest intervals</Text><Text variant="bodyLarge" style={[styles.roundTime, { color: theme.colors.primary }]}>{(completedWorkout.emomIntervals || []).filter(interval => interval.type === 'rest').length * (completedWorkout.emomCycles || 0)}</Text></View>
+                    </>
+                  ) : (completedWorkout.rounds || []).slice(completedWorkout.hasBuyInOut && completedWorkout.buyInCompleted ? 1 : 0, completedWorkout.hasBuyInOut && completedWorkout.buyOutCompleted ? -1 : undefined).map((round, index) => (
                     <View key={round.roundNumber} style={[styles.roundItem, { borderBottomColor: theme.colors.outline }]}>
-                      <Text variant="bodyLarge">Round {index + 1}</Text>
+                      <Text variant="bodyLarge">{completedWorkout.ladderType === 'emom' ? 'Interval' : 'Round'} {index + 1}</Text>
                       <Text variant="bodyLarge" style={[styles.roundTime, { color: theme.colors.primary }]}>
                         {formatTimeWithMs(round?.duration || 0).main}{formatTimeWithMs(round?.duration || 0).ms}
                       </Text>

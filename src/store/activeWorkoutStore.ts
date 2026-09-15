@@ -12,6 +12,7 @@ interface PausedWorkoutState {
   totalPausedTime: number;
   pauseStartTime: number;
   isTimerFocusMode: boolean;
+  isPaused?: boolean;
 }
 
 interface ActiveWorkoutStore {
@@ -30,9 +31,11 @@ interface ActiveWorkoutStore {
   completeBuyIn: () => void;
   completeBuyOut: () => void;
   completeRound: () => void;
+  syncEmomProgress: (completedIntervals: number) => void;
   startNextRound: () => void;
   completeWorkout: () => Promise<void>;
   pauseWorkout: (elapsedTime: number, totalPausedTime: number) => Promise<void>;
+  checkpointWorkout: (elapsedTime: number, totalPausedTime: number) => Promise<void>;
   resumeWorkout: () => void;
   discardPausedWorkout: () => Promise<void>;
   loadPausedWorkout: () => Promise<boolean>;
@@ -59,6 +62,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       stepSize: template.stepSize,
       startingReps: template.startingReps,
       timeCap: template.timeCap,
+      intervalSeconds: template.intervalSeconds,
+      emomCycles: template.emomCycles,
+      emomIntervals: template.emomIntervals?.map(interval => ({ ...interval, exercises: interval.exercises.map(exercise => ({ ...exercise })) })),
       // Buy In/Out
       hasBuyInOut: template.hasBuyInOut,
       buyInOutExercise: template.buyInOutExercise,
@@ -130,6 +136,25 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
     });
   },
 
+  syncEmomProgress: (completedIntervals: number) => {
+    const { activeWorkout, totalPausedTime } = get();
+    if (!activeWorkout || activeWorkout.ladderType !== 'emom' || !activeWorkout.intervalSeconds) return;
+    const target = Math.min(Math.max(0, completedIntervals), activeWorkout.maxRounds);
+    if (target <= activeWorkout.rounds.length) return;
+    const rounds = [...activeWorkout.rounds];
+    for (let index = rounds.length; index < target; index += 1) {
+      const startTime = new Date(activeWorkout.startTime.getTime() + (totalPausedTime + index * activeWorkout.intervalSeconds) * 1000);
+      const endTime = new Date(startTime.getTime() + activeWorkout.intervalSeconds * 1000);
+      rounds.push({ roundNumber: index + 1, startTime, endTime, duration: activeWorkout.intervalSeconds });
+    }
+    set({
+      activeWorkout: { ...activeWorkout, rounds, currentRoundIndex: Math.min(target, activeWorkout.maxRounds - 1) },
+      currentRoundStartTime: target < activeWorkout.maxRounds
+        ? new Date(activeWorkout.startTime.getTime() + (totalPausedTime + target * activeWorkout.intervalSeconds) * 1000)
+        : null,
+    });
+  },
+
   startNextRound: () => {
     const { activeWorkout } = get();
     if (!activeWorkout) return;
@@ -153,7 +178,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
     const completedWorkout: Workout = {
       ...activeWorkout,
       endTime,
-      totalTime,
+      totalTime: activeWorkout.ladderType === 'emom' && activeWorkout.intervalSeconds
+        ? activeWorkout.maxRounds * activeWorkout.intervalSeconds
+        : totalTime,
       status: 'completed',
     };
 
@@ -189,6 +216,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       totalPausedTime,
       pauseStartTime,
       isTimerFocusMode,
+      isPaused: true,
     };
 
     try {
@@ -204,9 +232,28 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
     }
   },
 
+  checkpointWorkout: async (elapsedTime: number, totalPausedTime: number) => {
+    const { activeWorkout, currentRoundStartTime, isTimerFocusMode } = get();
+    if (!activeWorkout) return;
+    const state: PausedWorkoutState = {
+      activeWorkout,
+      currentRoundStartTime,
+      elapsedTime,
+      totalPausedTime,
+      pauseStartTime: 0,
+      isTimerFocusMode,
+      isPaused: false,
+    };
+    try {
+      await AsyncStorage.setItem(PAUSED_WORKOUT_KEY, JSON.stringify(state));
+    } catch (error) {
+      console.error('Failed to checkpoint workout:', error);
+    }
+  },
+
   resumeWorkout: () => {
     const { pauseStartTime, totalPausedTime } = get();
-    const pauseDuration = Math.floor((Date.now() - pauseStartTime) / 1000);
+    const pauseDuration = (Date.now() - pauseStartTime) / 1000;
     
     set({ 
       isPaused: false,
@@ -257,7 +304,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set, get) => ({
       set({
         activeWorkout: pausedState.activeWorkout,
         currentRoundStartTime: pausedState.currentRoundStartTime,
-        isPaused: true,
+        isPaused: pausedState.isPaused ?? true,
         elapsedTime: pausedState.elapsedTime,
         totalPausedTime: pausedState.totalPausedTime,
         pauseStartTime: pausedState.pauseStartTime, // Use the saved pause start time

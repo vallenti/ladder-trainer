@@ -37,6 +37,7 @@ All types use `ladderStrategies.ts`; creation is coordinated by `CreateEditWorko
 | `chipper` | `FixedRepsExerciseInput` | per exercise `fixedReps`; rounds derived from count | last exercise |
 | `amrap` | `AMRAPExerciseInput` | per exercise start/step; `timeCap`; sentinel rounds | time cap |
 | `forreps` | `ForRepsExerciseInput` | per exercise `repsPerRound`; global rounds | round cap |
+| `emom` | `EmomIntervalInput` | shared `intervalSeconds`; ordered work/rest intervals; cycles | automatic interval clock |
 
 ## Undocumented/dead modules agents should recognize
 

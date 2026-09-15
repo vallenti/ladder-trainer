@@ -72,6 +72,7 @@ AMRAP completion is time-cap-driven and can request partial-round rep input. Oth
 | `chipper` | exercise whose position equals round | exercise count |
 | `amrap` | all exercises; independent fixed/increasing reps | time cap; sentinel 999 |
 | `forreps` | all exercises; fixed `repsPerRound` | configured rounds |
+| `emom` | one fixed work prescription or rest per interval; repeating sequence | shared interval duration and complete cycles |
 
 ## Change-impact rules
 

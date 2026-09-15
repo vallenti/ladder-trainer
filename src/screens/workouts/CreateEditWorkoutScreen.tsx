@@ -12,10 +12,12 @@ import AMRAPExerciseInput from '../../components/AMRAPExerciseInput';
 import NumberStepper from '../../components/NumberStepper';
 import AutocompleteExerciseInput from '../../components/AutocompleteExerciseInput';
 import LoadInput from '../../components/LoadInput';
-import { Exercise, LadderType } from '../../types';
+import EmomIntervalInput from '../../components/EmomIntervalInput';
+import { EmomInterval, Exercise, LadderType } from '../../types';
 import { spacing } from '../../constants/theme';
 import { getLadderStrategy } from '../../utils/ladderStrategies';
 import { getLadderDefaults } from '../../constants/ladderDefaults';
+import { formatDuration, formatEmomLabel, getEmomTotalDuration, getEmomTotalIntervals } from '../../utils/emom';
 
 type RouteParams = {
   CreateEditWorkout: {
@@ -50,6 +52,14 @@ const CreateEditWorkoutScreen: React.FC = () => {
   const initialTimeCap = existingWorkout?.timeCap || initialDefaults.timeCap || 600;
   const [timeCapMinutes, setTimeCapMinutes] = useState(Math.floor(initialTimeCap / 60));
   const [timeCapSeconds, setTimeCapSeconds] = useState(initialTimeCap % 60);
+  const [intervalSeconds, setIntervalSeconds] = useState(existingWorkout?.intervalSeconds || 60);
+  const [emomCycles, setEmomCycles] = useState(existingWorkout?.emomCycles || 1);
+  const [emomIntervals, setEmomIntervals] = useState<EmomInterval[]>(existingWorkout?.emomIntervals || [{
+    id: `emom-${Date.now()}`,
+    position: 1,
+    type: 'work',
+    exercises: [{ position: 1, unit: '', name: '', repsPerRound: 1 }],
+  }]);
   
   const [name, setName] = useState(existingWorkout?.name || '');
   const [isBenchmark, setIsBenchmark] = useState(existingWorkout?.isBenchmark || false);
@@ -112,6 +122,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
       const defaultTimeCap = defaults.timeCap || 600;
       setTimeCapMinutes(Math.floor(defaultTimeCap / 60));
       setTimeCapSeconds(defaultTimeCap % 60);
+      setIntervalSeconds(defaults.intervalSeconds || 60);
+      setEmomCycles(defaults.emomCycles || 1);
     }
   }, [ladderType, isEditing]);
 
@@ -138,6 +150,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
         ...(ladderType === 'forreps' && {
           repsPerRound: 0,
         }),
+        ...(ladderType === 'emom' && { repsPerRound: 1 }),
       };
       setExercises([newExercise]);
       
@@ -158,6 +171,8 @@ const CreateEditWorkoutScreen: React.FC = () => {
       // Reset rest period
       setHasRest(false);
       setRestPeriod('60');
+      setEmomIntervals([{ id: `emom-${Date.now()}`, position: 1, type: 'work', exercises: [{ position: 1, unit: '', name: '', repsPerRound: 1 }] }]);
+      setEmomCycles(1);
     }
     previousLadderTypeRef.current = ladderType;
   }, [ladderType, currentStep, isEditing]);
@@ -234,6 +249,9 @@ const CreateEditWorkoutScreen: React.FC = () => {
             ...rest,
             repsPerRound: ex.repsPerRound || 0
           };
+        } else if (ladderType === 'emom') {
+          const { direction, startingReps: exStartingReps, stepSize: exStepSize, fixedReps, ...rest } = ex;
+          return { ...rest, repsPerRound: ex.repsPerRound || 1 };
         } else {
           // Remove flexible, chipper, AMRAP, and forreps ladder fields for other types
           const { direction, startingReps: exStartingReps, stepSize: exStepSize, fixedReps, repsPerRound, ...rest } = ex;
@@ -242,6 +260,54 @@ const CreateEditWorkoutScreen: React.FC = () => {
       })
     );
   }, [ladderType]);
+
+  useEffect(() => {
+    if (ladderType !== 'emom') return;
+    setExercises(emomIntervals.flatMap(interval => interval.exercises));
+  }, [ladderType, emomIntervals]);
+
+  const reindexEmomIntervals = (items: EmomInterval[]): EmomInterval[] => {
+    let exercisePosition = 0;
+    return items.map((item, index) => ({
+      ...item,
+      position: index + 1,
+      exercises: item.exercises.map(exercise => ({ ...exercise, position: ++exercisePosition })),
+    }));
+  };
+
+  const addEmomInterval = (type: 'work' | 'rest') => {
+    if (emomIntervals.length >= 12) return;
+    const next: EmomInterval = {
+      id: `emom-${Date.now()}-${emomIntervals.length}`,
+      position: emomIntervals.length + 1,
+      type,
+      exercises: type === 'work' ? [{ position: 1, unit: '', name: '', repsPerRound: 1 }] : [],
+    };
+    setEmomIntervals(reindexEmomIntervals([...emomIntervals, next]));
+  };
+
+  const updateEmomExercise = (index: number, exercise: Exercise) => {
+    setEmomIntervals(reindexEmomIntervals(emomIntervals.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, exercises: [{ ...exercise }] } : item
+    )));
+  };
+
+  const deleteEmomInterval = (index: number) => setEmomIntervals(reindexEmomIntervals(emomIntervals.filter((_, i) => i !== index)));
+  const moveEmomInterval = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= emomIntervals.length) return;
+    const items = [...emomIntervals];
+    [items[index], items[target]] = [items[target], items[index]];
+    setEmomIntervals(reindexEmomIntervals(items));
+  };
+  const duplicateEmomInterval = (index: number) => {
+    if (emomIntervals.length >= 12) return;
+    const source = emomIntervals[index];
+    const copy = { ...source, id: `emom-${Date.now()}-${index}`, exercises: source.exercises.map(exercise => ({ ...exercise })) };
+    const items = [...emomIntervals];
+    items.splice(index + 1, 0, copy);
+    setEmomIntervals(reindexEmomIntervals(items));
+  };
 
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
@@ -328,7 +394,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       }
     });
 
-    if (hasRest) {
+    if (hasRest && ladderType !== 'emom') {
       const rest = parseInt(restPeriod, 10);
       if (isNaN(rest) || rest <= 0) {
         newErrors.push('Rest period must be a positive number');
@@ -336,7 +402,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
     }
 
     const rounds = parseInt(maxRounds, 10);
-    if (ladderType !== 'amrap' && (isNaN(rounds) || rounds <= 0)) {
+    if (ladderType !== 'amrap' && ladderType !== 'emom' && (isNaN(rounds) || rounds <= 0)) {
       newErrors.push('Max rounds must be a positive number');
     }
 
@@ -421,6 +487,25 @@ const CreateEditWorkoutScreen: React.FC = () => {
       });
     }
 
+    if (ladderType === 'emom') {
+      if (intervalSeconds < 15 || intervalSeconds > 900 || intervalSeconds % 15 !== 0) {
+        newErrors.push('EMOM interval must be 15 seconds to 15 minutes in 15-second increments');
+      }
+      if (emomCycles < 1 || emomCycles > 99) newErrors.push('EMOM cycles must be between 1 and 99');
+      if (emomIntervals.length < 1 || emomIntervals.length > 12) newErrors.push('EMOM sequence must contain 1 to 12 intervals');
+      if (!emomIntervals.some(interval => interval.type === 'work')) newErrors.push('EMOM sequence must contain at least one work interval');
+      emomIntervals.forEach((interval, index) => {
+        if (interval.type === 'work') {
+          if (interval.exercises.length !== 1) newErrors.push(`Interval ${index + 1}: exactly one exercise is required`);
+          const exercise = interval.exercises[0];
+          if (!exercise?.name.trim()) newErrors.push(`Interval ${index + 1}: Exercise name is required`);
+          if (!exercise?.repsPerRound || exercise.repsPerRound <= 0) newErrors.push(`Interval ${index + 1}: Amount must be positive`);
+        } else if (interval.exercises.length !== 0) {
+          newErrors.push(`Interval ${index + 1}: Rest cannot contain exercises`);
+        }
+      });
+    }
+
     // Buy In/Out validation
     if (hasBuyInOut && (ladderType === 'amrap' || ladderType === 'chipper' || ladderType === 'forreps')) {
       if (!buyInOutExercise.name.trim()) {
@@ -463,7 +548,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
     }
 
     // For chipper, maxRounds equals number of exercises; for AMRAP, set high number
-    const finalMaxRounds = ladderType === 'chipper' ? exercises.length : ladderType === 'amrap' ? 999 : parseInt(maxRounds, 10);
+    const finalMaxRounds = ladderType === 'chipper' ? exercises.length : ladderType === 'amrap' ? 999 : ladderType === 'emom' ? getEmomTotalIntervals(emomIntervals, emomCycles) : parseInt(maxRounds, 10);
     
     // Calculate total time cap in seconds from minutes and seconds
     const totalTimeCap = timeCapMinutes * 60 + timeCapSeconds;
@@ -473,13 +558,16 @@ const CreateEditWorkoutScreen: React.FC = () => {
 
     const workoutData = {
       name: name.trim(),
-      exercises,
-      restPeriodSeconds: hasRest ? parseInt(restPeriod, 10) : 0,
+      exercises: ladderType === 'emom' ? emomIntervals.flatMap(interval => interval.exercises) : exercises,
+      restPeriodSeconds: ladderType === 'emom' ? 0 : hasRest ? parseInt(restPeriod, 10) : 0,
       ladderType,
       maxRounds: finalMaxRounds,
       stepSize: (ladderType === 'ascending' || ladderType === 'descending' || ladderType === 'pyramid' || ladderType === 'reversepyramid') ? parseInt(stepSize, 10) : undefined,
       startingReps: (ladderType === 'ascending' || ladderType === 'descending') ? parseInt(startingReps, 10) : undefined,
       timeCap: ladderType === 'amrap' ? totalTimeCap : undefined,
+      intervalSeconds: ladderType === 'emom' ? intervalSeconds : undefined,
+      emomCycles: ladderType === 'emom' ? emomCycles : undefined,
+      emomIntervals: ladderType === 'emom' ? reindexEmomIntervals(emomIntervals) : undefined,
       // Buy In/Out
       hasBuyInOut: shouldIncludeBuyInOut,
       buyInOutExercise: shouldIncludeBuyInOut ? buyInOutExercise : undefined,
@@ -516,6 +604,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
       chipper: 'Chipper',
       amrap: 'AMRAP',
       forreps: 'For Reps',
+      emom: 'EMOM',
     };
     
     return `${typeNames[ladderType]} WOD`;
@@ -984,6 +1073,27 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   </Card.Content>
                 </Card>
 
+                {/* EMOM Card */}
+                <Card
+                  style={[
+                    styles.ladderTypeCard,
+                    { backgroundColor: theme.colors.surface },
+                    ladderType === 'emom' && { borderColor: theme.colors.primary, borderWidth: 2, backgroundColor: theme.dark ? `${theme.colors.primary}25` : theme.colors.primaryContainer }
+                  ]}
+                  onPress={() => setLadderType('emom')}
+                >
+                  <Card.Content>
+                    <View style={styles.ladderTypeHeader}>
+                      <MaterialCommunityIcons name="timer-sync" size={48} color={ladderType === 'emom' ? theme.colors.primary : theme.colors.onSurfaceVariant} style={styles.ladderTypeIcon} />
+                      <View style={styles.ladderTypeContent}>
+                        <Text variant="titleMedium" style={[styles.ladderTypeName, ladderType === 'emom' && { color: theme.colors.primary }]}>EMOM</Text>
+                        {ladderType === 'emom' && <Text variant="bodySmall" style={[styles.ladderTypeDescription, { color: theme.colors.onSurface }]}>Fixed work on each timed interval. The sequence repeats automatically and can include rest.</Text>}
+                      </View>
+                      {ladderType === 'emom' && <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.primary} />}
+                    </View>
+                  </Card.Content>
+                </Card>
+
                 {/* Christmas Ladder Card */}
                 <Card 
                   style={[
@@ -1060,6 +1170,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
                           chipper: 'Chipper Ladder',
                           amrap: 'AMRAP',
                           forreps: 'For Reps',
+                          emom: 'EMOM',
                         }[ladderType]}
                       </Text>
                     </Card.Content>
@@ -1143,8 +1254,26 @@ const CreateEditWorkoutScreen: React.FC = () => {
               </View>
             )}
 
+            {ladderType === 'emom' && (
+              <View style={styles.timeCapSection}>
+                <Text variant="labelLarge" style={[styles.timeCapLabel, { color: theme.colors.onSurface }]}>Shared interval duration</Text>
+                <View style={styles.presetChipsContainer}>
+                  {[60, 120, 180].map(seconds => (
+                    <Chip key={seconds} selected={intervalSeconds === seconds} onPress={() => setIntervalSeconds(seconds)} style={styles.presetChip}>
+                      {formatEmomLabel(seconds)}
+                    </Chip>
+                  ))}
+                </View>
+                <NumberStepper label="Seconds" value={intervalSeconds} onChange={setIntervalSeconds} min={15} max={900} step={15} />
+                <NumberStepper label="Cycles" value={emomCycles} onChange={setEmomCycles} min={1} max={99} step={1} />
+                <Text variant="bodyMedium" style={[styles.totalTimeDisplay, { color: theme.colors.primary }]}>
+                  {emomIntervals.length} intervals × {emomCycles} cycles = {getEmomTotalIntervals(emomIntervals, emomCycles)} intervals · {formatDuration(getEmomTotalDuration(intervalSeconds, emomIntervals, emomCycles))}
+                </Text>
+              </View>
+            )}
+
             {/* Max Rounds - Not shown for chipper (auto-calculated from exercise count) or AMRAP (unlimited) */}
-            {ladderType !== 'chipper' && ladderType !== 'amrap' && (
+            {ladderType !== 'chipper' && ladderType !== 'amrap' && ladderType !== 'emom' && (
               <TextInput
                 mode="outlined"
                 label="Maximum Rounds"
@@ -1226,7 +1355,7 @@ const CreateEditWorkoutScreen: React.FC = () => {
             })()}
 
             {/* Rest Period */}
-            <View style={styles.restSection}>
+            {ladderType !== 'emom' && <View style={styles.restSection}>
               <View style={styles.checkboxRow}>
                 <Checkbox.Android
                   status={hasRest ? 'checked' : 'unchecked'}
@@ -1248,17 +1377,32 @@ const CreateEditWorkoutScreen: React.FC = () => {
                   style={styles.restInput}
                 />
               )}
-            </View>
+            </View>}
 
             <Divider style={styles.divider} />
 
             {/* Exercises Section */}
             <View style={styles.exercisesHeader}>
-              <Text variant="titleLarge">Exercises</Text>
+              <Text variant="titleLarge">{ladderType === 'emom' ? 'Interval sequence' : 'Exercises'}</Text>
               
             </View>
 
-            {ladderType === 'flexible' ? (
+            {ladderType === 'emom' ? (
+              emomIntervals.map((interval, index) => (
+                <EmomIntervalInput
+                  key={interval.id}
+                  interval={interval}
+                  onChangeExercise={exercise => updateEmomExercise(index, exercise)}
+                  onDelete={() => deleteEmomInterval(index)}
+                  onDuplicate={() => duplicateEmomInterval(index)}
+                  onMoveUp={() => moveEmomInterval(index, -1)}
+                  onMoveDown={() => moveEmomInterval(index, 1)}
+                  canDelete={emomIntervals.length > 1}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < emomIntervals.length - 1}
+                />
+              ))
+            ) : ladderType === 'flexible' ? (
               exercises.map((exercise, index) => (
                 <FlexibleExerciseInput
                   key={index}
@@ -1325,6 +1469,14 @@ const CreateEditWorkoutScreen: React.FC = () => {
                 ? exercises.length < rounds && exercises.length < 12
                 : exercises.length < 12;
               
+              if (ladderType === 'emom') {
+                return emomIntervals.length < 12 && (
+                  <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                    <Button mode="outlined" onPress={() => addEmomInterval('work')} icon="plus" style={[styles.addButton, { flex: 1 }]}>Work</Button>
+                    <Button mode="outlined" onPress={() => addEmomInterval('rest')} icon="bed" style={[styles.addButton, { flex: 1 }]}>Rest</Button>
+                  </View>
+                );
+              }
               return canAddExercise && (
                 <Button
                   mode="outlined"

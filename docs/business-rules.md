@@ -57,6 +57,10 @@ Every round contains all exercises. Each exercise has positive `startingReps` an
 
 Every round contains all exercises with positive per-exercise `repsPerRound`. `maxRounds` is positive and ends the workout.
 
+### EMOM
+
+EMOM uses one shared interval duration from 15 to 900 seconds in 15-second increments. An ordered sequence contains 1 to 12 work or rest intervals and must include at least one work interval. V1 work intervals contain exactly one fixed prescription; rest intervals contain none. The user selects 1 to 99 complete cycles, `maxRounds` is derived as sequence length times cycles, and partial cycles are not allowed. The active workout advances from timestamps without manual completion controls. Explicit pause freezes the schedule; backgrounding checkpoints but does not pause it. One haptic fires at an observed interval boundary while the active screen is running. EMOM has neither regular round rest nor buy-in/out.
+
 ## Buy-in/out and rest
 
 - The saved create/edit workflow supports buy-in/out only for AMRAP, Chipper, and For Reps.
